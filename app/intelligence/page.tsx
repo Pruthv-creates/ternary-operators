@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Brain, Sparkles, Send, Search, AlertTriangle, BarChart2, ChevronRight, Minimize2, X, Maximize2 } from "lucide-react";
+import { Brain, Sparkles, Send, Search, AlertTriangle, BarChart2, ChevronRight, X, Maximize2 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 import Topbar from "@/components/Topbar";
 import { aiActions } from "@/lib/data";

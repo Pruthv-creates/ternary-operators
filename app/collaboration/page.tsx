@@ -4,15 +4,12 @@ import { motion } from "framer-motion";
 import { 
     Users, 
     MessageSquare, 
-    Share2, 
-    History, 
+    History,
     CheckCircle2, 
-    Clock, 
     Shield,
     Terminal,
     Eye,
     Zap,
-    AlertCircle,
     Layout
 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";

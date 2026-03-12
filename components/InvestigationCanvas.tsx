@@ -4,13 +4,10 @@ import { useCallback } from "react";
 import {
     ReactFlow,
     Background,
-    Controls,
     BackgroundVariant,
-    Connection,
     NodeMouseHandler,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { Maximize2, Layers, ZoomIn } from "lucide-react";
 
 import EntityNode from "./EntityNode";
 import EvidenceNode from "./EvidenceNode";

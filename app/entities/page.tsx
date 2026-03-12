@@ -1,16 +1,11 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { 
     Users, 
     Search, 
     Filter, 
-    UserPlus, 
     CheckCircle2, 
-    AlertCircle, 
-    BadgeCheck,
     ArrowUpRight,
-    Map,
     ShieldCheck,
     Database,
     History,
@@ -185,7 +180,7 @@ export default function EntitiesPage() {
                                         <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Astra Entity Logic</span>
                                     </div>
                                     <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
-                                        "Detected high-overlap between Version B and the Shell_Co_Registration.pdf. Suggest merging and tagging as 'High Significance'."
+                                        &quot;Detected high-overlap between Version B and the Shell_Co_Registration.pdf. Suggest merging and tagging as &apos;High Significance&apos;.&quot;
                                     </p>
                                     <button className="mt-4 w-full py-2 bg-blue-500/10 border border-blue-500/20 rounded-lg text-[9px] font-black text-blue-400 uppercase tracking-widest hover:bg-blue-500/20 transition-all">
                                         Execute AI Merge
@@ -212,7 +207,7 @@ export default function EntitiesPage() {
                                 <div className="mt-auto p-4 rounded-xl bg-[#0a0f1c] border border-[#1e3a5f]/30 flex items-start gap-3">
                                     <Info size={14} className="text-slate-600 mt-0.5" />
                                     <p className="text-[10px] text-slate-600 font-medium italic">
-                                        Entities in 'Stage 2' are ready for promotion once conflicts are zeroed out.
+                                        Entities in &apos;Stage 2&apos; are ready for promotion once conflicts are zeroed out.
                                     </p>
                                 </div>
                             </div>

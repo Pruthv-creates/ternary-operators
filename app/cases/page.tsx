@@ -7,14 +7,10 @@ import {
     ArrowUpRight, 
     Brain, 
     Clock, 
-    Database, 
     Users, 
-    Search,
     AlertTriangle,
     CheckCircle2,
-    Filter,
     Activity,
-    MessageSquare,
     BarChart3,
     Share2,
     Lock
@@ -181,7 +177,7 @@ export default function CasesPage() {
                                                     <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Astra AI Strategy</span>
                                                 </div>
                                                 <p className="text-[11px] font-medium text-slate-300 leading-relaxed mb-4 italic">
-                                                    "These travel logs indicate multiple unlisted flights to Nicosia, Cyprus. This pattern is highly consistent with the known shell company registration locations for Project Nexus. Recommendation: Coordinate with financial timeline."
+                                                    &quot;These travel logs indicate multiple unlisted flights to Nicosia, Cyprus. This pattern is highly consistent with the known shell company registration locations for Project Nexus. Recommendation: Coordinate with financial timeline.&quot;
                                                 </p>
                                                 <div className="space-y-2">
                                                     <div className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Confidence Score: 94%</div>

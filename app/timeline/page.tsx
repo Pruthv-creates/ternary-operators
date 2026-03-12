@@ -1,16 +1,10 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { 
-    Clock, 
     Filter, 
     ArrowUpRight, 
     Zap, 
-    Search,
-    Calendars, 
     BarChart3,
-    AlertTriangle,
-    CheckCircle2,
     Database,
     ChevronDown,
     Plus,

@@ -2,6 +2,7 @@ import { memo } from "react";
 import { Handle, Position } from "@xyflow/react";
 import EvidenceCard from "./EvidenceCard";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function EvidenceNode({ data }: any) {
     return (
         <div className="relative">

@@ -2,6 +2,7 @@ import { memo } from "react";
 import { Handle, Position } from "@xyflow/react";
 import HypothesisNote from "./HypothesisNote";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function HypothesisNode({ id, data }: any) {
     return (
         <div className="relative">

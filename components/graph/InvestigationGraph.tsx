@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import { 
   ReactFlow, 
   MiniMap, 
@@ -10,7 +10,8 @@ import {
   useEdgesState, 
   addEdge,
   Node,
-  Edge
+  Edge,
+  Connection
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -30,10 +31,10 @@ const initialEdges: Edge[] = [
 ];
 
 export default function InvestigationGraph() {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [nodes, , onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
-  const onConnect = useCallback((params: any) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
+  const onConnect = useCallback((params: Connection | Edge) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
 
   return (
     <div style={{ width: '100%', height: '100%' }}>

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Search, Bell, ChevronDown, Users, Settings, Wifi } from "lucide-react";
+import { Search, Bell, ChevronDown, Settings, Wifi } from "lucide-react";
 
 const avatars = [
     { initials: "MK", color: "bg-blue-500" },

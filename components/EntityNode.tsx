@@ -4,18 +4,6 @@ import { Building2, Landmark, MapPin, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EntityType } from "@/lib/data";
 
-interface EntityNodeProps {
-    data: {
-        name: string;
-        role: string;
-        type: EntityType;
-        selected?: boolean;
-        entityId?: string;
-        avatar?: string;
-    };
-    selected?: boolean;
-}
-
 const typeConfig: Record<
     EntityType,
     { icon: React.ReactNode; color: string; ring: string; bg: string }
@@ -52,6 +40,7 @@ const typeConfig: Record<
     },
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function EntityNode({ data, selected }: any) {
     const cfg = typeConfig[data.type as EntityType] ?? typeConfig.person;
 
@@ -116,8 +105,5 @@ function EntityNode({ data, selected }: any) {
         </div>
     );
 }
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-type _EntityNodeProps = EntityNodeProps;
 
 export default memo(EntityNode);

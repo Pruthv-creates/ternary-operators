@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  cases     Case[]   @relation("CaseInvestigators")
+  createdAt DateTime @default(now())
+}
+
+model Case {
+  id          String  @id @default(uuid())
+  title       String
+  description String?
+  status      String  @default("ACTIVE") // ACTIVE, RESOLVED, ARCHIVED
+
+  users     User[]     @relation("CaseInvestigators")
+  documents Document[]
+  nodes     Node[] // Knowledge Graph Nodes
+  edges     Edge[] // Knowledge Graph Edges
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Document {
+  id     String @id @default(uuid())
+  caseId String
+  case   Case   @relation(fields: [caseId], references: [id])
+
+  title       String
+  sourceUrl   String?
+  storageKey  String? // S3 path
+  contentHash String? // For deduplication
+  fileType    String // PDF, TXT, LINK, IMAGE
+
+  // Backlink to its corresponding Node in the Graph
+  nodeId String? @unique
+  node   Node?   @relation(fields: [nodeId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+enum NodeType {
+  DOCUMENT
+  SUMMARY
+  CONJECTURE
+  INVESTIGATION_TASK
+  ENTITY_PERSON
+  ENTITY_ORG
+  ENTITY_LOCATION
+  EVENT
+}
+
+model Node {
+  id     String @id @default(uuid())
+  caseId String
+  case   Case   @relation(fields: [caseId], references: [id])
+
+  type    NodeType
+  label   String // Display name in React Flow
+  content String? // Rich text, markdown, or JSON metadata (AI output)
+
+  // Real-time canvas positioning
+  positionX Float @default(0)
+  positionY Float @default(0)
+
+  // Links
+  document Document? // Optional relation if type=DOCUMENT
+
+  edgesOut Edge[] @relation("FromNode")
+  edgesIn  Edge[] @relation("ToNode")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Edge {
+  id     String @id @default(uuid())
+  caseId String
+  case   Case   @relation(fields: [caseId], references: [id])
+
+  sourceId String
+  targetId String
+  source   Node   @relation("FromNode", fields: [sourceId], references: [id])
+  target   Node   @relation("ToNode", fields: [targetId], references: [id])
+
+  relationshipType String // 'summarized_from', 'mentions', 'suggests', 'supports', 'contradicts'
+
+  createdAt DateTime @default(now())
+
+  @@unique([sourceId, targetId, relationshipType])
+}

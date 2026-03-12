@@ -122,15 +122,17 @@ model AuditLog {
 }
 
 model News {
-  id          String   @id @default(uuid())
+  id          String   @id @default(cuid())
   caseId      String
   title       String
   summary     String
   content     String?
   source      String
   url         String?
+  imageUrl    String?
   publishedAt DateTime @default(now())
-  sentiment   String?
+  sentiment   Float?
+  createdAt   DateTime @default(now())
   case        Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
 
   @@map("news")

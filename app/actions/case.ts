@@ -376,7 +376,8 @@ export async function createNewsItem(data: {
   summary: string;
   source: string;
   url?: string;
-  sentiment?: string;
+  imageUrl?: string;
+  sentiment?: number;
   publishedAt?: Date;
 }) {
   return prisma.news.create({

@@ -149,7 +149,7 @@ async function main() {
       summary: "Financial service giant Wirecard says its auditors are unable to confirm the existence of €1.9bn in cash, roughly a quarter of its balance sheet.",
       source: "Financial Times",
       url: "https://www.ft.com/wirecard-scandal",
-      sentiment: "Negative",
+      sentiment: -1.0,
       publishedAt: new Date('2020-06-18T09:00:00Z')
     },
     {
@@ -157,15 +157,15 @@ async function main() {
       summary: "Global police agency Interpol has issued a red notice for the arrest of Jan Marsalek, the fugitive former chief operating officer of collapsed German payments firm Wirecard.",
       source: "Reuters",
       url: "https://www.reuters.com/marsalek-red-notice",
-      sentiment: "Negative",
+      sentiment: -1.0,
       publishedAt: new Date('2020-08-12T14:30:00Z')
     },
     {
       title: "Synergy Corp records flagged in Munich money laundering sweep",
-      summary: "German prosecutors have identified Synergy Corp as a key node in the complex web of offshore entities used to facilitate Wirecard's suspicious third-party acquirer transactions.",
+      summary: "German prosecutors have identified Synergy Corp as a key node in the web of offshore entities used to facilitate Wirecard's suspicious third-party acquirer transactions.",
       source: "Spiegel International",
       url: "https://www.spiegel.de/international/business/the-wirecard-scandal-a-look-at-the-major-players-a-1234567.html",
-      sentiment: "Negative",
+      sentiment: -1.0,
       publishedAt: new Date('2021-02-05T11:15:00Z')
     },
     {
@@ -173,14 +173,14 @@ async function main() {
       summary: "New reports suggest that former Wirecard COO Jan Marsalek had long-standing ties to Russian intelligence services before his dramatics disappearance.",
       source: "Bellingcat",
       url: "https://www.bellingcat.com/news/2020/07/10/jan-marsalek-the-fugitive-coo/",
-      sentiment: "Negative",
+      sentiment: -1.0,
       publishedAt: new Date('2023-09-10T16:00:00Z')
     },
     {
        title: "EY Germany faces massive lawsuit over Wirecard failure",
        summary: "Thousands of investors have joined a class-action lawsuit against EY Germany, alleging the auditing firm failed to exercise professional skepticism in its Wirecard audits.",
        source: "Wall Street Journal",
-       sentiment: "Negative",
+       sentiment: -1.0,
        publishedAt: new Date('2024-11-20T08:00:00Z')
     },
     {
@@ -188,7 +188,7 @@ async function main() {
        summary: "Financial intelligence investigators in Limassol have traced €450M in transfers from Synergy Corp to previously unknown offshore accounts held in nomadic trusts.",
        source: "OCCRP",
        url: "https://www.occrp.org/en/investigations/the-wirecard-files",
-       sentiment: "Negative",
+       sentiment: -1.0,
        publishedAt: new Date()
     }
   ];

@@ -99,16 +99,12 @@ export default function Sidebar() {
             className="flex flex-col w-64 min-w-[256px] h-full bg-[#0d1424] border-r border-[#1e3a5f]/40 z-10"
         >
             {/* Logo */}
-            <div className="flex items-center gap-3 px-5 py-5 border-b border-[#1e3a5f]/50">
-                <div className="relative flex items-center justify-center w-8 h-8">
-                    <div className="absolute inset-0 bg-blue-500/20 rounded-lg blur-sm" />
-                    <Hexagon size={22} className="text-blue-400 relative z-10" strokeWidth={1.5} stroke="currentColor" />
-                    <Shield size={10} className="text-blue-300 absolute z-20" />
-                </div>
-                <div>
-                    <div className="text-sm font-bold tracking-widest text-white uppercase italic">ASTRAEUS</div>
-                    <div className="text-[9px] text-slate-500 tracking-wider uppercase">Intelligence Command Centre</div>
-                </div>
+            <div className="flex items-center gap-3 px-5 py-4 border-b border-[#1e3a5f]/50">
+                <img 
+                    src="/logo.png" 
+                    alt="Astraeus Logo" 
+                    className="h-10 w-auto object-contain brightness-0 invert"
+                />
             </div>
 
             {/* Cases Section */}

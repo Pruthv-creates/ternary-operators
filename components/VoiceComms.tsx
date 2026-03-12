@@ -43,18 +43,13 @@ interface PeerConnection {
 // Metered Open Relay: free, no signup, 20GB/mo, runs on ports 80/443 (firewall bypass)
 // These are real, working public TURN credentials from the Open Relay project.
 const ICE_SERVERS: RTCIceServer[] = [
-  // STUN — fast, for same-network + easy NAT
   { urls: "stun:stun.l.google.com:19302" },
   { urls: "stun:stun1.l.google.com:19302" },
+  { urls: "stun:stun2.l.google.com:19302" },
   { urls: "stun:stun.relay.metered.ca:80" },
-  // Metered Open Relay TURN — works across all network types
+  // Metered TURN servers (Primary)
   {
     urls: "turn:standard.relay.metered.ca:80",
-    username: "e2a44b0e2a6e8dd4e30a5bbd",
-    credential: "yFvlO9N6z1w5BXJH",
-  },
-  {
-    urls: "turn:standard.relay.metered.ca:80?transport=tcp",
     username: "e2a44b0e2a6e8dd4e30a5bbd",
     credential: "yFvlO9N6z1w5BXJH",
   },
@@ -64,10 +59,16 @@ const ICE_SERVERS: RTCIceServer[] = [
     credential: "yFvlO9N6z1w5BXJH",
   },
   {
-    urls: "turns:standard.relay.metered.ca:443?transport=tcp",
+    urls: "turn:standard.relay.metered.ca:443?transport=tcp",
     username: "e2a44b0e2a6e8dd4e30a5bbd",
     credential: "yFvlO9N6z1w5BXJH",
   },
+  // Numb TURN servers (Backup)
+  {
+    urls: "turn:numb.viagenie.ca",
+    username: "itouch@itouch.io",
+    credential: "itouchpassword",
+  }
 ];
 
 export default function VoiceComms({ caseId, currentUser, onActiveChange }: VoiceCommsProps) {
@@ -448,6 +449,10 @@ export default function VoiceComms({ caseId, currentUser, onActiveChange }: Voic
           },
         }));
         // Run through gain + compressor + EQ chain (routes to speakers internally)
+        // Force resume AudioContext on incoming tracks to wake up backgrounded contexts
+        const ctx = getAudioContext();
+        if (ctx.state === "suspended") ctx.resume();
+        
         setupRemoteAudioProcessing(peerKey, streams[0]);
       };
 
@@ -501,17 +506,36 @@ export default function VoiceComms({ caseId, currentUser, onActiveChange }: Voic
     });
     channelRef.current = channel;
 
-    // ── Peer joins ──
+    // ── Peer discovery (Join & Announce) ──
     channel.on("broadcast", { event: "voice-join" }, async ({ payload }: any) => {
       if (payload.sessionId === sessionId) return;
-      console.log(`👤 Peer joined: ${payload.userName} [${payload.sessionId}]`);
+      console.log(`👤 New peer arrived: ${payload.userName} [${payload.sessionId}]`);
       if (isActiveRef.current) {
-        // Small delay to avoid race: both sides try to initiate simultaneously
-        // The peer with the lexicographically SMALLER sessionId initiates
+        // Send our own Presence info back so they know we are here
+        channel.send({
+          type: "broadcast",
+          event: "voice-announce",
+          payload: {
+            userId: currentUser.id,
+            userName: currentUser.name,
+            sessionId,
+          },
+        });
+        
+        // Peer with lexicographically SMALLER sessionId initiates
         if (sessionId < payload.sessionId) {
           await initiateOffer(payload.userId, payload.sessionId, payload.userName);
         }
-        // The other side will receive this join and initiate toward us
+      }
+    });
+
+    channel.on("broadcast", { event: "voice-announce" }, async ({ payload }: any) => {
+      if (payload.sessionId === sessionId) return;
+      console.log(`🏢 Existing peer found: ${payload.userName} [${payload.sessionId}]`);
+      if (isActiveRef.current) {
+        if (sessionId < payload.sessionId) {
+          await initiateOffer(payload.userId, payload.sessionId, payload.userName);
+        }
       }
     });
 
@@ -644,7 +668,7 @@ export default function VoiceComms({ caseId, currentUser, onActiveChange }: Voic
 
       setupLocalAudioAnalysis(`${currentUser.id}:${sessionId}`, stream);
 
-      // Announce presence — any active peers will initiate toward us (or we toward them based on sessionId ordering)
+      // Announce presence — everyone already in the room will hear this and respond
       console.log("📣 Broadcasting join...");
       channelRef.current.send({
         type: "broadcast",
@@ -954,16 +978,18 @@ export default function VoiceComms({ caseId, currentUser, onActiveChange }: Voic
                     controls={false}
                     ref={(el) => {
                       if (el) {
-                        const src = processedStreams[peerKey] ?? peer.stream;
+                        const src = processedStreams[peerKey] || peer.stream;
                         if (el.srcObject !== src) {
                           el.srcObject = src;
                           el.volume = 1.0;
-                          // Explicit play() ensures audio starts/resumes if throttled while hidden
-                          el.play().catch(e => console.warn("Audio play failed:", e));
+                          el.play().catch(() => {
+                            // Secondary fallback attempt if play fails (might need interaction)
+                            console.warn("Audio tag blocked, waiting for gesture...");
+                          });
                         }
                       }
                     }}
-                    style={{ display: "none" }}
+                    className="absolute opacity-0 pointer-events-none w-px h-px overflow-hidden"
                   />
                   {peer.state === "connecting" && (
                     <motion.div

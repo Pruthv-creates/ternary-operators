@@ -2,12 +2,16 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { getUserCases, createCase } from "@/app/actions/case";
 import { useInvestigationStore } from "@/store/investigationStore";
+import { useRouter } from "next/navigation";
 
 export function useSidebarCases() {
+    const router = useRouter();
     const { loadCaseData, currentCaseId } = useInvestigationStore();
     const [userCases, setUserCases] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [creating, setCreating] = useState(false);
+
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchCases = async () => {
@@ -36,10 +40,11 @@ export function useSidebarCases() {
         loadCaseData(caseId);
     };
 
-    const handleCreateCase = async () => {
-        const title = prompt("Enter Case Title:");
-        if (!title) return;
+    const handleCreateCase = () => {
+        setIsCreateModalOpen(true);
+    };
 
+    const handleCreateCaseWithTitle = async (title: string) => {
         setCreating(true);
         try {
             const { data: { user } } = await supabase.auth.getUser();
@@ -47,6 +52,8 @@ export function useSidebarCases() {
                 const newCase = await createCase(title, user.id);
                 setUserCases([newCase, ...userCases]);
                 loadCaseData(newCase.id);
+                setIsCreateModalOpen(false);
+                router.push("/");
             }
         } catch (error) {
             console.error("Failed to create case:", error);
@@ -60,7 +67,10 @@ export function useSidebarCases() {
         loading,
         creating,
         currentCaseId,
+        isCreateModalOpen,
+        setIsCreateModalOpen,
         handleSelectCase,
-        handleCreateCase
+        handleCreateCase,
+        handleCreateCaseWithTitle
     };
 }

@@ -6,8 +6,11 @@ interface SidebarCasesProps {
     loading: boolean;
     creating: boolean;
     currentCaseId: string | null;
+    isCreateModalOpen: boolean;
+    setIsCreateModalOpen: (open: boolean) => void;
     handleSelectCase: (id: string) => void;
     handleCreateCase: () => void;
+    handleCreateCaseWithTitle: (title: string) => Promise<void>;
 }
 
 export function SidebarCases({
@@ -16,10 +19,10 @@ export function SidebarCases({
     creating,
     currentCaseId,
     handleSelectCase,
-    handleCreateCase
+    handleCreateCase,
 }: SidebarCasesProps) {
     return (
-        <div className="px-3 pt-4 pb-2">
+        <div className="px-3 pt-4 pb-2 text-slate-300">
             <div className="flex items-center justify-between px-2 mb-2">
                 <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Cases</span>
                 <button 
@@ -43,16 +46,16 @@ export function SidebarCases({
                                 key={c.id}
                                 onClick={() => handleSelectCase(c.id)}
                                 className={cn(
-                                    "flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all duration-150 group",
+                                    "flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all duration-150 group/item",
                                     isActive
                                         ? "bg-blue-500/10 border border-blue-500/20"
-                                        : "hover:bg-white/5"
+                                        : "hover:bg-white/5 border border-transparent"
                                 )}
                             >
                                 <span
                                     className={cn(
                                         "text-xs font-medium truncate max-w-[120px]",
-                                        isActive ? "text-blue-300" : "text-slate-400 group-hover:text-slate-300"
+                                        isActive ? "text-blue-300" : "text-slate-400 group-hover/item:text-slate-200"
                                     )}
                                 >
                                     {c.title}

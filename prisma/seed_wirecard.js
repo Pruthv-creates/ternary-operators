@@ -164,13 +164,15 @@ async function main() {
       title: "Synergy Corp records flagged in Munich money laundering sweep",
       summary: "German prosecutors have identified Synergy Corp as a key node in the complex web of offshore entities used to facilitate Wirecard's suspicious third-party acquirer transactions.",
       source: "Spiegel International",
+      url: "https://www.spiegel.de/international/business/the-wirecard-scandal-a-look-at-the-major-players-a-1234567.html",
       sentiment: "Negative",
       publishedAt: new Date('2021-02-05T11:15:00Z')
     },
     {
       title: "Whistleblower claims Jan Marsalek linked to Russian intelligence",
-      summary: "New reports suggest that former Wirecard COO Jan Marsalek had long-standing ties to Russian intelligence services before his dramatic disappearance.",
+      summary: "New reports suggest that former Wirecard COO Jan Marsalek had long-standing ties to Russian intelligence services before his dramatics disappearance.",
       source: "Bellingcat",
+      url: "https://www.bellingcat.com/news/2020/07/10/jan-marsalek-the-fugitive-coo/",
       sentiment: "Negative",
       publishedAt: new Date('2023-09-10T16:00:00Z')
     },
@@ -185,6 +187,7 @@ async function main() {
        title: "New investigation: Synergy Corp funds surfaced in Cyprus bank",
        summary: "Financial intelligence investigators in Limassol have traced €450M in transfers from Synergy Corp to previously unknown offshore accounts held in nomadic trusts.",
        source: "OCCRP",
+       url: "https://www.occrp.org/en/investigations/the-wirecard-files",
        sentiment: "Negative",
        publishedAt: new Date()
     }

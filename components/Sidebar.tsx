@@ -3,6 +3,7 @@
 import { useSidebarCases } from "@/hooks/useSidebarCases";
 import { SidebarCases } from "./sidebar/SidebarCases";
 import { SidebarNav } from "./sidebar/SidebarNav";
+import { CreateCaseModal } from "./modals/CreateCaseModal";
 
 export default function Sidebar() {
     const {
@@ -10,14 +11,18 @@ export default function Sidebar() {
         loading,
         creating,
         currentCaseId,
+        isCreateModalOpen,
+        setIsCreateModalOpen,
         handleSelectCase,
-        handleCreateCase
+        handleCreateCase,
+        handleCreateCaseWithTitle
     } = useSidebarCases();
 
     return (
-        <aside
-            className="flex flex-col w-64 min-w-[256px] h-full bg-[#0d1424] border-r border-[#1e3a5f]/40 z-10"
-        >
+        <>
+            <aside
+                className="flex flex-col w-64 min-w-[256px] h-full bg-[#0d1424] border-r border-[#1e3a5f]/40 z-10"
+            >
             {/* Logo */}
             <div className="flex items-center gap-3 px-5 py-4 border-b border-[#1e3a5f]/50">
                 <img 
@@ -32,15 +37,24 @@ export default function Sidebar() {
                 loading={loading}
                 creating={creating}
                 currentCaseId={currentCaseId}
+                isCreateModalOpen={isCreateModalOpen}
+                setIsCreateModalOpen={setIsCreateModalOpen}
                 handleSelectCase={handleSelectCase}
                 handleCreateCase={handleCreateCase}
+                handleCreateCaseWithTitle={handleCreateCaseWithTitle}
             />
 
             {/* Divider */}
             <div className="h-px bg-gradient-to-r from-transparent via-[#1e3a5f]/60 to-transparent mx-4 my-2" />
 
             <SidebarNav />
-
         </aside>
+
+        <CreateCaseModal 
+            isOpen={isCreateModalOpen}
+            onClose={() => setIsCreateModalOpen(false)}
+            onSubmit={handleCreateCaseWithTitle}
+        />
+    </>
     );
 }

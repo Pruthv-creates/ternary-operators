@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useInvestigationStore } from "@/store/investigationStore";
 import { getCaseNews } from "@/app/actions/case";
-import { fetchLiveIntelligence } from "@/app/actions/news";
+import { fetchLiveIntelligence, correlateNewsToCase } from "@/app/actions/news";
 import { 
     Newspaper, 
     ExternalLink, 
@@ -18,7 +18,8 @@ import {
     Filter,
     ArrowUpRight,
     RefreshCw,
-    Globe
+    Globe,
+    Play
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -39,6 +40,7 @@ export default function NewsPage() {
     const [news, setNews] = useState<NewsItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [correlatingIds, setCorrelatingIds] = useState<Set<string>>(new Set());
     const [filter, setFilter] = useState("all");
     const [searchQuery, setSearchQuery] = useState("");
 
@@ -72,6 +74,26 @@ export default function NewsPage() {
             console.error("Refresh failed:", error);
         } finally {
             setRefreshing(false);
+        }
+    };
+
+    const handleCorrelate = async (newsId: string) => {
+        setCorrelatingIds(prev => new Set(prev).add(newsId));
+        try {
+            const res = await correlateNewsToCase(newsId);
+            if (res.success) {
+                alert("Intelligence promoted to investigation graph!");
+            } else {
+                alert("Failed to correlate. " + (res.error || ""));
+            }
+        } catch (error) {
+            console.error("Correlation error:", error);
+        } finally {
+            setCorrelatingIds(prev => {
+                const next = new Set(prev);
+                next.delete(newsId);
+                return next;
+            });
         }
     };
 
@@ -215,9 +237,15 @@ export default function NewsPage() {
                                             <div className="w-5 h-5 rounded overflow-hidden bg-slate-800 flex items-center justify-center">
                                                 <span className="text-[10px] font-bold text-blue-400">{item.source[0]}</span>
                                             </div>
-                                            <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 group-hover:text-blue-400 transition-colors">
-                                                {item.source}
-                                            </span>
+                                            {item.url ? (
+                                                <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 hover:text-blue-400 transition-colors">
+                                                    {item.source}
+                                                </a>
+                                            ) : (
+                                                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 transition-colors">
+                                                    {item.source}
+                                                </span>
+                                            )}
                                             <div className="w-1 h-1 rounded-full bg-slate-700" />
                                             <div className="flex items-center gap-1.5 text-slate-500">
                                                 <Calendar size={11} />
@@ -225,6 +253,12 @@ export default function NewsPage() {
                                                     {item.publishedAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                                 </span>
                                             </div>
+                                            {item.url?.includes('youtube.com') && (
+                                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20 text-[9px] font-black uppercase tracking-widest ml-2">
+                                                    <Play size={10} fill="currentColor" />
+                                                    Video Intel
+                                                </div>
+                                            )}
                                         </div>
                                         <div className={cn(
                                             "flex items-center gap-1.5 px-2 py-0.5 rounded border text-[9px] font-bold uppercase racking-widest",
@@ -238,15 +272,24 @@ export default function NewsPage() {
                                     {/* Content Area */}
                                     <div className="p-5 flex-1 flex flex-col">
                                         <div className="flex items-start justify-between gap-4 mb-3">
-                                            <h2 className="text-base font-bold text-white leading-tight group-hover:text-blue-50 transition-colors">
-                                                {item.title}
+                                            <h2 className="text-base font-bold text-white leading-tight transition-colors">
+                                                {item.url ? (
+                                                    <a href={item.url} target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 hover:underline decoration-blue-500/30 underline-offset-4">
+                                                        {item.title}
+                                                    </a>
+                                                ) : item.title}
                                             </h2>
-                                            <motion.div 
-                                                whileHover={{ scale: 1.1 }}
-                                                className="p-1.5 rounded-lg bg-slate-800/50 text-slate-400 hover:text-white hover:bg-blue-600/20 cursor-pointer transition-all flex-shrink-0"
-                                            >
-                                                <ExternalLink size={14} />
-                                            </motion.div>
+                                            {item.url && (
+                                                <motion.a 
+                                                    href={item.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    whileHover={{ scale: 1.1 }}
+                                                    className="p-1.5 rounded-lg bg-slate-800/50 text-slate-400 hover:text-white hover:bg-blue-600/20 cursor-pointer transition-all flex-shrink-0"
+                                                >
+                                                    <ExternalLink size={14} />
+                                                </motion.a>
+                                            )}
                                         </div>
                                         
                                         <p className="text-sm text-slate-400 leading-relaxed line-clamp-3 mb-6 flex-1">
@@ -265,9 +308,19 @@ export default function NewsPage() {
                                                 </div>
                                             </div>
 
-                                            <button className="flex items-center gap-1 px-3 py-1 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500 hover:text-white transition-all text-[10px] font-bold uppercase tracking-wider">
-                                                Correlate 
-                                                <ArrowUpRight size={12} />
+                                            <button 
+                                                onClick={() => handleCorrelate(item.id)}
+                                                disabled={correlatingIds.has(item.id)}
+                                                className="flex items-center gap-1 px-3 py-1 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500 hover:text-white transition-all text-[10px] font-bold uppercase tracking-wider disabled:opacity-50"
+                                            >
+                                                {correlatingIds.has(item.id) ? (
+                                                    <RefreshCw size={12} className="animate-spin" />
+                                                ) : (
+                                                    <>
+                                                        Correlate 
+                                                        <ArrowUpRight size={12} />
+                                                    </>
+                                                )}
                                             </button>
                                         </div>
                                     </div>

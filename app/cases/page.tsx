@@ -57,7 +57,8 @@ export default function CasesPage() {
             <div className="flex flex-col flex-1 min-w-0 overflow-hidden relative">
                 <Topbar />
 
-                <main className="flex-1 overflow-hidden p-6 gap-6 grid grid-cols-12 grid-rows-12 relative z-10">
+                <main className="flex-1 overflow-hidden p-6 gap-6 flex relative z-10">
+                    <div className="flex-1 grid grid-cols-12 grid-rows-12 gap-6">
                     
                     {/* UI Section 1: Case Detail Header (Top Banner - Spans All Columns) */}
                     <div className="col-span-12 row-span-2 bg-[#0d1424] border border-[#1e3a5f]/40 rounded-2xl p-5 flex items-center justify-between shadow-lg">
@@ -316,22 +317,23 @@ export default function CasesPage() {
                             <span className="text-[10px] font-bold text-blue-400 uppercase">12 Assets Ready</span>
                         </div>
                     </div>
-                </main>
+                </div>
 
                 {/* Right AI Intellect Panel */}
-                <div className={cn(
-                    "transition-all duration-300 ease-in-out border-l border-[#1e3a5f]/40 bg-[#0d1424] overflow-hidden flex flex-col h-full",
-                    aiPanelOpen ? "w-[350px]" : "w-0 border-l-0"
-                )}>
-                    <div className="flex-1 min-w-[350px] h-full">
-                        <AIAssistant 
-                            actions={aiActions} 
-                            askAI={askAI} 
-                            isPanel={true} 
-                            onClose={() => setAIPanelOpen(false)} 
-                        />
+                    <div className={cn(
+                        "transition-all duration-300 ease-in-out border-l border-[#1e3a5f]/40 bg-[#0d1424] overflow-hidden flex flex-col h-full",
+                        aiPanelOpen ? "w-[350px]" : "w-0 border-l-0"
+                    )}>
+                        <div className="flex-1 min-w-[350px] h-full">
+                            <AIAssistant 
+                                actions={aiActions} 
+                                askAI={askAI} 
+                                isPanel={true} 
+                                onClose={() => setAIPanelOpen(false)} 
+                            />
+                        </div>
                     </div>
-                </div>
+                </main>
             </div>
 
             <style jsx global>{`

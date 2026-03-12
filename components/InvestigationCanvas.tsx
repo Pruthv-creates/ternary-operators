@@ -1,8 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState, useRef } from "react";
-import * as Y from "yjs";
-import { WebrtcProvider } from "y-webrtc";
 import {
     ReactFlow,
     Background,
@@ -21,7 +19,6 @@ import { entities } from "@/lib/data";
 import { Entity, EntityType } from "@/lib/data";
 import { useInvestigationStore } from "@/store/investigationStore";
 import { Brain, Loader2, Plus, Shield, Search, Users, Info } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -45,7 +42,6 @@ function CanvasInner() {
         setSelectedEntity,
         addStickyNote,
         currentCaseId,
-        syncNodes,
     } = useInvestigationStore();
 
     const { setCenter } = useReactFlow();
@@ -57,68 +53,8 @@ function CanvasInner() {
     const [showLegend, setShowLegend] = useState(false);
     const [activeFilter, setActiveFilter] = useState("all");
 
-    // REAL-TIME SYNC (WebRTC + Yjs)
-    const providerRef = useRef<WebrtcProvider | null>(null);
-
-    useEffect(() => {
-        if (!currentCaseId) return;
-
-        // Create Yjs Document
-        const ydoc = new Y.Doc();
-        
-        // Connect to WebRTC signaling servers
-        const provider = new WebrtcProvider(`astraeus-case-${currentCaseId}`, ydoc, {
-            signaling: [
-                'wss://signaling.yjs.dev',
-                'wss://y-webrtc-signaling-eu.herokuapp.com'
-            ]
-        });
-        providerRef.current = provider;
-
-        const ynodes = ydoc.getMap('nodes');
-        
-        // Listen to WebRTC changes from other investigators
-        ynodes.observe(event => {
-            const currentNodes = useInvestigationStore.getState().nodes;
-            let updatedNodes = [...currentNodes];
-            let changed = false;
-
-            event.keysChanged.forEach(key => {
-                const remoteNode: any = ynodes.get(key);
-                if (remoteNode) {
-                    const idx = updatedNodes.findIndex(n => n.id === key);
-                    if (idx > -1) {
-                        // Diff the remote node vs local node position
-                        if (
-                            updatedNodes[idx].position.x !== remoteNode.position.x ||
-                            updatedNodes[idx].position.y !== remoteNode.position.y
-                        ) {
-                            updatedNodes[idx] = { ...updatedNodes[idx], position: remoteNode.position };
-                            changed = true;
-                        }
-                    } else {
-                        // Brand new node spawned by another investigator
-                        updatedNodes.push(remoteNode);
-                        changed = true;
-                    }
-                }
-            });
-
-            if (changed) {
-                syncNodes(updatedNodes);
-            }
-        });
-
-        // Store globally for Zustand store access when dragging local nodes
-        (window as any).__yjs_nodesMap = ynodes;
-
-        return () => {
-            provider.destroy();
-            ydoc.destroy();
-            providerRef.current = null;
-            delete (window as any).__yjs_nodesMap;
-        };
-    }, [currentCaseId, syncNodes]);
+    // Real-time sync is now handled by the investigation store
+    // when loadCaseData is called
 
     const onNodeClick: NodeMouseHandler = useCallback(
         (_event, node) => {

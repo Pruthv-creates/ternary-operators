@@ -1,337 +1,574 @@
 import { create } from "zustand";
 import {
-    Connection,
-    Edge,
-    EdgeChange,
-    Node,
-    NodeChange,
-    addEdge,
-    OnNodesChange,
-    OnEdgesChange,
-    OnConnect,
-    applyNodeChanges,
-    applyEdgeChanges,
-    MarkerType,
+  Connection,
+  Edge,
+  EdgeChange,
+  Node,
+  NodeChange,
+  addEdge,
+  OnNodesChange,
+  OnEdgesChange,
+  OnConnect,
+  applyNodeChanges,
+  applyEdgeChanges,
+  MarkerType,
 } from "@xyflow/react";
 import { Entity } from "@/lib/data";
 import { getCaseGraph } from "@/app/actions/case";
-import { updateNodePosition, createNewNode, updateNodeContent } from "@/actions/nodes";
+import {
+  updateNodePosition,
+  createNewNode,
+  updateNodeContent,
+  deleteNodeAction,
+  createEdgeAction,
+  deleteEdgeAction,
+} from "@/actions/nodes";
 import { supabase } from "@/lib/supabase";
+import { realtimeSyncManager, SyncEvent } from "@/lib/realtimeSync";
 
 const initialNodes: Node[] = [
-    {
-        id: "volkov",
-        type: "entity",
-        position: { x: 440, y: 150 },
-        data: { 
-            name: "Alexander Volkov", 
-            role: "CEO", 
-            type: "person", 
-            avatar: "https://i.pravatar.cc/150?u=volkov", 
-            status: "Active",
-            riskScore: 87,
-            credibilityScore: 65
-        },
-    }
+  {
+    id: "volkov",
+    type: "entity",
+    position: { x: 440, y: 150 },
+    data: {
+      name: "Alexander Volkov",
+      role: "CEO",
+      type: "person",
+      avatar: "https://i.pravatar.cc/150?u=volkov",
+      status: "Active",
+      riskScore: 87,
+      credibilityScore: 65,
+    },
+  },
 ];
 
-const sharedLabelStyle = { fill: "#60a5fa", fontSize: 10, fontWeight: 500, fontFamily: "sans-serif" };
-const dottedEdgeStyle = { stroke: "#06b6d4", strokeWidth: 1.5, strokeDasharray: "3,3" };
+const sharedLabelStyle = {
+  fill: "#60a5fa",
+  fontSize: 10,
+  fontWeight: 500,
+  fontFamily: "sans-serif",
+};
+const dottedEdgeStyle = {
+  stroke: "#06b6d4",
+  strokeWidth: 1.5,
+  strokeDasharray: "3,3",
+};
 
 type InvestigationState = {
-    nodes: Node[];
-    edges: Edge[];
-    currentCaseId: string | null;
-    selectedEntity: Entity | null;
-    onNodesChange: OnNodesChange;
-    onEdgesChange: OnEdgesChange;
-    onConnect: OnConnect;
-    setSelectedEntity: (entity: Entity | null) => void;
-    addNode: (node: Node) => void;
-    deleteNode: (id: string) => void;
-    updateNodeData: (id: string, data: any) => void;
-    addEdge: (edge: Edge) => void;
-    addStickyNote: (position: { x: number, y: number }, text?: string, prefix?: string) => void;
-    updateStickyText: (id: string, text: string) => void;
-    addAIResult: (result: { nodes: any[], edges: any[] }) => void;
-    addEvidenceCard: (title: string, position: { x: number, y: number }) => void;
-    loadCaseData: (caseId: string) => Promise<void>;
-    aiPanelOpen: boolean;
-    setAIPanelOpen: (open: boolean) => void;
-    toggleAIPanel: () => void;
-    
-    // Real-time sync methods
-    syncNodes: (nodes: Node[]) => void;
-    syncEdges: (edges: Edge[]) => void;
+  nodes: Node[];
+  edges: Edge[];
+  currentCaseId: string | null;
+  selectedEntity: Entity | null;
+  onNodesChange: OnNodesChange;
+  onEdgesChange: OnEdgesChange;
+  onConnect: OnConnect;
+  setSelectedEntity: (entity: Entity | null) => void;
+  addNode: (node: Node) => void;
+  deleteNode: (id: string) => void;
+  updateNodeData: (id: string, data: any) => void;
+  addEdge: (edge: Edge) => void;
+  deleteEdgeByIds: (sourceId: string, targetId: string) => void;
+  addStickyNote: (
+    position: { x: number; y: number },
+    text?: string,
+    prefix?: string,
+  ) => void;
+  updateStickyText: (id: string, text: string) => void;
+  addAIResult: (result: { nodes: any[]; edges: any[] }) => void;
+  addEvidenceCard: (title: string, position: { x: number; y: number }) => void;
+  loadCaseData: (caseId: string) => Promise<void>;
+  aiPanelOpen: boolean;
+  setAIPanelOpen: (open: boolean) => void;
+  toggleAIPanel: () => void;
+
+  // Real-time sync methods
+  syncNodes: (nodes: Node[]) => void;
+  syncEdges: (edges: Edge[]) => void;
+  handleRemoteEvent: (event: SyncEvent) => void;
 };
 
 export const useInvestigationStore = create<InvestigationState>((set, get) => ({
-    nodes: initialNodes,
-    edges: [],
-    currentCaseId: null,
-    selectedEntity: null,
-    aiPanelOpen: false,
+  nodes: initialNodes,
+  edges: [],
+  currentCaseId: null,
+  selectedEntity: null,
+  aiPanelOpen: false,
 
-    setAIPanelOpen: (open: boolean) => set({ aiPanelOpen: open }),
-    toggleAIPanel: () => set((state) => ({ aiPanelOpen: !state.aiPanelOpen })),
+  setAIPanelOpen: (open: boolean) => set({ aiPanelOpen: open }),
+  toggleAIPanel: () => set((state) => ({ aiPanelOpen: !state.aiPanelOpen })),
 
-    loadCaseData: async (caseId: string) => {
-        const currentCase = get().currentCaseId;
-        if (currentCase === caseId) return;
-        
-        // Immediately clear for fast UX
-        set({ nodes: [], edges: [], currentCaseId: caseId });
-        
-        const { nodes: backendNodes, edges: backendEdges } = await getCaseGraph(caseId);
-        set({ 
-            nodes: backendNodes as any, 
-            edges: backendEdges as any
-        });
-    },
+  loadCaseData: async (caseId: string) => {
+    const currentCase = get().currentCaseId;
+    if (currentCase === caseId) return;
 
-    syncNodes: (nodes: Node[]) => set({ nodes }),
-    syncEdges: (edges: Edge[]) => set({ edges }),
+    // Immediately clear for fast UX
+    set({ nodes: [], edges: [], currentCaseId: caseId });
 
-    onNodesChange: (changes: NodeChange[]) => {
-        const currentNodes = get().nodes;
-        const updatedNodes = applyNodeChanges(changes, currentNodes);
-        set({ nodes: updatedNodes });
+    const { nodes: backendNodes, edges: backendEdges } =
+      await getCaseGraph(caseId);
+    set({
+      nodes: backendNodes as any,
+      edges: backendEdges as any,
+    });
 
-        // PERSIST POSITIONS! 
-        changes.forEach((change) => {
-            if (change.type === 'position' && change.position) {
-                updateNodePosition(change.id, change.position.x, change.position.y);
-                
-                // BROADCAST position via WebRTC (Yjs)
-                const ynodesMap = (window as any).__yjs_nodesMap;
-                if (ynodesMap) {
-                    const currentNode = get().nodes.find(n => n.id === change.id);
-                    if (currentNode) {
-                        try {
-                            ynodesMap.set(change.id, { 
-                                id: change.id, 
-                                position: change.position, 
-                                data: currentNode.data 
-                            });
-                        } catch (e) {
-                            console.error("Yjs sync error:", e);
-                        }
-                    }
-                }
-            }
-        });
-    },
+    // Subscribe to real-time updates
+    await realtimeSyncManager.subscribe(caseId, (event) => {
+      get().handleRemoteEvent(event);
+    });
+  },
 
-    onEdgesChange: (changes: EdgeChange[]) => {
-        set({
-            edges: applyEdgeChanges(changes, get().edges),
-        });
-    },
+  syncNodes: (nodes: Node[]) => set({ nodes }),
+  syncEdges: (edges: Edge[]) => set({ edges }),
 
-    onConnect: (connection: Connection) => {
-        set({
-            edges: addEdge({ ...connection, type: "relation", data: { credibilityScore: 50 } }, get().edges),
-        });
-    },
+  handleRemoteEvent: (event: SyncEvent) => {
+    const currentState = get();
 
-    setSelectedEntity: (entity: Entity | null) => {
-        set({
-            selectedEntity: entity,
-            nodes: get().nodes.map((n) => ({
+    switch (event.type) {
+      case "node-move": {
+        const updatedNodes = currentState.nodes.map((n) =>
+          n.id === event.id
+            ? {
                 ...n,
-                data: { ...n.data, selected: entity?.id === n.id },
-            })),
-            edges: get().edges.map((e) => {
-                const isConnected = entity ? (e.source === entity.id || e.target === entity.id) : false;
-                const isMoneyFlow = typeof e.label === "string" && e.label.includes("Money Flow");
+                position: event.position,
+              }
+            : n,
+        );
+        set({ nodes: updatedNodes });
+        break;
+      }
 
-                return {
-                    ...e,
-                    animated: isConnected || isMoneyFlow,
-                    className: isConnected ? "animated-edge-glow" : "",
-                    style: {
-                        ...e.style,
-                        opacity: entity ? (isConnected ? 0.7 : 0.1) : (isMoneyFlow ? 0.6 : 1),
-                        strokeWidth: isConnected ? (isMoneyFlow ? 6 : 2.5) : (isMoneyFlow ? 6 : (e.style?.strokeWidth || 1.5))
-                    }
-                };
-            }),
-        });
-    },
-
-    deleteNode: (id: string) => {
-        set({
-            nodes: get().nodes.filter((n) => n.id !== id),
-            edges: get().edges.filter((e) => e.source !== id && e.target !== id),
-            selectedEntity: get().selectedEntity?.id === id ? null : get().selectedEntity,
-        });
-    },
-
-    updateNodeData: async (id: string, data: any) => {
-        const updatedNodes = get().nodes.map((n) => n.id === id ? { ...n, data: { ...n.data, ...data } } : n);
-        const selectedEntity = get().selectedEntity;
-        let newSelectedEntity = selectedEntity;
-
-        if (selectedEntity?.id === id) {
-            newSelectedEntity = {
-                ...selectedEntity,
-                ...data
-            };
+      case "node-create": {
+        // Avoid duplicates
+        if (!currentState.nodes.find((n) => n.id === event.node.id)) {
+          set({
+            nodes: [...currentState.nodes, event.node],
+          });
         }
+        break;
+      }
 
+      case "node-update": {
+        const updatedNodes = currentState.nodes.map((n) =>
+          n.id === event.id
+            ? {
+                ...n,
+                data: { ...n.data, ...event.data },
+              }
+            : n,
+        );
+        set({ nodes: updatedNodes });
+        break;
+      }
+
+      case "node-delete": {
         set({
-            nodes: updatedNodes,
-            selectedEntity: newSelectedEntity
+          nodes: currentState.nodes.filter((n) => n.id !== event.id),
+          edges: currentState.edges.filter(
+            (e) => e.source !== event.id && e.target !== event.id,
+          ),
         });
+        break;
+      }
 
-        const targetNode = updatedNodes.find(n => n.id === id);
-        if (targetNode) {
-            await updateNodeContent(id, targetNode.data);
+      case "edge-create": {
+        // Avoid duplicates
+        if (
+          !currentState.edges.find(
+            (e) =>
+              e.source === event.edge.source && e.target === event.edge.target,
+          )
+        ) {
+          set({
+            edges: [...currentState.edges, event.edge],
+          });
         }
-    },
+        break;
+      }
 
-    addStickyNote: async (position: { x: number, y: number }, text = "", prefix = "HYPOTHESIS:") => {
-        const caseId = get().currentCaseId;
-        if (!caseId) return;
+      case "edge-delete": {
+        set({
+          edges: currentState.edges.filter((e) => e.id !== event.edgeId),
+        });
+        break;
+      }
 
-        const id = `hyp-${Date.now()}`;
-        const newNode = {
-            id,
-            type: "hypothesis",
-            position,
-            data: {
-                prefix,
-                text: text || "Click to edit...",
-                rotate: Math.random() * 4 - 2
-            }
+      case "graph-full-update": {
+        // Full refresh (optional - usually not needed)
+        if (event.nodes.length > 0) {
+          set({
+            nodes: event.nodes,
+            edges: event.edges,
+          });
+        }
+        break;
+      }
+    }
+  },
+
+  onNodesChange: (changes: NodeChange[]) => {
+    const currentNodes = get().nodes;
+    const updatedNodes = applyNodeChanges(changes, currentNodes);
+    set({ nodes: updatedNodes });
+
+    // PERSIST POSITIONS AND BROADCAST!
+    changes.forEach((change) => {
+      if (change.type === "position" && change.position) {
+        updateNodePosition(change.id, change.position.x, change.position.y);
+
+        // BROADCAST position via real-time sync
+        realtimeSyncManager.broadcast({
+          type: "node-move",
+          id: change.id,
+          position: change.position,
+        });
+      }
+    });
+  },
+
+  onEdgesChange: (changes: EdgeChange[]) => {
+    set({
+      edges: applyEdgeChanges(changes, get().edges),
+    });
+  },
+
+  onConnect: async (connection: Connection) => {
+    const caseId = get().currentCaseId;
+    if (!caseId) return;
+
+    const edge: Edge = {
+      id: `${connection.source}-${connection.target}-${Date.now()}`,
+      source: connection.source,
+      target: connection.target,
+      type: "relation",
+      data: { credibilityScore: 50 },
+      animated: true,
+    };
+
+    // Optimistic update
+    set({
+      edges: addEdge(edge, get().edges),
+    });
+
+    // Persist to database
+    const result = await createEdgeAction(
+      caseId,
+      connection.source,
+      connection.target,
+      "related_to",
+    );
+
+    if (result.success) {
+      // Broadcast the new edge
+      await realtimeSyncManager.broadcast({
+        type: "edge-create",
+        edge,
+      });
+    }
+  },
+
+  setSelectedEntity: (entity: Entity | null) => {
+    set({
+      selectedEntity: entity,
+      nodes: get().nodes.map((n) => ({
+        ...n,
+        data: { ...n.data, selected: entity?.id === n.id },
+      })),
+      edges: get().edges.map((e) => {
+        const isConnected = entity
+          ? e.source === entity.id || e.target === entity.id
+          : false;
+        const isMoneyFlow =
+          typeof e.label === "string" && e.label.includes("Money Flow");
+
+        return {
+          ...e,
+          animated: isConnected || isMoneyFlow,
+          className: isConnected ? "animated-edge-glow" : "",
+          style: {
+            ...e.style,
+            opacity: entity ? (isConnected ? 0.7 : 0.1) : isMoneyFlow ? 0.6 : 1,
+            strokeWidth: isConnected
+              ? isMoneyFlow
+                ? 6
+                : 2.5
+              : isMoneyFlow
+                ? 6
+                : e.style?.strokeWidth || 1.5,
+          },
         };
-        
-        set({ nodes: [...get().nodes, newNode] });
-        await createNewNode(caseId, newNode);
-    },
+      }),
+    });
+  },
 
-    addEvidenceCard: async (title: string, position: { x: number, y: number }) => {
-        const caseId = get().currentCaseId;
-        if (!caseId) return;
+  deleteNode: async (id: string) => {
+    const caseId = get().currentCaseId;
 
-        const id = `ev-${Date.now()}`;
-        const newNode = {
-            id,
-            type: "evidence",
-            position,
-            data: {
-                item: {
-                    id,
-                    title,
-                    credibility: Math.floor(Math.random() * 40) + 60,
-                    timestamp: "Just now",
-                    type: "financial",
-                    nodeId: "",
-                }
-            }
-        };
-        
-        set({ nodes: [...get().nodes, newNode] });
-        await createNewNode(caseId, { ...newNode, nodeType: 'DOCUMENT' });
-    },
+    set({
+      nodes: get().nodes.filter((n) => n.id !== id),
+      edges: get().edges.filter((e) => e.source !== id && e.target !== id),
+      selectedEntity:
+        get().selectedEntity?.id === id ? null : get().selectedEntity,
+    });
 
-    updateStickyText: (id: string, text: string) => {
-        set({
-            nodes: get().nodes.map((n) =>
-                n.id === id ? { ...n, data: { ...n.data, text } } : n
-            ),
+    if (caseId) {
+      const result = await deleteNodeAction(id, caseId);
+      if (result.success) {
+        // Broadcast deletion
+        await realtimeSyncManager.broadcast({
+          type: "node-delete",
+          id,
         });
-    },
+      }
+    }
+  },
 
-    addNode: async (node: Node) => {
-        const caseId = get().currentCaseId;
-        if (!caseId) return;
+  deleteEdgeByIds: async (sourceId: string, targetId: string) => {
+    const caseId = get().currentCaseId;
+    const edge = get().edges.find(
+      (e) => e.source === sourceId && e.target === targetId,
+    );
 
-        set({
-            nodes: [...get().nodes, node],
+    if (!edge) return;
+
+    set({
+      edges: get().edges.filter((e) => e.id !== edge.id),
+    });
+
+    if (caseId && edge.id) {
+      const result = await deleteEdgeAction(edge.id, caseId);
+      if (result.success) {
+        // Broadcast deletion
+        await realtimeSyncManager.broadcast({
+          type: "edge-delete",
+          edgeId: edge.id,
         });
+      }
+    }
+  },
 
-        let prismaType = 'ENTITY_PERSON';
-        if (node.data.type === 'company' || node.data.type === 'offshore') prismaType = 'ENTITY_ORG';
-        else if (node.data.type === 'location') prismaType = 'ENTITY_LOCATION';
-        else if (node.data.type === 'bank') prismaType = 'ENTITY_PERSON';
+  updateNodeData: async (id: string, data: any) => {
+    const updatedNodes = get().nodes.map((n) =>
+      n.id === id ? { ...n, data: { ...n.data, ...data } } : n,
+    );
+    const selectedEntity = get().selectedEntity;
+    let newSelectedEntity = selectedEntity;
 
-        const nodeWithPrismaType = {
-            ...node,
-            nodeType: prismaType
-        };
+    if (selectedEntity?.id === id) {
+      newSelectedEntity = {
+        ...selectedEntity,
+        ...data,
+      };
+    }
 
-        await createNewNode(caseId, nodeWithPrismaType);
-    },
+    set({
+      nodes: updatedNodes,
+      selectedEntity: newSelectedEntity,
+    });
 
-    addAIResult: (result: { nodes: any[], edges: any[] }) => {
-        const currentNodes = get().nodes;
-        const currentEdges = get().edges;
+    const targetNode = updatedNodes.find((n) => n.id === id);
+    if (targetNode) {
+      await updateNodeContent(id, targetNode.data);
 
-        const nexusNode = currentNodes[0] || { position: { x: 400, y: 300 } };
-        const centerX = nexusNode.position.x;
-        const centerY = nexusNode.position.y;
-        
-        const filteredNodes = result.nodes.filter(n => !currentNodes.find(cn => cn.id === n.id));
-        
-        const newNodes: Node[] = filteredNodes.map((n, i) => {
-            const angle = (i / filteredNodes.length) * Math.PI * 2;
-            const radius = 350 + Math.random() * 50;
-            
-            return {
-                id: n.id,
-                type: "entity",
-                position: { 
-                    x: centerX + Math.cos(angle) * radius, 
-                    y: centerY + Math.sin(angle) * radius 
-                },
-                data: { 
-                    name: n.name, 
-                    role: n.role, 
-                    type: n.type, 
-                    status: n.status || "Active",
-                    credibilityScore: n.credibilityScore,
-                    riskScore: n.riskScore,
-                    avatar: n.type === "person" ? `https://i.pravatar.cc/150?u=${n.id}` : undefined,
-                    isNew: true 
-                },
-            };
-        });
+      // Broadcast update
+      await realtimeSyncManager.broadcast({
+        type: "node-update",
+        id,
+        data: targetNode.data,
+      });
+    }
+  },
 
-        const newEdges: Edge[] = result.edges
-            .filter(e => !currentEdges.find(ce => ce.source === e.source && ce.target === e.target))
-            .map(e => ({
-                id: `e-${e.source}-${e.target}-${Date.now()}`,
-                source: e.source,
-                target: e.target,
-                type: "relation",
-                label: e.label,
-                data: { credibilityScore: e.credibilityScore },
-                style: e.credibilityScore > 80 
-                    ? { stroke: "#10b981", strokeWidth: 2 } 
-                    : { ...dottedEdgeStyle, opacity: 0.6 },
-                animated: e.credibilityScore > 70,
-                markerEnd: { 
-                    type: MarkerType.ArrowClosed, 
-                    color: e.credibilityScore > 80 ? "#10b981" : "#06b6d4" 
-                },
-            }));
+  addStickyNote: async (
+    position: { x: number; y: number },
+    text = "",
+    prefix = "HYPOTHESIS:",
+  ) => {
+    const caseId = get().currentCaseId;
+    if (!caseId) return;
 
-        set({
-            nodes: [...currentNodes, ...newNodes],
-            edges: [...currentEdges, ...newEdges],
-        });
+    const id = `hyp-${Date.now()}`;
+    const newNode: Node = {
+      id,
+      type: "hypothesis",
+      position,
+      data: {
+        prefix,
+        text: text || "Click to edit...",
+        rotate: Math.random() * 4 - 2,
+      },
+    };
 
-        setTimeout(() => {
-            set({
-                nodes: get().nodes.map(n => ({...n, data: {...n.data, isNew: false }}))
-            });
-        }, 3000);
-    },
+    set({ nodes: [...get().nodes, newNode] });
 
-    addEdge: (edge: Edge) => {
-        set({
-            edges: [...get().edges, edge],
-        });
-    },
+    const result = await createNewNode(caseId, newNode);
+    if (result.success) {
+      // Broadcast creation
+      await realtimeSyncManager.broadcast({
+        type: "node-create",
+        node: newNode,
+      });
+    }
+  },
+
+  addEvidenceCard: async (
+    title: string,
+    position: { x: number; y: number },
+  ) => {
+    const caseId = get().currentCaseId;
+    if (!caseId) return;
+
+    const id = `ev-${Date.now()}`;
+    const newNode: Node = {
+      id,
+      type: "evidence",
+      position,
+      data: {
+        item: {
+          id,
+          title,
+          credibility: Math.floor(Math.random() * 40) + 60,
+          timestamp: "Just now",
+          type: "financial",
+          nodeId: "",
+        },
+      },
+    };
+
+    set({ nodes: [...get().nodes, newNode] });
+
+    const result = await createNewNode(caseId, {
+      ...newNode,
+      nodeType: "DOCUMENT",
+    });
+    if (result.success) {
+      // Broadcast creation
+      await realtimeSyncManager.broadcast({
+        type: "node-create",
+        node: newNode,
+      });
+    }
+  },
+
+  updateStickyText: (id: string, text: string) => {
+    set({
+      nodes: get().nodes.map((n) =>
+        n.id === id ? { ...n, data: { ...n.data, text } } : n,
+      ),
+    });
+  },
+
+  addNode: async (node: Node) => {
+    const caseId = get().currentCaseId;
+    if (!caseId) return;
+
+    set({
+      nodes: [...get().nodes, node],
+    });
+
+    let prismaType = "ENTITY_PERSON";
+    if (node.data.type === "company" || node.data.type === "offshore")
+      prismaType = "ENTITY_ORG";
+    else if (node.data.type === "location") prismaType = "ENTITY_LOCATION";
+    else if (node.data.type === "bank") prismaType = "ENTITY_PERSON";
+
+    const nodeWithPrismaType = {
+      ...node,
+      nodeType: prismaType,
+    };
+
+    const result = await createNewNode(caseId, nodeWithPrismaType);
+    if (result.success) {
+      // Broadcast creation
+      await realtimeSyncManager.broadcast({
+        type: "node-create",
+        node,
+      });
+    }
+  },
+
+  addAIResult: (result: { nodes: any[]; edges: any[] }) => {
+    const currentNodes = get().nodes;
+    const currentEdges = get().edges;
+
+    const nexusNode = currentNodes[0] || { position: { x: 400, y: 300 } };
+    const centerX = nexusNode.position.x;
+    const centerY = nexusNode.position.y;
+
+    const filteredNodes = result.nodes.filter(
+      (n) => !currentNodes.find((cn) => cn.id === n.id),
+    );
+
+    const newNodes: Node[] = filteredNodes.map((n, i) => {
+      const angle = (i / filteredNodes.length) * Math.PI * 2;
+      const radius = 350 + Math.random() * 50;
+
+      return {
+        id: n.id,
+        type: "entity",
+        position: {
+          x: centerX + Math.cos(angle) * radius,
+          y: centerY + Math.sin(angle) * radius,
+        },
+        data: {
+          name: n.name,
+          role: n.role,
+          type: n.type,
+          status: n.status || "Active",
+          credibilityScore: n.credibilityScore,
+          riskScore: n.riskScore,
+          avatar:
+            n.type === "person"
+              ? `https://i.pravatar.cc/150?u=${n.id}`
+              : undefined,
+          isNew: true,
+        },
+      };
+    });
+
+    const newEdges: Edge[] = result.edges
+      .filter(
+        (e) =>
+          !currentEdges.find(
+            (ce) => ce.source === e.source && ce.target === e.target,
+          ),
+      )
+      .map((e) => ({
+        id: `e-${e.source}-${e.target}-${Date.now()}`,
+        source: e.source,
+        target: e.target,
+        type: "relation",
+        label: e.label,
+        data: { credibilityScore: e.credibilityScore },
+        style:
+          e.credibilityScore > 80
+            ? { stroke: "#10b981", strokeWidth: 2 }
+            : { ...dottedEdgeStyle, opacity: 0.6 },
+        animated: e.credibilityScore > 70,
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: e.credibilityScore > 80 ? "#10b981" : "#06b6d4",
+        },
+      }));
+
+    set({
+      nodes: [...currentNodes, ...newNodes],
+      edges: [...currentEdges, ...newEdges],
+    });
+
+    setTimeout(() => {
+      set({
+        nodes: get().nodes.map((n) => ({
+          ...n,
+          data: { ...n.data, isNew: false },
+        })),
+      });
+    }, 3000);
+  },
+
+  addEdge: (edge: Edge) => {
+    set({
+      edges: [...get().edges, edge],
+    });
+  },
 }));

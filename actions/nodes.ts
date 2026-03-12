@@ -22,8 +22,10 @@ export async function updateNodePosition(nodeId: string, x: number, y: number) {
         }
 
         return { success: true };
-    } catch (error) {
-        console.error("Failed to update node position:", error);
+    } catch (error: any) {
+        if (error?.code !== 'P2025') {
+            console.error("Failed to update node position:", error);
+        }
         return { success: false };
     }
 }

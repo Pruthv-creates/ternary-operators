@@ -62,7 +62,7 @@ export default function TeamChat({ caseId, currentUser }: TeamChatProps) {
                             <AlertCircle size={16} className="text-red-400" />
                         </div>
                         <div className="space-y-1">
-                            <h4 className="text-[11px] font-black text-white uppercase tracking-widest text-red-400">Security Alert</h4>
+                            <h4 className="text-[11px] font-black uppercase tracking-widest text-red-400">Security Alert</h4>
                             <p className="text-[10px] text-red-300 font-medium leading-relaxed opacity-80">{error}</p>
                         </div>
                     </motion.div>

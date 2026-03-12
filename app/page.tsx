@@ -52,17 +52,15 @@ export default function Home() {
 
                     {/* Right AI Intellect Panel */}
                     <div className={cn(
-                        "transition-all duration-300 ease-in-out border-l border-[#1e3a5f]/40 bg-[#0d1424] overflow-hidden flex flex-col",
-                        aiPanelOpen ? "w-[350px]" : "w-0 border-l-0"
+                        "transition-all duration-300 ease-in-out border-l border-[#1e3a5f]/40 bg-[#0d1424] overflow-hidden flex flex-col h-full",
+                        aiPanelOpen ? "w-[350px] min-w-[350px]" : "w-0 border-l-0"
                     )}>
-                        <div className="flex-1 min-w-[350px]">
-                            <AIAssistant 
-                                actions={aiActions} 
-                                askAI={askAI} 
-                                isPanel={true} 
-                                onClose={() => setAIPanelOpen(false)} 
-                            />
-                        </div>
+                        <AIAssistant 
+                            actions={aiActions} 
+                            askAI={askAI} 
+                            isPanel={true} 
+                            onClose={() => setAIPanelOpen(false)} 
+                        />
                     </div>
                 </div>
             </div>

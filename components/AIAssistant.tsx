@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Brain, Search, AlertTriangle, BarChart2, X, ChevronRight, Sparkles, Minimize2, Send, Paperclip, Mic, MoreHorizontal } from "lucide-react";
+import { motion } from "framer-motion";
+import { Search, AlertTriangle, BarChart2, X, ChevronRight, Sparkles, Send, Paperclip, Mic, MoreHorizontal } from "lucide-react";
 import { AIAction } from "@/lib/data";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
 
 type Message = {
     role: "user" | "assistant";
@@ -41,7 +42,18 @@ export default function AIAssistant({ actions, askAI, isPanel, onClose }: AIAssi
     const [question, setQuestion] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [userInitial, setUserInitial] = useState("U");
     const scrollRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        supabase.auth.getUser().then(({ data }) => {
+            if (data.user?.email) {
+                setUserInitial(data.user.email[0].toUpperCase());
+            } else if (data.user?.user_metadata?.full_name) {
+                setUserInitial(data.user.user_metadata.full_name[0].toUpperCase());
+            }
+        });
+    }, []);
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -61,10 +73,10 @@ export default function AIAssistant({ actions, askAI, isPanel, onClose }: AIAssi
 
         try {
             const result = await askAI(query);
-            const assistantMsg: Message = { 
-                role: "assistant", 
-                content: result.answer, 
-                timestamp: new Date() 
+            const assistantMsg: Message = {
+                role: "assistant",
+                content: result.answer,
+                timestamp: new Date()
             };
             setMessages(prev => [...prev, assistantMsg]);
         } catch (err) {
@@ -75,23 +87,21 @@ export default function AIAssistant({ actions, askAI, isPanel, onClose }: AIAssi
         }
     }
 
-    const content = (
+    return (
         <div className={cn(
-            "bg-[#0d1424] flex flex-col h-full",
-            !isPanel && "border border-[#1e3a5f]/70 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.6)] w-[350px] fixed bottom-4 right-4 z-50 overflow-hidden"
+            "bg-[#0d1424] flex flex-col h-full overflow-hidden",
+            !isPanel && "border border-[#1e3a5f]/70 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.6)] w-[350px] fixed bottom-4 right-4 z-50"
         )}>
 
-            {/* Header */}
-            <div className="flex items-center gap-3 px-4 py-4 border-b border-[#1e3a5f]/30">
+            {/* ── Header (fixed) ── */}
+            <div className="shrink-0 flex items-center gap-3 px-4 py-4 border-b border-[#1e3a5f]/30">
                 <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
                     <span className="text-xs font-black text-white italic">AI</span>
                 </div>
 
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 overflow-hidden">
-                        <span className="text-[13px] font-bold text-white truncate">
-                            Intellect AI
-                        </span>
+                        <span className="text-[13px] font-bold text-white truncate">Intellect AI</span>
                         <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
                     </div>
                 </div>
@@ -112,11 +122,12 @@ export default function AIAssistant({ actions, askAI, isPanel, onClose }: AIAssi
                 </div>
             </div>
 
-            {/* Message History */}
-            <div 
+            {/* ── Scrollable area: messages + suggestion pills ── */}
+            <div
                 ref={scrollRef}
-                className="flex-1 overflow-y-auto p-4 space-y-6 scroll-smooth custom-scrollbar"
+                className="flex-1 min-h-0 overflow-y-auto scroll-smooth custom-scrollbar p-4 flex flex-col gap-6"
             >
+                {/* Messages */}
                 {messages.map((msg, i) => (
                     <div key={i} className={cn(
                         "flex gap-3",
@@ -125,23 +136,29 @@ export default function AIAssistant({ actions, askAI, isPanel, onClose }: AIAssi
                         {/* Avatar */}
                         <div className={cn(
                             "w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white",
-                            msg.role === "assistant" ? "bg-indigo-600 shadow-md shadow-indigo-900/40" : "bg-emerald-600"
+                            msg.role === "assistant"
+                                ? "bg-indigo-600 shadow-md shadow-indigo-900/40"
+                                : "bg-gradient-to-br from-purple-500 to-blue-500"
                         )}>
-                            {msg.role === "assistant" ? <Sparkles size={14} /> : <div className="text-[10px] font-bold">MK</div>}
+                            {msg.role === "assistant"
+                                ? <Sparkles size={14} />
+                                : <div className="text-[10px] font-bold uppercase">{userInitial}</div>
+                            }
                         </div>
 
                         {/* Bubble */}
                         <div className={cn(
                             "max-w-[85%] px-4 py-3 rounded-2xl text-[12px] leading-relaxed shadow-sm",
-                            msg.role === "assistant" 
-                                ? "bg-[#1e293b]/80 text-slate-200 border border-slate-800/50" 
+                            msg.role === "assistant"
+                                ? "bg-[#1e293b]/80 text-slate-200 border border-slate-800/50"
                                 : "bg-indigo-600 text-white font-medium"
                         )}>
                             {msg.content}
                         </div>
                     </div>
                 ))}
-                
+
+                {/* Loading indicator */}
                 {loading && (
                     <div className="flex gap-3">
                         <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-900/40">
@@ -149,8 +166,8 @@ export default function AIAssistant({ actions, askAI, isPanel, onClose }: AIAssi
                         </div>
                         <div className="bg-[#1e293b]/80 border border-slate-800/50 rounded-2xl px-4 py-3 flex gap-1 items-center">
                             {[0, 1, 2].map(d => (
-                                <motion.div 
-                                    key={d} 
+                                <motion.div
+                                    key={d}
                                     className="w-1 h-1 rounded-full bg-indigo-400"
                                     animate={{ opacity: [0.3, 1, 0.3] }}
                                     transition={{ duration: 1, repeat: Infinity, delay: d * 0.2 }}
@@ -160,32 +177,33 @@ export default function AIAssistant({ actions, askAI, isPanel, onClose }: AIAssi
                     </div>
                 )}
 
+                {/* Error */}
                 {error && (
                     <div className="text-[10px] text-rose-400 bg-rose-500/5 border border-rose-500/20 rounded-lg p-3 flex items-center gap-2">
                         <AlertTriangle size={12} />
                         {error}
                     </div>
                 )}
-            </div>
 
-            {/* Suggested Pills & Input Component */}
-            <div className="p-4 pt-0 space-y-4">
-                {/* Suggestions Pills */}
-                {!loading && (
-                    <div className="flex flex-wrap gap-2 overflow-x-auto pb-1 no-scrollbar">
+                {/* Suggestion pills — scroll with messages */}
+                {!loading && actions.length > 0 && (
+                    <div className="flex flex-col gap-2">
+                        <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest px-1">Suggested Queries</p>
                         {actions.map((action) => (
                             <button
                                 key={action.id}
                                 onClick={() => handleAsk(action.text)}
-                                className="whitespace-nowrap px-4 py-2 rounded-full border border-slate-800 bg-[#0d1424] hover:bg-white/5 text-[10px] font-bold text-slate-400 hover:text-slate-200 hover:border-slate-700 transition-all shadow-sm"
+                                className="w-full text-left px-4 py-2.5 rounded-xl border border-slate-800/80 bg-[#111827]/50 hover:bg-white/5 text-[11px] font-semibold text-slate-400 hover:text-slate-200 hover:border-indigo-500/40 transition-all shadow-sm"
                             >
                                 {action.text}
                             </button>
                         ))}
                     </div>
                 )}
+            </div>
 
-                {/* Main Input Field */}
+            {/* ── Fixed input area — always at the bottom ── */}
+            <div className="shrink-0 p-4 pt-3 space-y-3 border-t border-[#1e3a5f]/20">
                 <div className="relative group">
                     <div className="bg-[#1a2333]/80 border border-slate-800 rounded-2xl p-2 px-4 shadow-sm group-focus-within:border-indigo-500/50 group-focus-within:ring-2 group-focus-within:ring-indigo-500/10 transition-all">
                         <input
@@ -198,7 +216,7 @@ export default function AIAssistant({ actions, askAI, isPanel, onClose }: AIAssi
                             className="w-full py-2 bg-transparent text-[13px] text-slate-200 placeholder-slate-600 focus:outline-none"
                             disabled={loading}
                         />
-                        
+
                         <div className="flex items-center justify-between mt-1 pb-1">
                             <div className="flex items-center gap-3">
                                 <button className="text-slate-500 hover:text-slate-300 transition-colors">
@@ -208,13 +226,15 @@ export default function AIAssistant({ actions, askAI, isPanel, onClose }: AIAssi
                                     <Mic size={16} />
                                 </button>
                             </div>
-                            
-                            <button 
+
+                            <button
                                 onClick={() => handleAsk()}
                                 disabled={!question.trim() || loading}
                                 className={cn(
                                     "p-1.5 rounded-xl transition-all",
-                                    question.trim() ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20" : "text-slate-600"
+                                    question.trim()
+                                        ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20"
+                                        : "text-slate-600"
                                 )}
                             >
                                 <Send size={18} />
@@ -222,13 +242,11 @@ export default function AIAssistant({ actions, askAI, isPanel, onClose }: AIAssi
                         </div>
                     </div>
                 </div>
-                
+
                 <div className="text-center">
                     <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest">Astra Model v4.0</span>
                 </div>
             </div>
         </div>
     );
-
-    return content;
 }

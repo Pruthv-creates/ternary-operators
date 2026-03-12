@@ -320,27 +320,19 @@ export default function CasesPage() {
                 </div>
 
                 {/* Right AI Intellect Panel */}
-                    <div className={cn(
-                        "transition-all duration-300 ease-in-out border-l border-[#1e3a5f]/40 bg-[#0d1424] overflow-hidden flex flex-col h-full",
-                        aiPanelOpen ? "w-[350px]" : "w-0 border-l-0"
-                    )}>
-                        <div className="flex-1 min-w-[350px] h-full">
-                            <AIAssistant 
-                                actions={aiActions} 
-                                askAI={askAI} 
-                                isPanel={true} 
-                                onClose={() => setAIPanelOpen(false)} 
-                            />
-                        </div>
-                    </div>
+                <div className={cn(
+                    "transition-all duration-300 ease-in-out border-l border-[#1e3a5f]/40 bg-[#0d1424] overflow-hidden flex flex-col h-full",
+                    aiPanelOpen ? "w-[350px] min-w-[350px]" : "w-0 border-l-0"
+                )}>
+                    <AIAssistant 
+                        actions={aiActions} 
+                        askAI={askAI} 
+                        isPanel={true} 
+                        onClose={() => setAIPanelOpen(false)} 
+                    />
+                </div>
                 </main>
             </div>
-
-            <style jsx global>{`
-                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 10px; }
-            `}</style>
         </div>
     );
 }

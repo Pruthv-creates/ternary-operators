@@ -12,78 +12,112 @@ model User {
   id                  String       @id @default(uuid())
   email               String       @unique
   name                String?      @unique
-  cases               Case[]       @relation("CaseInvestigators")
-  invitationsSent     Invitation[] @relation("InvitationsSent")
-  invitationsReceived Invitation[] @relation("InvitationsReceived")
   createdAt           DateTime     @default(now())
   auditLogs           AuditLog[]
+  invitationsReceived Invitation[] @relation("InvitationsReceived")
+  invitationsSent     Invitation[] @relation("InvitationsSent")
+  cases               Case[]       @relation("CaseInvestigators")
 }
 
 model Invitation {
-  id        String @id @default(uuid())
+  id        String   @id @default(uuid())
   caseId    String
-  case      Case   @relation(fields: [caseId], references: [id], onDelete: Cascade)
   inviterId String
-  inviter   User   @relation("InvitationsSent", fields: [inviterId], references: [id])
   inviteeId String
-  invitee   User   @relation("InvitationsReceived", fields: [inviteeId], references: [id])
-  role      String @default("VIEWER") // EDITOR, VIEWER
-  status    String @default("PENDING") // PENDING, ACCEPTED, REJECTED
-
+  role      String   @default("VIEWER")
+  status    String   @default("PENDING")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  case      Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  invitee   User     @relation("InvitationsReceived", fields: [inviteeId], references: [id])
+  inviter   User     @relation("InvitationsSent", fields: [inviterId], references: [id])
 
-  @@unique([caseId, inviteeId]) // Prevent duplicate invites for same case
+  @@unique([caseId, inviteeId])
 }
 
 model Case {
-  id          String  @id @default(uuid())
-  title       String
-  description String?
-  status      String  @default("ACTIVE") // ACTIVE, RESOLVED, ARCHIVED
-
-  users     User[]     @relation("CaseInvestigators")
-  documents Document[]
-  nodes     Node[] // Knowledge Graph Nodes
-  edges     Edge[] // Knowledge Graph Edges
-
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  invitations Invitation[]
-  auditLogs   AuditLog[]
-  chatMessages ChatMessage[]
+  id           String        @id @default(uuid())
+  title        String
+  description  String?
+  status       String        @default("ACTIVE")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   aiAnalysis   Json?
+  auditLogs    AuditLog[]
+  documents    Document[]
+  edges        Edge[]
+  invitations  Invitation[]
+  nodes        Node[]
+  chatMessages ChatMessage[]
+  users        User[]        @relation("CaseInvestigators")
 }
 
 model ChatMessage {
-  id            String   @id @default(uuid())
-  content       String
-  senderId     String    @map("sender_id")
-  senderName   String    @map("sender_name")
-  senderAvatar String?   @map("sender_avatar")
-  caseId       String    @map("case_id")
-  case          Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  id           String   @id @default(uuid())
+  content      String
+  senderId     String   @map("sender_id")
+  senderName   String   @map("sender_name")
+  senderAvatar String?  @map("sender_avatar")
+  caseId       String   @map("case_id")
   createdAt    DateTime @default(now()) @map("created_at")
+  case         Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
 
   @@map("chat_messages")
 }
 
 model Document {
-  id     String @id @default(uuid())
-  caseId String
-  case   Case   @relation(fields: [caseId], references: [id], onDelete: Cascade)
-
+  id          String   @id @default(uuid())
+  caseId      String
   title       String
   sourceUrl   String?
-  storageKey  String? // S3 path
-  contentHash String? // For deduplication
-  fileType    String // PDF, TXT, LINK, IMAGE
+  storageKey  String?
+  contentHash String?
+  fileType    String
+  nodeId      String?  @unique
+  createdAt   DateTime @default(now())
+  case        Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  node        Node?    @relation(fields: [nodeId], references: [id])
+}
 
-  // Backlink to its corresponding Node in the Graph
-  nodeId String? @unique
-  node   Node?   @relation(fields: [nodeId], references: [id])
+model Node {
+  id        String    @id @default(uuid())
+  caseId    String
+  type      NodeType
+  label     String
+  content   String?
+  positionX Float     @default(0)
+  positionY Float     @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  document  Document?
+  edgesOut  Edge[]    @relation("FromNode")
+  edgesIn   Edge[]    @relation("ToNode")
+  case      Case      @relation(fields: [caseId], references: [id], onDelete: Cascade)
+}
 
+model Edge {
+  id               String   @id @default(uuid())
+  caseId           String
+  sourceId         String
+  targetId         String
+  relationshipType String
+  createdAt        DateTime @default(now())
+  case             Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  source           Node     @relation("FromNode", fields: [sourceId], references: [id])
+  target           Node     @relation("ToNode", fields: [targetId], references: [id])
+
+  @@unique([sourceId, targetId, relationshipType])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  caseId    String
+  userId    String
+  action    String
+  icon      String   @default("zap")
   createdAt DateTime @default(now())
+  case      Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 enum NodeType {
@@ -96,57 +130,3 @@ enum NodeType {
   ENTITY_LOCATION
   EVENT
 }
-
-model Node {
-  id     String @id @default(uuid())
-  caseId String
-  case   Case   @relation(fields: [caseId], references: [id], onDelete: Cascade)
-
-  type    NodeType
-  label   String // Display name in React Flow
-  content String? // Rich text, markdown, or JSON metadata (AI output)
-
-  // Real-time canvas positioning
-  positionX Float @default(0)
-  positionY Float @default(0)
-
-  // Links
-  document Document? // Optional relation if type=DOCUMENT
-
-  edgesOut Edge[] @relation("FromNode")
-  edgesIn  Edge[] @relation("ToNode")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Edge {
-  id     String @id @default(uuid())
-  caseId String
-  case   Case   @relation(fields: [caseId], references: [id], onDelete: Cascade)
-
-  sourceId String
-  targetId String
-  source   Node   @relation("FromNode", fields: [sourceId], references: [id])
-  target   Node   @relation("ToNode", fields: [targetId], references: [id])
-
-  relationshipType String // 'summarized_from', 'mentions', 'suggests', 'supports', 'contradicts'
-
-  createdAt DateTime @default(now())
-
-  @@unique([sourceId, targetId, relationshipType])
-}
-
-model AuditLog {
-  id        String   @id @default(uuid())
-  caseId    String
-  case      Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-
-  action    String
-  icon      String   @default("zap")
-
-  createdAt DateTime @default(now())
-}
-

@@ -157,8 +157,10 @@ export default function CollaborationPage() {
                         </div>
                     </div>
 
-                    {/* Team Workspace (Top Right) */}
-                    <div className="col-span-2 row-span-1 bg-[#0d1424]/60 border border-[#1e3a5f]/30 rounded-3xl flex flex-col overflow-hidden backdrop-blur-sm">
+                    {/* right column (active + milestone) */}
+                    <div className="w-2/3 flex flex-col gap-6">
+                        {/* Active panel */}
+                        <div className="bg-[#0d1424]/60 border border-[#1e3a5f]/30 rounded-3xl flex flex-col overflow-hidden backdrop-blur-sm">
                         <div className="px-6 py-5 border-b border-[#1e3a5f]/40 bg-white/[0.02] flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <Users size={16} className="text-emerald-400" />
@@ -201,10 +203,10 @@ export default function CollaborationPage() {
                                 </div>
                             ))}
                         </div>
-                    </div>
+                        </div>
 
-                    {/* Project Task Board (Bottom Right) - now sits flush beneath the workspace */}
-                    <div className="col-span-2 row-span-1 bg-[#0d1424]/60 border border-[#1e3a5f]/30 rounded-3xl flex flex-col overflow-hidden backdrop-blur-sm">
+                        {/* Milestone tracker */}
+                        <div className="bg-[#0d1424]/60 border border-[#1e3a5f]/30 rounded-3xl flex flex-col overflow-hidden backdrop-blur-sm">
                         <div className="px-6 py-5 border-b border-[#1e3a5f]/40 bg-white/[0.02] flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <Layout size={16} className="text-purple-400" />
@@ -242,6 +244,7 @@ export default function CollaborationPage() {
                                     </div>
                                 </div>
                             ))}
+                        </div>
                         </div>
                     </div>
                 </main>

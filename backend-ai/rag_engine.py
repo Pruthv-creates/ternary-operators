@@ -180,3 +180,81 @@ JSON:"""
         print(f"[analyze_graph] Error for {case_id}: {e}")
 
     return {"nodes": [], "edges": [], "error": f"Failed to extract graph for case {case_id}"}
+def reconstruct_timeline(case_id: str):
+    """
+    Extracts chronological events from case evidence.
+    """
+    import json
+    import re
+    import os
+    from langchain_community.document_loaders import TextLoader
+
+    documents = []
+    case_evidence_dir = os.path.join(EVIDENCE_DIR, case_id)
+    
+    if not os.path.exists(case_evidence_dir):
+        return {"events": []}
+
+    for file in sorted(os.listdir(case_evidence_dir)):
+        if file.endswith(".txt") or file.endswith(".md"):
+            try:
+                loader = TextLoader(os.path.join(case_evidence_dir, file))
+                documents.extend(loader.load())
+            except Exception:
+                pass
+
+    if not documents:
+        return {"events": []}
+
+    # Use first few docs for timeline extraction
+    top_docs = documents[:4]
+    full_text = "\n\n".join([d.page_content[:2000] for d in top_docs])
+
+    user_prompt = f"""[TIMELINE RECONSTRUCTION TASK]
+Extract a chronological sequence of events from the evidence for Case ID: {case_id}.
+Focus on specific dates, travel, meetings, transfers, and critical findings.
+
+TEXT TO ANALYZE:
+{full_text}
+
+JSON SCHEMA:
+{{
+  "events": [
+    {{
+      "date": "YYYY-MM-DD",
+      "title": "Short event title",
+      "description": "Short 1-sentence detail",
+      "type": "Travel|Financial|Comm|Intel|Action",
+      "category": "Location|Bank|Network|Direct",
+      "confidence": 0-100
+    }}
+  ]
+}}
+
+STRICT RULES:
+1. Respond with ONLY valid JSON.
+2. Sort events by date (ascending).
+3. If a specific day is missing, use "YYYY-MM-01" or similar approximation based on context.
+
+JSON:"""
+
+    try:
+        response = ollama.chat(
+            model="llama3",
+            messages=[{"role": "user", "content": user_prompt}],
+            options={"temperature": 0.1}
+        )
+        raw = response["message"]["content"].strip()
+
+        brace_match = re.search(r'\{[\s\S]*\}', raw)
+        if brace_match:
+            try:
+                result = json.loads(brace_match.group(0))
+                if "events" in result:
+                    return result
+            except: pass
+
+    except Exception as e:
+        print(f"[reconstruct_timeline] Error: {e}")
+
+    return {"events": [], "error": "Failed to reconstruct timeline"}

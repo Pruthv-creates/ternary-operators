@@ -185,3 +185,8 @@ async def analyze_case(data: CaseAnalysisRequest):
             "looseEnds": [],
             "pointsOfInterest": [],
         }
+@app.post("/reconstruct-timeline")
+async def timeline(data: Question):
+    """Reconstructs events chronologically from evidence."""
+    from rag_engine import reconstruct_timeline
+    return reconstruct_timeline(data.case_id)

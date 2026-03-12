@@ -55,13 +55,16 @@ model Case {
 }
 
 model ChatMessage {
-  id          String   @id @default(uuid())
-  content     String
-  sender_id   String
-  sender_name String
-  case_id     String
-  case        Case     @relation(fields: [case_id], references: [id])
-  created_at  DateTime @default(now())
+  id            String   @id @default(uuid())
+  content       String
+  senderId     String    @map("sender_id")
+  senderName   String    @map("sender_name")
+  senderAvatar String?   @map("sender_avatar")
+  caseId       String    @map("case_id")
+  case          Case     @relation(fields: [caseId], references: [id])
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("chat_messages")
 }
 
 model Document {

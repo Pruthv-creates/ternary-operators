@@ -32,8 +32,8 @@ export default function CollaboratorInvite() {
     }, []);
 
     useEffect(() => {
-        if (!query || query.length < 2) {
-            setResults([]);
+        if (!query || query.length < 2 || selected) {
+            if (!selected) setResults([]);
             return;
         }
         if (searchTimeout.current) clearTimeout(searchTimeout.current);
@@ -48,7 +48,7 @@ export default function CollaboratorInvite() {
                 setSearching(false);
             }
         }, 300);
-    }, [query, currentUserId]);
+    }, [query, currentUserId, selected]);
 
     const handleInvite = async () => {
         if (!currentCaseId || !selected || !currentUserId) return;

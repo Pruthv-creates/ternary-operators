@@ -21,9 +21,9 @@ import { useInvestigationStore } from "@/store/investigationStore";
 import CanvasToolbarLeft from "@/components/canvas/CanvasToolbarLeft";
 import CanvasToolbarRight from "@/components/canvas/CanvasToolbarRight";
 import GhostCursors from "@/components/canvas/GhostCursors";
-import { useCanvasCollaborators } from "@/hooks/useCanvasCollaborators";
-import { useCanvasAI } from "@/hooks/useCanvasAI";
-import { useCanvasSearch } from "@/hooks/useCanvasSearch";
+import { useCanvasCollaborators } from "@/hooks/canvas/useCanvasCollaborators";
+import { useCanvasAI } from "@/hooks/canvas/useCanvasAI";
+import { useCanvasSearch } from "@/hooks/canvas/useCanvasSearch";
 
 const nodeTypes: any = {
     entity: EntityNode,

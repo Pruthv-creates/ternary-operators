@@ -1,6 +1,6 @@
 "use client";
 
-import { useSidebarCases } from "@/hooks/useSidebarCases";
+import { useSidebarCases } from "@/hooks/sidebar/useSidebarCases";
 import { SidebarCases } from "@/components/sidebar/SidebarCases";
 import { SidebarNav } from "@/components/sidebar/SidebarNav";
 import { CreateCaseModal } from "@/components/modals/CreateCaseModal";

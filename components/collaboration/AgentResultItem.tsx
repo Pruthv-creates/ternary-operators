@@ -1,4 +1,4 @@
-import { Agent } from "@/hooks/useCollaboratorInvite";
+import { Agent } from "@/hooks/collaboration/useCollaboratorInvite";
 
 interface AgentResultItemProps {
     agent: Agent;

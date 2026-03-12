@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Message } from "@/hooks/useTeamChat";
+import { Message } from "@/hooks/chat/useTeamChat";
 
 interface ChatMessageProps {
     msg: Message;

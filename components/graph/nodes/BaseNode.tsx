@@ -1,7 +1,7 @@
 import { Handle, Position } from "@xyflow/react";
 import { X, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useNodeInteraction } from "@/hooks/useNodeInteraction";
+import { useNodeInteraction } from "@/hooks/graph/useNodeInteraction";
 
 interface BaseNodeProps {
     id: string;

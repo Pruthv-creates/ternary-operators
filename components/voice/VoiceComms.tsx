@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { useVoiceComms } from "@/hooks/useVoiceComms";
+import { useVoiceComms } from "@/hooks/voice/useVoiceComms";
 import { PeerAudioPlayer } from "@/components/voice/PeerAudioPlayer";
 
 interface VoiceCommsProps {

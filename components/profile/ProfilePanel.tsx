@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Shield, Bell, LogOut, ChevronRight, Settings } from "lucide-react";
 import InvitationWizard from "@/components/profile/InvitationWizard";
-import { useProfileLogic } from "@/hooks/useProfileLogic";
+import { useProfileLogic } from "@/hooks/profile/useProfileLogic";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileMenuItem } from "@/components/profile/ProfileMenuItem";
 

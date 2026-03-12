@@ -5,7 +5,7 @@ import Topbar from "@/components/topbar/Topbar";
 import AIAssistant from "@/components/ai/AIAssistant";
 import { aiActions } from "@/lib/data";
 import { useInvestigationStore } from "@/store/investigationStore";
-import { useAI } from "@/hooks/useAI";
+import { useAI } from "@/hooks/ai/useAI";
 import { cn } from "@/lib/utils";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {

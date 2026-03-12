@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { SyncEvent } from "@/lib/realtimeSync";
-import { useActivityFeed } from "@/hooks/useActivityFeed";
+import { useActivityFeed } from "@/hooks/activity/useActivityFeed";
 import { ActivityItem } from "@/components/activity/ActivityItem";
 
 interface ActivityFeedProps {

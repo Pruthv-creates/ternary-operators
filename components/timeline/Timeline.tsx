@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { TimelineEvent } from "@/lib/data";
-import { useTimelineLogic } from "@/hooks/useTimelineLogic";
+import { useTimelineLogic } from "@/hooks/timeline/useTimelineLogic";
 import { TimelineMarker } from "@/components/timeline/TimelineMarker";
 import { TimelineActions } from "@/components/timeline/TimelineActions";
 

@@ -4,7 +4,7 @@ import { useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Sparkles, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useTeamChat } from "@/hooks/useTeamChat";
+import { useTeamChat } from "@/hooks/chat/useTeamChat";
 import { ChatHeader } from "@/components/chat/ChatHeader";
 import { ChatMessage } from "@/components/chat/ChatMessage";
 import { ChatInput } from "@/components/chat/ChatInput";

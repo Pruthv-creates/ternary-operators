@@ -1,4 +1,4 @@
-import { PresenceUser } from "@/hooks/useTopbarPresence";
+import { PresenceUser } from "@/hooks/topbar/useTopbarPresence";
 
 interface PresenceIndicatorProps {
     presenceUsers: PresenceUser[];

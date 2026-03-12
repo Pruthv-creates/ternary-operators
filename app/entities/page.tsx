@@ -27,7 +27,7 @@ const pendingEntities = [
 ];
 
 import { useInvestigationStore } from "@/store/investigationStore";
-import { useAI } from "@/hooks/useAI";
+import { useAI } from "@/hooks/ai/useAI";
 import AIAssistant from "@/components/ai/AIAssistant";
 import { aiActions } from "@/lib/data";
 

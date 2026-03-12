@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Check, Bell, Loader2, User, FileText, Shield, ArrowRight } from "lucide-react";
-import { useInvitations } from "@/hooks/useInvitations";
+import { useInvitations } from "@/hooks/profile/useInvitations";
 
 interface InvitationWizardProps {
     isOpen: boolean;

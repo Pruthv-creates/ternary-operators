@@ -95,7 +95,7 @@ type InvestigationState = {
     prefix?: string,
   ) => void;
   updateStickyText: (id: string, text: string) => void;
-  addAIResult: (result: { nodes: any[]; edges: any[] }) => void;
+  addAIResult: (result: { nodes: any[]; edges: any[] }) => Promise<void>;
   addEvidenceCard: (title: string, position: { x: number; y: number }) => void;
   loadCaseData: (caseId: string) => Promise<void>;
   aiPanelOpen: boolean;
@@ -667,9 +667,10 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
     }
   },
 
-  addAIResult: (result: { nodes: any[]; edges: any[] }) => {
+  addAIResult: async (result: { nodes: any[]; edges: any[] }) => {
     const currentNodes = get().nodes;
     const currentEdges = get().edges;
+    const caseId = get().currentCaseId;
 
     const nexusNode = currentNodes[0] || { position: { x: 400, y: 300 } };
     const centerX = nexusNode.position.x;
@@ -679,8 +680,18 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
       (n) => !currentNodes.find((cn) => cn.id === n.id),
     );
 
+    // Map AI type strings to Prisma NodeType enum values
+    const typeToNodeType = (type: string): string => {
+      const t = (type || "person").toLowerCase();
+      if (t === "person") return "ENTITY_PERSON";
+      if (t === "company" || t === "corporation" || t === "org") return "ENTITY_ORG";
+      if (t === "location" || t === "city" || t === "country") return "ENTITY_LOCATION";
+      if (t === "bank" || t === "financial" || t === "offshore") return "ENTITY_ORG";
+      return "ENTITY_PERSON";
+    };
+
     const newNodes: Node[] = filteredNodes.map((n, i) => {
-      const angle = (i / filteredNodes.length) * Math.PI * 2;
+      const angle = (i / Math.max(filteredNodes.length, 1)) * Math.PI * 2;
       const radius = 350 + Math.random() * 50;
 
       return {
@@ -731,10 +742,64 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
         },
       }));
 
+    // Update in-memory store immediately for instant UI response
     set({
       nodes: [...currentNodes, ...newNodes],
       edges: [...currentEdges, ...newEdges],
     });
+
+    // Persist to database so Cases page stats are accurate
+    if (caseId) {
+      // Persist all new nodes in parallel
+      await Promise.allSettled([
+        // Persist all new nodes
+        ...newNodes.map(async (n) => {
+          try {
+            await createNewNode(caseId, {
+              id: n.id,
+              nodeType: typeToNodeType((n.data as any).type),
+              position: n.position,
+              data: n.data,
+            });
+          } catch (e) {
+            console.warn("[addAIResult] Failed to persist node:", n.id, e);
+          }
+        }),
+      ]);
+
+      // Persist edges — only after nodes are in DB (use small delay for safety)
+      if (newEdges.length > 0) {
+        setTimeout(async () => {
+          const allNodeIds = new Set(get().nodes.map((n) => n.id));
+          for (const e of newEdges) {
+            // Only create edge if both endpoints exist in DB
+            if (allNodeIds.has(e.source) && allNodeIds.has(e.target)) {
+              try {
+                await createEdgeAction(
+                  caseId,
+                  e.source,
+                  e.target,
+                  (e.label as string) || "related_to",
+                );
+              } catch (err) {
+                console.warn("[addAIResult] Failed to persist edge:", e.id, err);
+              }
+            }
+          }
+        }, 1000);
+      }
+
+      // Broadcast to other investigators
+      try {
+        await realtimeSyncManager.broadcast({
+          type: "graph-full-update",
+          nodes: get().nodes,
+          edges: get().edges,
+        });
+      } catch (e) {
+        console.warn("[addAIResult] Broadcast failed:", e);
+      }
+    }
 
     setTimeout(() => {
       set({

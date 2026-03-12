@@ -52,6 +52,7 @@ model Case {
   invitations Invitation[]
   auditLogs   AuditLog[]
   chatMessages ChatMessage[]
+  aiAnalysis   Json?
 }
 
 model ChatMessage {

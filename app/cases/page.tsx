@@ -6,7 +6,7 @@ import Topbar from "@/components/Topbar";
 import { useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
-import { getUserCases, getCaseGraph, getCaseAuditLogs, getCaseCollaborators } from "@/app/actions/case";
+import { getUserCases, getCaseGraph, getCaseAuditLogs, getCaseCollaborators, saveCaseAnalysis } from "@/app/actions/case";
 import { useInvestigationStore } from "@/store/investigationStore";
 import { useRouter } from "next/navigation";
 import {
@@ -25,6 +25,7 @@ interface CaseItem {
     createdAt: string;
     updatedAt: string;
     description?: string | null;
+    aiAnalysis?: any | null;
 }
 
 interface AnalysisResult {
@@ -39,6 +40,7 @@ interface AnalysisResult {
     summary: string;
     looseEnds: Array<{ title: string; description: string; severity: "high" | "medium" | "low" }>;
     pointsOfInterest: Array<{ title: string; description: string; type: string }>;
+    lastAnalyzed?: string;
 }
 
 interface CaseStats {
@@ -216,7 +218,13 @@ export default function CasesPage() {
                 recentActivity: logs.length > 0 ? logs[0].action : "No activity yet",
             });
             setAuditLogs(logs.slice(0, 8));
-            setAnalysis(null); // clear old analysis
+            
+            // Persist the analysis if it exists in the case object
+            if (selectedCase.aiAnalysis) {
+                setAnalysis(selectedCase.aiAnalysis as AnalysisResult);
+            } else {
+                setAnalysis(null);
+            }
         };
         loadStats();
     }, [selectedCase]);
@@ -238,7 +246,14 @@ export default function CasesPage() {
             });
             if (!res.ok) throw new Error("Analysis failed");
             const data = await res.json();
-            setAnalysis(data);
+            const analysisWithTime = { ...data, lastAnalyzed: new Date().toISOString() };
+            setAnalysis(analysisWithTime);
+            
+            // Persist to database
+            await saveCaseAnalysis(selectedCase.id, analysisWithTime);
+            
+            // Update local cases state
+            setCases(prev => prev.map(c => c.id === selectedCase.id ? { ...c, aiAnalysis: analysisWithTime } : c));
         } catch (e) {
             console.error("Analysis error:", e);
         } finally {
@@ -474,6 +489,11 @@ export default function CasesPage() {
                                                 <div className="flex items-center gap-3 mb-5">
                                                     <BarChart3 size={16} className="text-blue-400" />
                                                     <h3 className="text-xs font-black text-white uppercase tracking-widest">Intelligence Quality Score</h3>
+                                                    {analysis.lastAnalyzed && (
+                                                        <span className="text-[10px] text-slate-600 font-mono">
+                                                            Analyzed {formatDate(analysis.lastAnalyzed)}
+                                                        </span>
+                                                    )}
                                                     <button onClick={runAnalysis} className="ml-auto p-1.5 rounded-lg hover:bg-white/5 text-slate-600 hover:text-slate-400 transition-all" title="Re-analyze">
                                                         <RefreshCcw size={12} />
                                                     </button>

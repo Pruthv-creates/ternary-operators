@@ -206,7 +206,7 @@ function CanvasInner() {
 
             if (data.nodes?.length || data.edges?.length) {
                 const oldNodesCount = nodes.length;
-                useInvestigationStore.getState().addAIResult(data);
+                await useInvestigationStore.getState().addAIResult(data);
                 const added = useInvestigationStore.getState().nodes.length - oldNodesCount;
                 setAiMessage(
                     added > 0

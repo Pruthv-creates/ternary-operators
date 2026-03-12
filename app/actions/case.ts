@@ -302,6 +302,19 @@ export async function createAuditLog(
   });
 }
 
+export async function saveCaseAnalysis(caseId: string, analysis: any) {
+  try {
+    const updatedCase = await prisma.case.update({
+      where: { id: caseId },
+      data: { aiAnalysis: analysis as any },
+    });
+    return { success: true, case: updatedCase };
+  } catch (error) {
+    console.error("Failed to save case analysis:", error);
+    return { success: false, error: String(error) };
+  }
+}
+
 export async function deleteCase(caseId: string, userId: string) {
   try {
     // Verify user is part of the case

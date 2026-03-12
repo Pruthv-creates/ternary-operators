@@ -14,7 +14,7 @@ export function AIAssistantHeader({ isPanel, onClose }: HeaderProps) {
 
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 overflow-hidden">
-                    <span className="text-[13px] font-bold text-white truncate">Intellect AI</span>
+                    <span className="text-[13px] font-bold text-white truncate">Astra AI</span>
                     <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
                 </div>
             </div>

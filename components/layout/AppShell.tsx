@@ -30,7 +30,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                         {children}
                     </div>
 
-                    {/* Right AI Intellect Panel */}
+                    {/* Right Astra AI Panel */}
                     <div className={cn(
                         "transition-all duration-300 ease-in-out border-l border-[#1e3a5f]/40 bg-[#0d1424] overflow-hidden flex flex-col h-full",
                         aiPanelOpen ? "w-[350px] min-w-[350px]" : "w-0 border-l-0"

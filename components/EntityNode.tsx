@@ -83,7 +83,7 @@ function EntityNode({ id, data, selected }: any) {
             {/* Avatar circle */}
             <div
                 className={cn(
-                    "relative w-14 h-14 rounded-full flex items-center justify-center ring-[3px] transition-all duration-200 overflow-hidden shadow-[0_0_15px_rgba(0,0,0,0.5)]",
+                    "relative w-14 h-14 rounded-full flex items-center justify-center ring-[3px] transition-all duration-200 shadow-[0_0_15px_rgba(0,0,0,0.5)]",
                     customRing,
                     cfg.bg,
                     selected ? "ring-white shadow-[0_0_20px_rgba(255,255,255,0.3)]" : ""
@@ -94,27 +94,29 @@ function EntityNode({ id, data, selected }: any) {
                     <div className={cn("absolute inset-0 rounded-full opacity-20 bg-current blur-md", cfg.color)} />
                 )}
 
-                {/* Inner content */}
-                {isPerson && data.avatar ? (
-                    <img src={data.avatar} alt={data.name} className="w-full h-full object-cover" />
-                ) : (
-                    <div className={cn("relative z-10", cfg.color)}>
-                        {data.type === "company" ? (
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-activity"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
-                        ) : cfg.icon}
-                    </div>
-                )}
+                {/* Inner content (clipped) */}
+                <div className="absolute inset-0 rounded-full overflow-hidden flex items-center justify-center">
+                    {isPerson && data.avatar ? (
+                        <img src={data.avatar} alt={data.name} className="w-full h-full object-cover" />
+                    ) : (
+                        <div className={cn("relative z-10", cfg.color)}>
+                            {data.type === "company" ? (
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-activity"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
+                            ) : cfg.icon}
+                        </div>
+                    )}
+                </div>
 
                 {/* Risk Score badge (Top Right) */}
                 {data.riskScore !== undefined && data.riskScore > 0 && (
-                    <div className="absolute -top-1 -right-1 z-10 bg-red-600 text-white text-[8px] font-black px-1 rounded-sm border border-red-700 shadow-sm">
+                    <div className="absolute -top-1.5 -right-1.5 z-20 bg-red-600 text-white text-[8px] font-black px-1 py-0.5 rounded-sm border border-red-700 shadow-[0_0_10px_rgba(220,38,38,0.5)]">
                         R:{data.riskScore}%
                     </div>
                 )}
 
                 {/* Credibility Score badge (Bottom Right) */}
                 {data.credibilityScore !== undefined && (
-                    <div className="absolute -bottom-1 -right-1 z-10 bg-emerald-500 text-white text-[8px] font-black px-1 rounded-sm border border-emerald-600 shadow-sm">
+                    <div className="absolute -bottom-1.5 -right-1.5 z-20 bg-emerald-500 text-white text-[8px] font-black px-1 py-0.5 rounded-sm border border-emerald-600 shadow-[0_0_10px_rgba(16,185,129,0.5)]">
                         C:{data.credibilityScore}%
                     </div>
                 )}

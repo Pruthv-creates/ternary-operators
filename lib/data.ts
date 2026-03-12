@@ -184,6 +184,20 @@ export const timelineEvents: TimelineEvent[] = [
         description: "Physical meeting Volkov/Mercer/Ahmad on private yacht. Documents exchanged.",
         type: "alert",
     },
+    {
+        id: "e7",
+        date: "Feb 22, 2024",
+        label: "INTERNAL AUDIT LOCKDOWN",
+        description: "Sarah Patel flags $3.2M missing in London accounts. Key logs encrypted.",
+        type: "alert",
+    },
+    {
+        id: "e8",
+        date: "Mar 05, 2024",
+        label: "SHADOW TRACE: BANCO DE SOMBRAS",
+        description: "Communication intercepted regarding the 'routing protocol' for offshore exit.",
+        type: "milestone",
+    },
 ];
 
 export const evidenceItems: EvidenceItem[] = [

@@ -1,0 +1,20 @@
+ORION HOLDINGS LTD - BANK STATEMENT SUMMARY
+FOR THE PERIOD: JAN 2024 - FEB 2024
+--------------------------------------------------
+ACCOUNT: 8829-1029-XXXX (Alpha Bank, Nicosia)
+CURRENCY: USD
+
+TRANSACTION LOG:
+- JAN 05: INCOMING TRANSFER - $4,200,000 from SYNERGY CORP (REF: SERVICES)
+- JAN 08: OUTGOING TRANSFER - $1,500,000 to BLUEWAVE CORPORATION (REF: ADVISORY)
+- JAN 12: OUTGOING TRANSFER - $850,000 to PERSONAL ACCOUNT (A. VOLKOV)
+- FEB 10: INCOMING TRANSFER - $12,500,000 from SYNERGY CORP (REF: NEXUS PROJECT SETTLEMENT)
+- FEB 12: OUTGOING TRANSFER - $11,000,000 to PANAMA OFFSHORE SERVICES
+
+SIGNATORIES:
+- Alexander Volkov (Primary)
+- Elena Petrova (Secondary)
+
+NOTES:
+The $12.5M transfer matches the suspicious activity flagged in the Project Nexus summary. Orion Holdings is serving as a clearing house for Synergy Corp funds before they move offshore to Panama.
+--------------------------------------------------

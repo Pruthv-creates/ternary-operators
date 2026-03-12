@@ -1,0 +1,18 @@
+[FINANCIAL AUDIT REPORT]
+CASE: VANGUARD OMEGA
+SUBJECT: Nexus Global Holdings Flux
+SOURCE: Forensic Accounting
+
+ENTITIES DETECTED:
+- ID: n5 | NAME: Sarah Patel | TYPE: person | ROLE: Director, Nexus Global | STATUS: Abnormal | RISK: 80
+- ID: n6 | NAME: Nexus Global Holdings | TYPE: company | ROLE: Investment Holding | STATUS: Flagged | RISK: 75
+- ID: n7 | NAME: Orion Energy | TYPE: company | ROLE: Defunct Shell | STATUS: Abnormal | RISK: 100
+- ID: n8 | NAME: Panama Maritime Logistics | TYPE: company | ROLE: Logistics Provider | STATUS: Flagged | RISK: 85
+
+RELATIONSHIPS:
+- n5 (Sarah Patel) -> MANAGES -> n6 (Nexus Global Holdings)
+- n7 (Orion Energy) -> FUNDS -> n6 (Nexus Global Holdings)
+- n6 (Nexus Global Holdings) -> TRANSACTS_WITH -> n8 (Panama Maritime Logistics)
+
+SUMMARY:
+Sarah Patel has authorized $450k incoming from the defunct Orion Energy. These funds were immediately moved to Panama Maritime Logistics, indicating a classic 'layering' phase of money laundering.

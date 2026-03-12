@@ -10,63 +10,60 @@ EVIDENCE_DIR = "evidence"
 DB_DIR = "db"
 
 
-def ingest_documents():
-
+def ingest_documents(case_id: str):
+    """Indices documents for a specific case into a dedicated vector store."""
     documents = []
+    case_evidence_dir = os.path.join(EVIDENCE_DIR, case_id)
+    
+    if not os.path.exists(case_evidence_dir):
+        print(f"No evidence directory for case {case_id}")
+        return
 
-    for file in os.listdir(EVIDENCE_DIR):
+    for file in os.listdir(case_evidence_dir):
+        if file.endswith(".txt") or file.endswith(".pdf") or file.endswith(".md"):
+            try:
+                # Basic TextLoader for tx/md. For PDF you might need PyPDFLoader
+                loader = TextLoader(os.path.join(case_evidence_dir, file))
+                docs = loader.load()
+                for d in docs:
+                    d.metadata["case_id"] = case_id
+                    d.metadata["source"] = file
+                documents.extend(docs)
+            except Exception as e:
+                print(f"Error loading {file}: {e}")
 
-        if file.endswith(".txt"):
+    if not documents:
+        return
 
-            loader = TextLoader(os.path.join(EVIDENCE_DIR, file))
-            docs = loader.load()
-
-            for d in docs:
-                d.metadata["source"] = file
-
-            documents.extend(docs)
-
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=800,
-        chunk_overlap=100
-    )
-
+    splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=100)
     chunks = splitter.split_documents(documents)
+    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
-    embeddings = HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2"
-    )
-
+    case_db_dir = os.path.join(DB_DIR, case_id)
     vectordb = Chroma.from_documents(
         chunks,
         embeddings,
-        persist_directory=DB_DIR
+        persist_directory=case_db_dir
     )
-
     vectordb.persist()
 
 
-def query_rag(question):
+def query_rag(question: str, case_id: str):
+    """Queries the vector store associated with a specific case."""
+    case_db_dir = os.path.join(DB_DIR, case_id)
+    if not os.path.exists(case_db_dir):
+        return "No intelligence database found for this case. Please upload evidence first.", []
 
-    embeddings = HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2"
-    )
-
-    vectordb = Chroma(
-        persist_directory=DB_DIR,
-        embedding_function=embeddings
-    )
-
+    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    vectordb = Chroma(persist_directory=case_db_dir, embedding_function=embeddings)
     retriever = vectordb.as_retriever(search_kwargs={"k": 5})
-
     docs = retriever.invoke(question)
 
     context = "\n\n".join([d.page_content for d in docs])
-
     prompt = f"""
-You are an investigative intelligence assistant.
+You are an investigative intelligence assistant. You are analyzing evidence for Case ID: {case_id}.
 
-Use ONLY the evidence below.
+Use ONLY the evidence below to answer the question. If the information isn't in the evidence, state that you don't know based on current case files.
 
 Evidence:
 {context}
@@ -81,28 +78,28 @@ Question:
     )
 
     answer = response["message"]["content"]
-
-    sources = list(set([d.metadata["source"] for d in docs]))
+    sources = list(set([d.metadata.get("source", "unknown") for d in docs]))
 
     return answer, sources
 
 
-def analyze_graph():
+def analyze_graph(case_id: str):
     """
-    Analyzes all ingested documents to extract entities and relationships.
-    Returns nodes and edges for the knowledge graph.
+    Analyzes case-specific documents to extract entities and relationships.
     """
     import json
     import re
 
     documents = []
-    if not os.path.exists(EVIDENCE_DIR):
+    case_evidence_dir = os.path.join(EVIDENCE_DIR, case_id)
+    
+    if not os.path.exists(case_evidence_dir):
         return {"nodes": [], "edges": []}
 
-    for file in sorted(os.listdir(EVIDENCE_DIR)):
-        if file.endswith(".txt"):
+    for file in sorted(os.listdir(case_evidence_dir)):
+        if file.endswith(".txt") or file.endswith(".md"):
             try:
-                loader = TextLoader(os.path.join(EVIDENCE_DIR, file))
+                loader = TextLoader(os.path.join(case_evidence_dir, file))
                 documents.extend(loader.load())
             except Exception:
                 pass
@@ -112,21 +109,44 @@ def analyze_graph():
 
     # Take only the most relevant chunks to keep context short
     documents.sort(key=lambda x: str(x.metadata.get("source", "")), reverse=True)
-    full_text = "\n\n".join([d.page_content[:1000] for d in documents[:4]])
+    top_docs = documents[:3]
+    full_text = "\n\n".join([d.page_content[:1500] for d in top_docs])
 
-    # Very explicit, compact prompt that works reliably with llama3
-    user_prompt = f"""TASK: Extract named entities and their relationships from the text below.
-Respond with ONLY a JSON object. No explanation, no markdown, no commentary.
+    user_prompt = f"""[STRICT DATA EXTRACTION TASK]
+You are a precision data extractor for an investigative platform. Analyze the text for Case ID: {case_id}.
+Return ONLY a valid JSON object. No words outside of the JSON.
 
-TEXT:
+TEXT TO ANALYZE:
 {full_text}
 
-OUTPUT FORMAT (fill in real values):
-{{"nodes":[{{"id":"n1","name":"Full Name","type":"person","role":"Job Title","status":"Active","credibilityScore":80,"riskScore":40}},{{"id":"n2","name":"Company Name","type":"company","role":"Corporation","status":"Active","credibilityScore":70,"riskScore":60}}],"edges":[{{"source":"n1","target":"n2","label":"controls","credibilityScore":75}}]}}
+JSON SCHEMA:
+{{
+  "nodes": [
+    {{
+      "id": "string (use n1, n2, etc)",
+      "name": "Full Name or Company Name",
+      "type": "person|company|bank|location|offshore",
+      "role": "Specific role, e.g., CEO, Money Launderer, Hub",
+      "status": "Active|Abnormal|Flagged|Inactive",
+      "credibilityScore": 0-100,
+      "riskScore": 0-100
+    }}
+  ],
+  "edges": [
+    {{
+      "source": "id of source node",
+      "target": "id of target node",
+      "label": "relationship type (e.g., controls, owns, transacts_with)",
+      "credibilityScore": 0-100
+    }}
+  ]
+}}
 
-Types allowed: person, company, bank, location, offshore
-Status allowed: Active, Abnormal, Flagged, Inactive
-Scores: integers 0-100
+STRICT RULES:
+1. No Markdown formatting (no ```json).
+2. ONLY one JSON object.
+3. Every person or company must have exactly one node.
+4. Extract only facts present in the text.
 
 JSON:"""
 
@@ -134,68 +154,29 @@ JSON:"""
         response = ollama.chat(
             model="llama3",
             messages=[{"role": "user", "content": user_prompt}],
-            options={"temperature": 0.1, "num_predict": 1500}
+            options={"temperature": 0.1, "num_predict": 1800}
         )
         raw = response["message"]["content"].strip()
 
-        # --- Multi-strategy JSON extraction ---
-
-        # Strategy 1: find the outermost { ... } block
+        # Strategy 1: find JSON block
         brace_match = re.search(r'\{[\s\S]*\}', raw)
         if brace_match:
-            candidate = brace_match.group(0)
             try:
-                result = json.loads(candidate)
-                if "nodes" in result and isinstance(result["nodes"], list):
-                    print(f"[analyze_graph] Parsed {len(result['nodes'])} nodes, {len(result.get('edges', []))} edges")
+                result = json.loads(brace_match.group(0))
+                if "nodes" in result:
                     return result
-            except json.JSONDecodeError:
-                pass
+            except: pass
 
-        # Strategy 2: find JSON inside ```json ... ``` or ``` ... ```
-        for pattern in [r'```json\s*([\s\S]*?)```', r'```\s*([\s\S]*?)```']:
-            match = re.search(pattern, raw)
-            if match:
-                try:
-                    result = json.loads(match.group(1).strip())
-                    if "nodes" in result:
-                        return result
-                except json.JSONDecodeError:
-                    pass
-
-        # Strategy 3: Find arrays directly and reconstruct
-        nodes_match = re.search(r'"nodes"\s*:\s*(\[[\s\S]*?\])', raw)
-        edges_match = re.search(r'"edges"\s*:\s*(\[[\s\S]*?\])', raw)
-        if nodes_match:
+        # Strategy 2: code blocks
+        match = re.search(r'```(?:json)?\s*([\s\S]*?)```', raw)
+        if match:
             try:
-                nodes = json.loads(nodes_match.group(1))
-                edges = json.loads(edges_match.group(1)) if edges_match else []
-                print(f"[analyze_graph] Reconstructed {len(nodes)} nodes via strategy 3")
-                return {"nodes": nodes, "edges": edges}
-            except json.JSONDecodeError:
-                pass
-
-        # Strategy 4: Ask LLM to fix its own output
-        print(f"[analyze_graph] All strategies failed, requesting JSON fix from LLM...")
-        fix_prompt = f"""The following text should be a JSON object with 'nodes' and 'edges' arrays.
-Extract and output ONLY the valid JSON, nothing else:
-
-{raw[:2000]}
-
-JSON:"""
-        fix_response = ollama.chat(
-            model="llama3",
-            messages=[{"role": "user", "content": fix_prompt}],
-            options={"temperature": 0.0, "num_predict": 800}
-        )
-        fix_raw = fix_response["message"]["content"].strip()
-        fix_match = re.search(r'\{[\s\S]*\}', fix_raw)
-        if fix_match:
-            result = json.loads(fix_match.group(0))
-            if "nodes" in result:
-                return result
+                result = json.loads(match.group(1).strip())
+                if "nodes" in result:
+                    return result
+            except: pass
 
     except Exception as e:
-        print(f"[analyze_graph] Error: {e}")
+        print(f"[analyze_graph] Error for {case_id}: {e}")
 
-    return {"nodes": [], "edges": [], "error": "Could not extract graph data from documents."}
+    return {"nodes": [], "edges": [], "error": f"Failed to extract graph for case {case_id}"}

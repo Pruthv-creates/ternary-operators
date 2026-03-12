@@ -1,0 +1,18 @@
+[TACTICAL SURVEILLANCE LOG]
+CASE: VANGUARD OMEGA
+LOCATION: Warehouse 12, London Docks
+SOURCE: Field Ops
+
+ENTITIES DETECTED:
+- ID: n1 | NAME: Mark Altman | TYPE: person | ROLE: Principal | STATUS: Abnormal | RISK: 85
+- ID: n5 | NAME: Sarah Patel | TYPE: person | ROLE: Director | STATUS: Abnormal | RISK: 80
+- ID: n9 | NAME: Warehouse 12 | TYPE: location | ROLE: Central Hub | STATUS: Abnormal | RISK: 90
+- ID: n10 | NAME: Altman Estates | TYPE: company | ROLE: Real Estate Shell | STATUS: Flagged | RISK: 60
+
+RELATIONSHIPS:
+- n1 (Mark Altman) -> LOCATED_AT -> n9 (Warehouse 12)
+- n5 (Sarah Patel) -> COMMUNICATES_WITH -> n1 (Mark Altman)
+- n10 (Altman Estates) -> OWNS -> n9 (Warehouse 12)
+
+SUMMARY:
+Surveillance confirmed a high-level meeting between Mark Altman and Sarah Patel at Warehouse 12. Use of an 'Altman Estates' vehicle suggests this shell company is being used to mask operational movements.

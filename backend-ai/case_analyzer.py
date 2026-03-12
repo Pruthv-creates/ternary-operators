@@ -17,13 +17,16 @@ def get_embeddings():
     return HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
 
-def get_vectordb():
-    return Chroma(persist_directory=DB_DIR, embedding_function=get_embeddings())
+def get_vectordb(case_id: str):
+    case_db_dir = os.path.join(DB_DIR, case_id)
+    if not os.path.exists(case_db_dir):
+        return None
+    return Chroma(persist_directory=case_db_dir, embedding_function=get_embeddings())
 
 
-def analyze_case_quality(case_data: dict) -> dict:
+def analyze_case_quality(case_data: dict, case_id: str) -> dict:
     """
-    Analyzes quality of a case given its node/edge graph data.
+    Analyzes quality of a case given its node/edge graph data and case_id for RAG context.
     Returns a quality score and detailed breakdown.
     """
     nodes = case_data.get("nodes", [])
@@ -49,39 +52,30 @@ def analyze_case_quality(case_data: dict) -> dict:
         }
 
     # --- Data Density Score (0-100) ---
-    # More nodes + edges = richer graph (cap at 30 nodes for 100%)
     data_density = min(100, int((node_count / 30) * 100))
 
     # --- Connectivity Score (0-100) ---
-    # Good graphs have roughly edges_count ~ nodes_count (connected graph)
     ideal_edges = max(node_count - 1, 1)
     connectivity = min(100, int((edge_count / (ideal_edges * 2)) * 100))
 
     # --- Entity Diversity Score (0-100) ---
-    # Count how many different entity types exist
     node_types = set()
     for n in nodes:
         node_type = n.get("data", {}).get("type", "unknown")
         node_types.add(node_type)
-    diversity = min(100, int((len(node_types) / 5) * 100))  # 5 types = 100%
+    diversity = min(100, int((len(node_types) / 5) * 100))
 
     # --- Evidence Coverage (0-100) ---
-    # Count evidence/document/hypothesis nodes
     evidence_nodes = [n for n in nodes if n.get("type") in ["evidence", "hypothesis"]]
     evidence_coverage = min(100, int((len(evidence_nodes) / max(node_count * 0.3, 1)) * 100))
 
     overall = int((data_density * 0.25 + connectivity * 0.35 + diversity * 0.2 + evidence_coverage * 0.2))
 
-    if overall >= 85:
-        grade = "A"
-    elif overall >= 70:
-        grade = "B"
-    elif overall >= 55:
-        grade = "C"
-    elif overall >= 40:
-        grade = "D"
-    else:
-        grade = "F"
+    if overall >= 85: grade = "A"
+    elif overall >= 70: grade = "B"
+    elif overall >= 55: grade = "C"
+    elif overall >= 40: grade = "D"
+    else: grade = "F"
 
     # --- Build entity list for AI context ---
     entity_names = [n.get("data", {}).get("name", n.get("data", {}).get("label", "Unknown")) for n in nodes[:15]]
@@ -94,22 +88,24 @@ def analyze_case_quality(case_data: dict) -> dict:
         for e in edges[:15]
     ]
 
-    # Build context string for LLM
     entity_str = ", ".join(entity_names) if entity_names else "No entities yet"
     edge_str = "; ".join([f"{r['source']} → {r['label']} → {r['target']}" for r in edge_relations[:8]]) or "No connections yet"
 
-    # --- Retrieve relevant context from RAG ---
+    # --- Retrieve relevant context from Case RAG ---
     try:
-        vectordb = get_vectordb()
-        retriever = vectordb.as_retriever(search_kwargs={"k": 4})
-        relevant_docs = retriever.invoke(f"investigation loose ends missing evidence {title}")
-        rag_context = "\n".join([d.page_content[:600] for d in relevant_docs])
+        vectordb = get_vectordb(case_id)
+        if vectordb:
+            retriever = vectordb.as_retriever(search_kwargs={"k": 4})
+            relevant_docs = retriever.invoke(f"investigation loose ends missing evidence for {title}")
+            rag_context = "\n".join([d.page_content[:600] for d in relevant_docs])
+        else:
+            rag_context = "No case-specific evidence vault found. Please upload documents in the Evidence Library."
     except Exception as e:
-        print(f"RAG retrieval warning: {e}")
-        rag_context = "No additional evidence context available."
+        print(f"RAG retrieval warning for {case_id}: {e}")
+        rag_context = "Evidence retrieval interrupted."
 
     # --- LLM Analysis prompt ---
-    prompt = f"""You are a senior intelligence analyst reviewing the case: "{title}".
+    prompt = f"""You are a senior intelligence analyst reviewing the case: "{title}" (ID: {case_id}).
 
 CASE GRAPH SUMMARY:
 - Total Entities/Nodes: {node_count}
@@ -117,10 +113,10 @@ CASE GRAPH SUMMARY:
 - Entity names: {entity_str}
 - Key relationships: {edge_str}
 
-BACKGROUND INTELLIGENCE:
+BACKGROUND INTELLIGENCE (FROM CASE EVIDENCE):
 {rag_context}
 
-Your task: Provide a concise, sharp intelligence analysis. Think like a detective.
+Your task: Provide a concise, sharp intelligence analysis. Think like a detective focusing on this specific case.
 
 Return ONLY valid JSON (no markdown, no explanation):
 {{
@@ -145,30 +141,23 @@ Return ONLY valid JSON (no markdown, no explanation):
         )
         content = response["message"]["content"]
 
-        # Strip markdown if present
         if "```json" in content:
             content = content.split("```json")[1].split("```")[0].strip()
         elif "```" in content:
             content = content.split("```")[1].split("```")[0].strip()
 
-        # Extract just the JSON object
         json_match = re.search(r'\{.*\}', content, re.DOTALL)
         if json_match:
             ai_result = json.loads(json_match.group())
         else:
-            raise ValueError("No JSON found in response")
+            raise ValueError("No JSON in LLM response")
 
     except Exception as e:
-        print(f"LLM analysis error: {e}")
+        print(f"LLM analysis error for {case_id}: {e}")
         ai_result = {
-            "summary": f"Analysis of '{title}': The investigation graph contains {node_count} entities and {edge_count} connections. Expand the entity network and add more evidence to improve coverage.",
-            "looseEnds": [
-                {"title": "Missing financial trail", "description": "No direct financial transaction nodes found connecting key suspects.", "severity": "high"},
-                {"title": "Unverified entity relationships", "description": "Several entities lack documented connections to primary suspects.", "severity": "medium"},
-            ],
-            "pointsOfInterest": [
-                {"title": "Entity cluster analysis", "description": "Look for unexplained patterns in the central cluster of entities.", "type": "connection"},
-            ]
+            "summary": f"Analysis of '{title}': Baseline graph analysis completed. Evidence library suggests deeper exploration of entity clusters.",
+            "looseEnds": [],
+            "pointsOfInterest": []
         }
 
     return {

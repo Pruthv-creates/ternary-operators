@@ -1,13 +1,20 @@
 import { NextResponse } from "next/server";
 
-export async function POST() {
+export async function POST(req: Request) {
   try {
-    const res = await fetch("http://localhost:8000/analyze", {
+    const body = await req.json();
+    const caseId = body.caseId;
+
+    if (!caseId) {
+      return NextResponse.json({ error: "caseId is required" }, { status: 400 });
+    }
+
+    const res = await fetch(`http://localhost:8000/analyze?case_id=${caseId}`, {
       method: "POST",
     });
 
     if (!res.ok) {
-      throw new Error(`Backend returned ${res.status}`);
+      throw new Error(`AI Backend returned ${res.status}`);
     }
 
     const data = await res.json();

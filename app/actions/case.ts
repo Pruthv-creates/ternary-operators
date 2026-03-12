@@ -343,3 +343,16 @@ export async function deleteCase(caseId: string, userId: string) {
     return { success: false, error: String(error) };
   }
 }
+
+export async function getCaseDocuments(caseId: string) {
+  try {
+    const docs = await prisma.document.findMany({
+      where: { caseId },
+      orderBy: { createdAt: "desc" },
+    });
+    return docs;
+  } catch (error) {
+    console.error("Failed to fetch case documents:", error);
+    return [];
+  }
+}

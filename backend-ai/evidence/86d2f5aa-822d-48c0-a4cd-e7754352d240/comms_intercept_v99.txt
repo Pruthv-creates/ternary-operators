@@ -1,0 +1,18 @@
+[INTELLIGENCE REPORT #99-V]
+CASE: VANGUARD OMEGA
+SUBJECT: Comms Intercept - Altman/Vanguard
+SOURCE: Signals Intelligence (SIGINT)
+
+ENTITIES DETECTED:
+- ID: n1 | NAME: Mark Altman | TYPE: person | ROLE: Principal, Altman Associates | STATUS: Abnormal | RISK: 85
+- ID: n2 | NAME: Altman Associates | TYPE: company | ROLE: Financial Services | STATUS: Flagged | RISK: 70
+- ID: n3 | NAME: Vanguard Group | TYPE: company | ROLE: Criminal Syndicate | STATUS: Abnormal | RISK: 95
+- ID: n4 | NAME: Nicosia Shell | TYPE: company | ROLE: Offshore Entity | STATUS: Abnormal | RISK: 90
+
+RELATIONSHIPS:
+- n1 (Mark Altman) -> EMPLOYS -> n2 (Altman Associates)
+- n3 (Vanguard Group) -> CONTROLS -> n1 (Mark Altman)
+- n2 (Altman Associates) -> TRANSACTS_WITH -> n4 (Nicosia Shell)
+
+SUMMARY:
+Intercept confirms Mark Altman is operating under direct orders from Vanguard Group. Funds are being routed through the Nicosia Shell to bypass UK regulators.

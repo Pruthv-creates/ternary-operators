@@ -238,6 +238,7 @@ export default function CasesPage() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
+                    case_id: selectedCase.id,
                     title: selectedCase.title,
                     nodes: graph.nodes,
                     edges: graph.edges,

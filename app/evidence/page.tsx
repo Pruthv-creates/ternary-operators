@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useInvestigationStore } from "@/store/investigationStore";
+import { getCaseDocuments } from "@/app/actions/case";
 import {
   Upload,
   FileText,
@@ -22,25 +24,49 @@ import { cn } from "@/lib/utils";
 
 type UploadStatus = "idle" | "uploading" | "success" | "error";
 
-interface UploadedFile {
+interface EvidenceFile {
   id: string;
   name: string;
   size: number;
   status: UploadStatus;
   message?: string;
   timestamp: Date;
+  fileType?: string;
 }
 
 type AIResponse = { answer: string; sources: string[] };
 
 export default function EvidencePage() {
-  const [files, setFiles] = useState<UploadedFile[]>([]);
+  const { currentCaseId } = useInvestigationStore();
+  const [files, setFiles] = useState<EvidenceFile[]>([]);
   const [dragging, setDragging] = useState(false);
   const [question, setQuestion] = useState("");
   const [loading, setLoading] = useState(false);
   const [aiResult, setAiResult] = useState<AIResponse | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Load case-specific evidence on mount/case change
+  useEffect(() => {
+    async function fetchDocs() {
+      if (!currentCaseId) return;
+      try {
+        const docs = await getCaseDocuments(currentCaseId);
+        const mapped: EvidenceFile[] = docs.map(d => ({
+          id: d.id,
+          name: d.title,
+          size: 0, // Metadata might not have size
+          status: "success",
+          timestamp: new Date(d.createdAt),
+          fileType: d.fileType
+        }));
+        setFiles(mapped);
+      } catch (err) {
+        console.error("Failed to fetch documents:", err);
+      }
+    }
+    fetchDocs();
+  }, [currentCaseId]);
 
   /* ── Drag & Drop ── */
   const onDragOver = useCallback((e: React.DragEvent) => {
@@ -58,7 +84,12 @@ export default function EvidencePage() {
 
   /* ── Upload ── */
   async function handleFiles(newFiles: File[]) {
-    const uploads: UploadedFile[] = newFiles.map((f) => ({
+    if (!currentCaseId) {
+      alert("Please select or create an investigation case first.");
+      return;
+    }
+
+    const uploads: EvidenceFile[] = newFiles.map((f) => ({
       id: crypto.randomUUID(),
       name: f.name,
       size: f.size,
@@ -74,16 +105,23 @@ export default function EvidencePage() {
 
       const fd = new FormData();
       fd.append("file", file);
+      // Pass caseId to backend
+      fd.append("caseId", currentCaseId);
 
       try {
-        const res = await fetch("/api/ai/upload", { method: "POST", body: fd });
+        // Updated API path to include caseId query param or body
+        const res = await fetch(`/api/ai/upload?caseId=${currentCaseId}`, { 
+          method: "POST", 
+          body: fd 
+        });
+        
         if (!res.ok) throw new Error();
         const data = await res.json();
 
         setFiles((prev) =>
           prev.map((f) =>
             f.id === entry.id
-              ? { ...f, status: "success", message: data.message ?? "Indexed successfully" }
+              ? { ...f, status: "success", message: data.message ?? "Indexed into Case Vault" }
               : f
           )
         );
@@ -101,7 +139,7 @@ export default function EvidencePage() {
 
   /* ── Ask AI ── */
   async function askAI() {
-    if (!question.trim()) return;
+    if (!question.trim() || !currentCaseId) return;
     setLoading(true);
     setAiResult(null);
     setAiError(null);
@@ -110,13 +148,13 @@ export default function EvidencePage() {
       const res = await fetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({ question, caseId: currentCaseId }),
       });
       if (!res.ok) throw new Error();
       const data: AIResponse = await res.json();
       setAiResult(data);
     } catch {
-      setAiError("Astra AI is currently unavailable. Verify the RAG engine status.");
+      setAiError("Astra AI is currently unavailable for this cluster. Verify RAG engine status.");
     } finally {
       setLoading(false);
     }

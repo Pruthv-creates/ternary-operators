@@ -93,22 +93,34 @@ export default function VoiceComms({ caseId, currentUser }: VoiceCommsProps) {
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const analysersRef = useRef<Record<string, AnalyserNode>>({});
-  const animFrames = useRef<Record<string, number>>({});
+  const gainNodesRef = useRef<Record<string, GainNode>>({});
+  const animFrames = useRef<Record<string, number>>();
+  if (!animFrames.current) animFrames.current = {};
 
-  // ─── Audio Analysis ───────────────────────────────────────────────────────
-  const setupAudioAnalysis = useCallback((key: string, stream: MediaStream) => {
+  // ─── Ensure AudioContext is ready ────────────────────────────────────────
+  const getAudioContext = useCallback(() => {
+    if (!audioContextRef.current || audioContextRef.current.state === "closed") {
+      audioContextRef.current = new (window.AudioContext ||
+        (window as any).webkitAudioContext)({
+          latencyHint: "interactive",
+          sampleRate: 48000,
+        });
+    }
+    if (audioContextRef.current.state === "suspended") {
+      audioContextRef.current.resume();
+    }
+    return audioContextRef.current;
+  }, []);
+
+  // ─── Local mic analysis (no boost — just metering) ────────────────────────
+  const setupLocalAudioAnalysis = useCallback((key: string, stream: MediaStream) => {
     try {
-      if (!audioContextRef.current || audioContextRef.current.state === "closed") {
-        audioContextRef.current = new (window.AudioContext ||
-          (window as any).webkitAudioContext)();
-      }
-      if (audioContextRef.current.state === "suspended") {
-        audioContextRef.current.resume();
-      }
-      const source = audioContextRef.current.createMediaStreamSource(stream);
-      const analyser = audioContextRef.current.createAnalyser();
-      analyser.fftSize = 64;
+      const ctx = getAudioContext();
+      const source = ctx.createMediaStreamSource(stream);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 128;
       source.connect(analyser);
+      // NOTE: do NOT connect to ctx.destination — would cause mic loopback/echo
       analysersRef.current[key] = analyser;
 
       const check = () => {
@@ -116,14 +128,75 @@ export default function VoiceComms({ caseId, currentUser }: VoiceCommsProps) {
         const data = new Uint8Array(analyser.frequencyBinCount);
         analyser.getByteFrequencyData(data);
         const avg = data.reduce((a, b) => a + b, 0) / data.length;
-        setActiveSpeakers((prev) => ({ ...prev, [key]: avg > 20 }));
-        animFrames.current[key] = requestAnimationFrame(check);
+        setActiveSpeakers((prev) => ({ ...prev, [key]: avg > 15 }));
+        animFrames.current![key] = requestAnimationFrame(check);
       };
       check();
     } catch (e) {
-      console.warn("Audio analysis failed:", e);
+      console.warn("Local audio analysis failed:", e);
     }
-  }, []);
+  }, [getAudioContext]);
+
+  // ─── Remote audio: boost + compress + analyse ─────────────────────────────
+  // Routes: source → gain (×2 boost) → compressor (clarity) → destination (speakers)
+  //                           └→ analyser (speaker detection)
+  const setupRemoteAudioProcessing = useCallback((key: string, stream: MediaStream) => {
+    try {
+      const ctx = getAudioContext();
+      const source = ctx.createMediaStreamSource(stream);
+
+      // 1. Gain node — doubles the volume
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(2.0, ctx.currentTime); // 2× amplification
+      gainNodesRef.current[key] = gain;
+
+      // 2. Dynamics compressor — reduces harsh peaks, brings up quiet voices
+      const compressor = ctx.createDynamicsCompressor();
+      compressor.threshold.setValueAtTime(-24, ctx.currentTime); // start compressing at -24dB
+      compressor.knee.setValueAtTime(12, ctx.currentTime);        // soft knee for natural sound
+      compressor.ratio.setValueAtTime(4, ctx.currentTime);        // 4:1 ratio
+      compressor.attack.setValueAtTime(0.003, ctx.currentTime);   // fast attack
+      compressor.release.setValueAtTime(0.15, ctx.currentTime);   // smooth release
+
+      // 3. High-pass filter — removes low-frequency rumble/noise below 80Hz
+      const highPass = ctx.createBiquadFilter();
+      highPass.type = "highpass";
+      highPass.frequency.setValueAtTime(80, ctx.currentTime);
+      highPass.Q.setValueAtTime(0.7, ctx.currentTime);
+
+      // 4. Presence boost — slight boost in the 2-4kHz range for speech clarity
+      const presenceEQ = ctx.createBiquadFilter();
+      presenceEQ.type = "peaking";
+      presenceEQ.frequency.setValueAtTime(3000, ctx.currentTime);
+      presenceEQ.gain.setValueAtTime(4, ctx.currentTime); // +4dB at 3kHz
+      presenceEQ.Q.setValueAtTime(1, ctx.currentTime);
+
+      // 5. Analyser for speaking detection
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 128;
+      analysersRef.current[key] = analyser;
+
+      // Wire the chain: source → highPass → presenceEQ → gain → compressor → destination
+      source.connect(highPass);
+      highPass.connect(presenceEQ);
+      presenceEQ.connect(gain);
+      gain.connect(compressor);
+      compressor.connect(ctx.destination); // → speakers
+      gain.connect(analyser);              // → speaking detector (tap off gain node)
+
+      const check = () => {
+        if (!analysersRef.current[key] || !isActiveRef.current) return;
+        const data = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteFrequencyData(data);
+        const avg = data.reduce((a, b) => a + b, 0) / data.length;
+        setActiveSpeakers((prev) => ({ ...prev, [key]: avg > 15 }));
+        animFrames.current![key] = requestAnimationFrame(check);
+      };
+      check();
+    } catch (e) {
+      console.warn("Remote audio processing failed:", e);
+    }
+  }, [getAudioContext]);
 
   // ─── Flush Pending ICE Candidates ────────────────────────────────────────
   const flushPendingCandidates = useCallback(async (peerKey: string) => {
@@ -144,12 +217,16 @@ export default function VoiceComms({ caseId, currentUser }: VoiceCommsProps) {
   // ─── Peer Cleanup ─────────────────────────────────────────────────────────
   const cleanupPeer = useCallback((peerKey: string) => {
     console.log(`🧹 Cleaning up peer: ${peerKey}`);
-    if (animFrames.current[peerKey]) {
+    if (animFrames.current?.[peerKey]) {
       cancelAnimationFrame(animFrames.current[peerKey]);
       delete animFrames.current[peerKey];
     }
     if (analysersRef.current[peerKey]) {
       delete analysersRef.current[peerKey];
+    }
+    if (gainNodesRef.current[peerKey]) {
+      try { gainNodesRef.current[peerKey].disconnect(); } catch {}
+      delete gainNodesRef.current[peerKey];
     }
     if (peerConnections.current[peerKey]) {
       peerConnections.current[peerKey].ontrack = null;
@@ -323,10 +400,10 @@ export default function VoiceComms({ caseId, currentUser }: VoiceCommsProps) {
         }
       };
 
-      // Remote track received
+      // Remote track received — run through Web Audio boost+clarity chain
       pc.ontrack = ({ streams }) => {
         if (!streams[0]) return;
-        console.log(`🔊 Remote audio from ${userName}`);
+        console.log(`🔊 Remote audio from ${userName} — applying boost & EQ`);
         setPeers((prev) => ({
           ...prev,
           [peerKey]: {
@@ -337,12 +414,13 @@ export default function VoiceComms({ caseId, currentUser }: VoiceCommsProps) {
             state: "connected",
           },
         }));
-        setupAudioAnalysis(peerKey, streams[0]);
+        // Run through gain + compressor + EQ chain (routes to speakers internally)
+        setupRemoteAudioProcessing(peerKey, streams[0]);
       };
 
       return pc;
     },
-    [currentUser.id, currentUser.name, sessionId, setupAudioAnalysis, cleanupPeer, flushPendingCandidates]
+    [currentUser.id, currentUser.name, sessionId, setupRemoteAudioProcessing, cleanupPeer, flushPendingCandidates]
   );
 
   // ─── Initiate Offer ───────────────────────────────────────────────────────
@@ -531,7 +609,7 @@ export default function VoiceComms({ caseId, currentUser }: VoiceCommsProps) {
       setIsActive(true);
       isActiveRef.current = true;
 
-      setupAudioAnalysis(`${currentUser.id}:${sessionId}`, stream);
+      setupLocalAudioAnalysis(`${currentUser.id}:${sessionId}`, stream);
 
       // Announce presence — any active peers will initiate toward us (or we toward them based on sessionId ordering)
       console.log("📣 Broadcasting join...");
@@ -569,8 +647,8 @@ export default function VoiceComms({ caseId, currentUser }: VoiceCommsProps) {
     localStreamRef.current?.getTracks().forEach((t) => t.stop());
     localStreamRef.current = null;
 
-    Object.keys(animFrames.current).forEach((k) => cancelAnimationFrame(animFrames.current[k]));
-    animFrames.current = {};
+    Object.keys(animFrames.current ?? {}).forEach((k) => cancelAnimationFrame(animFrames.current![k]));
+    if (animFrames.current) animFrames.current = {};
 
     Object.keys(peerConnections.current).forEach(cleanupPeer);
 
@@ -835,15 +913,8 @@ export default function VoiceComms({ caseId, currentUser }: VoiceCommsProps) {
                   <div className="text-[12px] font-black text-white uppercase">
                     {peer.userName.substring(0, 2)}
                   </div>
-                  {/* Hidden audio element */}
-                  <audio
-                    autoPlay
-                    playsInline
-                    ref={(el) => {
-                      if (el && peer.stream) el.srcObject = peer.stream;
-                    }}
-                    hidden
-                  />
+                  {/* Audio is routed via Web Audio API chain (gain → compressor → ctx.destination).
+                       No <audio> element needed — avoids double playback / echo. */}
                   {peer.state === "connecting" && (
                     <motion.div
                       animate={{ rotate: 360 }}

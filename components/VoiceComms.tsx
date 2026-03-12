@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Mic, MicOff, PhoneOff, Users, Radio, Signal, Volume2, ShieldCheck, Headphones } from "lucide-react";
+import { Mic, MicOff, PhoneOff, Users, Radio, Signal, Volume2, ShieldCheck, Headphones, AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -25,9 +25,11 @@ interface PeerConnection {
 export default function VoiceComms({ caseId, currentUser }: VoiceCommsProps) {
   const [isActive, setIsActive] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [peers, setPeers] = useState<Record<string, PeerConnection>>({});
   const [activeSpeakers, setActiveSpeakers] = useState<Record<string, boolean>>({});
   
+  const isActiveRef = useRef(false);
   const sessionId = useRef(Math.random().toString(36).substring(7)).current;
   const localStreamRef = useRef<MediaStream | null>(null);
   const peerConnections = useRef<Record<string, RTCPeerConnection>>({});
@@ -74,7 +76,7 @@ export default function VoiceComms({ caseId, currentUser }: VoiceCommsProps) {
         analysersRef.current[key] = analyser;
 
         const checkSpeaking = () => {
-            if (!analysersRef.current[key] || !isActive) return;
+            if (!analysersRef.current[key] || !isActiveRef.current) return;
             const dataArray = new Uint8Array(analyser.frequencyBinCount);
             analyser.getByteFrequencyData(dataArray);
             const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
@@ -90,7 +92,7 @@ export default function VoiceComms({ caseId, currentUser }: VoiceCommsProps) {
     } catch (e) {
         console.warn("Audio analysis setup failed", e);
     }
-  }, [isActive]);
+  }, []); // Static reference
 
   const createPeerConnection = useCallback(async (targetUserId: string, targetSessionId: string, userName: string, isInitiator: boolean) => {
     const peerKey = `${targetUserId}:${targetSessionId}`;
@@ -171,6 +173,14 @@ export default function VoiceComms({ caseId, currentUser }: VoiceCommsProps) {
 
   const joinChannel = async () => {
     try {
+      setError(null);
+      if (!currentUser.id) {
+          throw new Error("Identity not verified. Please check login.");
+      }
+      if (!channelRef.current) {
+        throw new Error("Comms System Offline. Please refresh.");
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
             echoCancellation: true,
@@ -181,11 +191,13 @@ export default function VoiceComms({ caseId, currentUser }: VoiceCommsProps) {
       
       localStreamRef.current = stream;
       setIsActive(true);
+      isActiveRef.current = true;
       
       // Analyze our own audio
       setupAudioAnalysis(`${currentUser.id}:${sessionId}`, stream);
 
-      channelRef.current.send({
+      console.log("🚀 Transmitting voice-join signal...");
+      const signal = await channelRef.current.send({
         type: "broadcast",
         event: "voice-join",
         payload: {
@@ -194,8 +206,13 @@ export default function VoiceComms({ caseId, currentUser }: VoiceCommsProps) {
           sessionId: sessionId
         }
       });
-    } catch (err) {
-      console.error("Microphone Access Blocked:", err);
+      
+      if (signal !== 'ok') {
+          console.warn("Signal Broadcast Status:", signal);
+      }
+    } catch (err: any) {
+      console.error("Microphone Access Error:", err);
+      setError(err.name === 'NotAllowedError' ? "Microphone Permission Denied" : err.message);
       setIsActive(false);
     }
   };
@@ -215,6 +232,7 @@ export default function VoiceComms({ caseId, currentUser }: VoiceCommsProps) {
     }
     
     setIsActive(false);
+    isActiveRef.current = false;
     setActiveSpeakers({});
     if (audioContextRef.current) {
         audioContextRef.current.close().catch(() => {});
@@ -283,10 +301,10 @@ export default function VoiceComms({ caseId, currentUser }: VoiceCommsProps) {
       });
 
     return () => {
-      leaveChannel();
+      // Internal cleanup only, don't trigger state resets here
       if (channelRef.current) supabase.removeChannel(channelRef.current);
     };
-  }, [caseId, createPeerConnection, cleanupPeer, currentUser.id, sessionId, leaveChannel]);
+  }, [caseId, createPeerConnection, cleanupPeer, currentUser.id, sessionId]); // Stabilized deps
 
   const toggleMute = () => {
     if (localStreamRef.current) {
@@ -351,9 +369,15 @@ export default function VoiceComms({ caseId, currentUser }: VoiceCommsProps) {
                 {!isActive ? (
                     <button 
                         onClick={joinChannel}
-                        className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-xl shadow-blue-900/40 border border-blue-400/30 active:scale-95"
+                        disabled={!currentUser.id}
+                        className={cn(
+                            "px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border active:scale-95",
+                            !currentUser.id 
+                                ? "bg-white/5 border-white/10 text-slate-600 cursor-not-allowed" 
+                                : "bg-blue-600 hover:bg-blue-500 text-white shadow-xl shadow-blue-900/40 border-blue-400/30"
+                        )}
                     >
-                        Establish Link
+                        {!currentUser.id ? "Identity Missing" : "Establish Link"}
                     </button>
                 ) : (
                     <div className="flex items-center gap-2 bg-black/20 p-1.5 rounded-xl border border-white/5">
@@ -379,6 +403,18 @@ export default function VoiceComms({ caseId, currentUser }: VoiceCommsProps) {
         </div>
 
         <AnimatePresence>
+            {error && (
+                <motion.div 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="mt-4 p-2 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2"
+                >
+                    <AlertCircle size={14} className="text-red-500" />
+                    <span className="text-[10px] font-bold text-red-500 uppercase tracking-tighter">{error}</span>
+                </motion.div>
+            )}
+
             {isActive && (
                 <motion.div 
                     initial={{ height: 0, opacity: 0, marginTop: 0 }}

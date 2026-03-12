@@ -244,6 +244,8 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
                     role: n.role, 
                     type: n.type, 
                     status: n.status || "Active",
+                    credibilityScore: n.credibilityScore,
+                    riskScore: n.riskScore,
                     avatar: n.type === "person" ? `https://i.pravatar.cc/150?u=${n.id}` : undefined,
                     isNew: true 
                 },

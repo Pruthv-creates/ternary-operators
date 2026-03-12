@@ -123,7 +123,9 @@ Output ONLY a valid JSON object with the following structure:
       "name": "Full Name",
       "type": "person|company|bank|location|offshore",
       "role": "Their job or function",
-      "status": "Active|Abnormal|Flagged|Inactive"
+      "status": "Active|Abnormal|Flagged|Inactive",
+      "credibilityScore": 0-100,
+      "riskScore": 0-100
     }}
   ],
   "edges": [
@@ -136,7 +138,10 @@ Output ONLY a valid JSON object with the following structure:
   ]
 }}
 
-Ensure all IDs mentioned in 'edges' exist in 'nodes'.
+Guidelines:
+- credibilityScore: 0-100 based on how well-documented or verified the entity is in the evidence.
+- riskScore: 0-100 based on suspicious activity, criminal ties, or illicit patterns revealed in the text.
+- Ensure all IDs mentioned in 'edges' exist in 'nodes'.
 """
 
     response = ollama.chat(

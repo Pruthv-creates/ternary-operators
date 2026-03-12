@@ -22,6 +22,9 @@ import { useInvestigationStore } from "@/store/investigationStore";
 import { Brain, Loader2, Plus, Shield, Search, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
+import CanvasToolbarLeft from "./canvas/CanvasToolbarLeft";
+import CanvasToolbarRight from "./canvas/CanvasToolbarRight";
+import GhostCursors from "./canvas/GhostCursors";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const nodeTypes: any = {
@@ -266,111 +269,23 @@ function CanvasInner() {
             {/* UI Overlays — CollaboratorsBar removed, presence shown inline in toolbar */}
             
             {/* Canvas toolbar — Left */}
-            <div className="absolute top-3 left-4 z-10 flex items-center gap-2">
-                <div className="flex items-center gap-0.5 px-2 py-1 rounded-lg bg-[#0d1424]/90 border border-[#1e3a5f]/50 backdrop-blur-sm shadow-sm">
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse mr-1.5" />
-                    <span className="text-[9px] font-black text-blue-400 uppercase tracking-[0.2em]">Investigation Canvas</span>
-                </div>
-
-                <button
-                    onClick={runAIAnalysis}
-                    disabled={analyzing}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition-all disabled:opacity-50 shadow-lg shadow-indigo-900/40"
-                >
-                    {analyzing ? <Loader2 size={13} className="animate-spin" /> : <Brain size={13} />}
-                    <span className="text-[10px] font-black uppercase tracking-wider">AI Analysis</span>
-                </button>
-
-                <button
-                    onClick={addNewEntity}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0d1424]/90 border border-[#1e3a5f]/50 hover:bg-slate-800 text-slate-300 transition-all shadow-sm backdrop-blur-sm"
-                >
-                    <Plus size={13} className="text-blue-400" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider">Add Entity</span>
-                </button>
-
-                <button
-                    onClick={() => addStickyNote({ x: 400, y: 300 })}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#fde88a]/90 backdrop-blur-sm border border-[#d6b83f]/50 text-[#422006] hover:bg-[#f0d060] transition-all shadow-sm font-black text-[10px] uppercase tracking-wider"
-                >
-                    <Plus size={13} strokeWidth={3} />
-                    Sticky
-                </button>
-
-                <div className="h-5 w-px bg-slate-700/50" />
-
-                <div className="flex bg-[#0d1424]/90 backdrop-blur-sm p-0.5 rounded-lg border border-[#1e3a5f]/50 shadow-sm">
-                    {["all", "entity", "evidence"].map((f) => (
-                        <button
-                            key={f}
-                            onClick={() => setActiveFilter(f)}
-                            className={cn(
-                                "px-2.5 py-1 rounded text-[9px] font-bold uppercase tracking-widest transition-all",
-                                activeFilter === f ? "bg-blue-500 text-white shadow-sm" : "text-slate-500 hover:text-slate-300"
-                            )}
-                        >
-                            {f}
-                        </button>
-                    ))}
-                </div>
-
-                {aiMessage && (
-                    <div className={cn(
-                        "px-3 py-1.5 rounded-lg border text-[10px] font-bold uppercase tracking-wider animate-in fade-in slide-in-from-left-2",
-                        aiMessage.startsWith("⚠️") || aiMessage.startsWith("⏱")
-                            ? "bg-red-500/10 border-red-500/20 text-red-400"
-                            : aiMessage.startsWith("✓")
-                                ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-                                : "bg-amber-500/10 border-amber-500/20 text-amber-400"
-                    )}>
-                        {aiMessage}
-                    </div>
-                )}
-            </div>
-
+            <CanvasToolbarLeft
+                analyzing={analyzing}
+                runAIAnalysis={runAIAnalysis}
+                addNewEntity={addNewEntity}
+                activeFilter={activeFilter}
+                setActiveFilter={setActiveFilter}
+                aiMessage={aiMessage}
+            />
 
             {/* Canvas toolbar — Right */}
-            <div className="absolute top-3 right-4 z-10 flex items-center gap-2">
-                {/* Search */}
-                <div className={cn(
-                    "flex items-center transition-all duration-300 rounded-lg border",
-                    isSearching
-                        ? "w-44 bg-[#0d1424] border-blue-500/50"
-                        : "w-9 bg-[#0d1424]/90 border-[#1e3a5f]/50 backdrop-blur-sm"
-                )}>
-                    <button
-                        onClick={() => setIsSearching(!isSearching)}
-                        className="w-9 h-9 flex items-center justify-center text-slate-400 flex-shrink-0"
-                    >
-                        <Search size={14} strokeWidth={2.5} />
-                    </button>
-                    {isSearching && (
-                        <input
-                            autoFocus
-                            placeholder="Find node..."
-                            value={searchQuery}
-                            onChange={(e) => handleSearch(e.target.value)}
-                            className="bg-transparent border-none outline-none text-[11px] text-white w-full pr-2 placeholder:text-slate-600"
-                        />
-                    )}
-                </div>
-
-                {/* Live collaborators from real presence data */}
-                {Object.keys(collaborators).length > 0 && (
-                    <div className="flex -space-x-1.5 pl-1 border-l border-slate-700/50">
-                        {Object.values(collaborators).slice(0, 4).map((c) => (
-                            <div
-                                key={c.userId}
-                                title={c.name}
-                                className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold text-white border-2 border-[#0a0f1c]"
-                                style={{ backgroundColor: c.color }}
-                            >
-                                {c.name?.substring(0, 2).toUpperCase()}
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
+            <CanvasToolbarRight
+                isSearching={isSearching}
+                setIsSearching={setIsSearching}
+                searchQuery={searchQuery}
+                handleSearch={handleSearch}
+                collaborators={collaborators}
+            />
 
             <ReactFlow
                 nodes={filteredNodes}
@@ -393,61 +308,7 @@ function CanvasInner() {
             </ReactFlow>
 
             {/* Ghost cursor overlay — separate layer so ReactFlow canvas doesn't re-render on moves */}
-            <div className="absolute inset-0 pointer-events-none z-20">
-                {Object.values(collaborators).map((user) => (
-                    <div
-                        key={user.userId}
-                        className="absolute"
-                        style={{
-                            left: user.x,
-                            top: user.y,
-                            transition: `left ${CURSOR_THROTTLE_MS}ms linear, top ${CURSOR_THROTTLE_MS}ms linear`,
-                        }}
-                    >
-                        {/* Cursor SVG */}
-                        <svg
-                            width="20"
-                            height="20"
-                            viewBox="0 0 16 16"
-                            fill="none"
-                            style={{ filter: `drop-shadow(0 1px 2px rgba(0,0,0,0.5))` }}
-                        >
-                            <path
-                                d="M0 0 L0 11 L3 8.5 L5.5 14 L7 13.5 L4.5 8 L8 8 Z"
-                                fill={user.color}
-                                stroke="rgba(0,0,0,0.5)"
-                                strokeWidth="1"
-                            />
-                        </svg>
-                        {/* Name tag — positioned to the right of the cursor tip */}
-                        <div
-                            style={{
-                                position: "absolute",
-                                top: "0px",
-                                left: "18px",
-                                backgroundColor: user.color,
-                                borderRadius: "4px",
-                                padding: "2px 7px",
-                                whiteSpace: "nowrap",
-                                boxShadow: "0 2px 8px rgba(0,0,0,0.5)",
-                            }}
-                        >
-                            <span
-                                style={{
-                                    color: "#fff",
-                                    fontSize: "11px",
-                                    fontWeight: 700,
-                                    fontFamily: "sans-serif",
-                                    letterSpacing: "0.03em",
-                                    textShadow: "0 1px 2px rgba(0,0,0,0.3)",
-                                }}
-                            >
-                                {user.name}
-                            </span>
-                        </div>
-                    </div>
-                ))}
-            </div>
+            <GhostCursors collaborators={collaborators} throttleMs={CURSOR_THROTTLE_MS} />
         </div>
     );
 }

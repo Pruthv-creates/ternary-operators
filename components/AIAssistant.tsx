@@ -31,7 +31,7 @@ type AIResponse = {
 
 interface AIAssistantProps {
     actions: AIAction[];
-    askAI?: (question: string) => Promise<AIResponse>;
+    askAI?: (question: string, caseId?: string) => Promise<AIResponse>;
     isPanel?: boolean;
     onClose?: () => void;
 }

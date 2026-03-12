@@ -8,7 +8,7 @@ type AIResponse = {
 export function useAI() {
     const [loading, setLoading] = useState(false);
 
-    async function askAI(question: string, caseId: string): Promise<AIResponse> {
+    async function askAI(question: string, caseId?: string): Promise<AIResponse> {
         setLoading(true);
         try {
             const res = await fetch("/api/ai", {

@@ -9,6 +9,8 @@ import ProfilePanel from "./ProfilePanel";
 import CollaboratorInvite from "./CollaboratorInvite";
 import TeamChat from "./TeamChat";
 import VoiceComms from "./VoiceComms";
+import ChatSidePanel from "./topbar/ChatSidePanel";
+import VoiceCommsOverlay from "./topbar/VoiceCommsOverlay";
 import { useInvestigationStore } from "@/store/investigationStore";
 import { getCaseInvestigators, deleteCase } from "@/app/actions/case";
 import { useRouter } from "next/navigation";
@@ -264,57 +266,12 @@ export default function Topbar() {
 
         </header>
 
-        {/* ── Voice Comms floating panel ──────────────────────────────────────
-             IMPORTANT: VoiceComms is ALWAYS mounted — never conditionally rendered.
-             Closing the panel only hides it visually (CSS/animation). This ensures
-             the WebRTC connection and audio streams persist when the user closes
-             the panel. Only the user clicking "End Call" stops the connection.
-        ────────────────────────────────────────────────────── */}
-        {fullUser && currentCaseId && (
-            <motion.div
-                animate={{
-                    opacity: voiceOpen ? 1 : 0,
-                    y: voiceOpen ? 0 : -10,
-                    scale: voiceOpen ? 1 : 0.97,
-                    pointerEvents: voiceOpen ? "auto" : "none",
-                }}
-                initial={false}
-                transition={{ type: "spring", damping: 28, stiffness: 300 }}
-                className="fixed top-[56px] right-[260px] z-[80] w-[480px] max-w-[calc(100vw-2rem)]"
-            >
-                {/* Arrow notch */}
-                <div className="absolute -top-1.5 right-[68px] w-3 h-3 bg-[#0d1424] border-l border-t border-[#1e3a5f]/50 rotate-45" />
-                <div className="mt-1 rounded-2xl overflow-hidden shadow-[0_24px_80px_rgba(0,0,0,0.7)] border border-[#1e3a5f]/40">
-                    <VoiceComms
-                        caseId={currentCaseId}
-                        currentUser={{
-                            id: fullUser.id,
-                            name: fullUser.name,
-                            avatar: fullUser.avatar,
-                        }}
-                        onActiveChange={setVoiceActive}
-                    />
-                </div>
-            </motion.div>
-        )}
-
-        {/* No-case placeholder — only shown when panel open but no case selected */}
-        {fullUser && !currentCaseId && voiceOpen && (
-            <motion.div
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                className="fixed top-[56px] right-[260px] z-[80] w-[480px] max-w-[calc(100vw-2rem)]"
-            >
-                <div className="mt-1 rounded-2xl overflow-hidden shadow-[0_24px_80px_rgba(0,0,0,0.7)] border border-[#1e3a5f]/40 bg-[#0d1424]/95 backdrop-blur-xl p-8 flex flex-col items-center text-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                        <Radio size={22} className="text-emerald-500" />
-                    </div>
-                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">No Case Active</p>
-                    <p className="text-[10px] text-slate-600 max-w-[240px]">Open a case to enable tactical voice communications.</p>
-                </div>
-            </motion.div>
-        )}
+        <VoiceCommsOverlay
+            fullUser={fullUser}
+            currentCaseId={currentCaseId}
+            voiceOpen={voiceOpen}
+            setVoiceActive={setVoiceActive}
+        />
 
         {fullUser && (
             <ProfilePanel 
@@ -326,61 +283,12 @@ export default function Topbar() {
 
         {/* Chat Side Panel */}
         <AnimatePresence>
-            {chatOpen && fullUser && (
-                <>
-                    <motion.div 
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={() => setChatOpen(false)}
-                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]"
-                    />
-                    <motion.div 
-                        initial={{ x: "100%" }}
-                        animate={{ x: 0 }}
-                        exit={{ x: "100%" }}
-                        transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                        className="fixed top-0 right-0 h-full w-full sm:w-[420px] z-[70] sm:p-4 flex flex-col"
-                    >
-                        <div className="flex-1 relative flex flex-col h-full overflow-hidden">
-                            <button 
-                                onClick={() => setChatOpen(false)}
-                                className="absolute -left-12 top-4 w-10 h-10 rounded-xl bg-[#0d1424] border border-[#1e3a5f]/50 hidden sm:flex items-center justify-center text-slate-400 hover:text-white transition-all shadow-2xl z-20"
-                            >
-                                <X size={20} />
-                            </button>
-                            
-                            {/* Mobile Close Button */}
-                            <button 
-                                onClick={() => setChatOpen(false)}
-                                className="sm:hidden absolute right-4 top-4 w-8 h-8 rounded-lg bg-black/20 backdrop-blur-md flex items-center justify-center text-white z-30"
-                            >
-                                <X size={18} />
-                            </button>
-                            
-                            {currentCaseId ? (
-                                <TeamChat 
-                                    caseId={currentCaseId} 
-                                    currentUser={{ 
-                                        id: fullUser.id, 
-                                        name: fullUser.name,
-                                        avatar: fullUser.avatar 
-                                    }} 
-                                />
-                            ) : (
-                                <div className="flex flex-col h-full bg-[#0d1424]/90 border border-[#1e3a5f]/30 rounded-3xl items-center justify-center p-8 text-center backdrop-blur-md">
-                                    <div className="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mb-6">
-                                        <MessageSquare size={32} className="text-amber-500" />
-                                    </div>
-                                    <h3 className="text-lg font-black text-white uppercase tracking-widest mb-2">No Case Active</h3>
-                                    <p className="text-xs text-slate-400 leading-relaxed font-medium">
-                                        Select a Unified Case from the dashboard or sidebar to initiate team communications.
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                    </motion.div>
-                </>
+            {chatOpen && (
+                <ChatSidePanel 
+                    setIsOpen={setChatOpen} 
+                    currentCaseId={currentCaseId} 
+                    fullUser={fullUser} 
+                />
             )}
         </AnimatePresence>
         </>

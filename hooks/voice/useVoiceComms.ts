@@ -37,6 +37,17 @@ const ICE_SERVERS: RTCIceServer[] = [
     },
 ];
 
+const JOIN_SOUND_URL = "https://www.myinstants.com/media/sounds/discord-join.mp3";
+const LEAVE_SOUND_URL = "https://www.myinstants.com/media/sounds/discord-leave.mp3";
+
+const playSound = (url: string) => {
+    try {
+        const audio = new Audio(url);
+        audio.volume = 0.4;
+        audio.play().catch(() => {});
+    } catch (e) {}
+};
+
 export function useVoiceComms(caseId: string, currentUser: { id: string, name: string }, onActiveChange?: (active: boolean) => void) {
     const [isActive, setIsActive] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
@@ -309,6 +320,7 @@ export function useVoiceComms(caseId: string, currentUser: { id: string, name: s
 
         channel.on("broadcast", { event: "voice-join" }, async ({ payload }: any) => {
             if (payload.sessionId === sessionId) return;
+            playSound(JOIN_SOUND_URL);
             if (isActiveRef.current) {
                 channel.send({
                     type: "broadcast",
@@ -388,6 +400,9 @@ export function useVoiceComms(caseId: string, currentUser: { id: string, name: s
         });
 
         channel.on("broadcast", { event: "voice-leave" }, ({ payload }: any) => {
+            if (isActiveRef.current) {
+                playSound(LEAVE_SOUND_URL);
+            }
             cleanupPeer(`${payload.userId}:${payload.sessionId}`);
         });
 
@@ -399,6 +414,9 @@ export function useVoiceComms(caseId: string, currentUser: { id: string, name: s
     }, [caseId, initiateOffer, getOrCreatePeerConnection, currentUser.id, currentUser.name, sessionId, cleanupPeer]);
 
     const leaveChannel = useCallback(() => {
+        if (isActiveRef.current) {
+            playSound(LEAVE_SOUND_URL);
+        }
         isActiveRef.current = false;
         setIsActive(false);
         setNetworkQuality("unknown");
@@ -431,6 +449,7 @@ export function useVoiceComms(caseId: string, currentUser: { id: string, name: s
             localStreamRef.current = stream;
             setIsActive(true);
             isActiveRef.current = true;
+            playSound(JOIN_SOUND_URL);
             setupMetering(`${currentUser.id}:${sessionId}`, stream);
             channelRef.current.send({
                 type: "broadcast",

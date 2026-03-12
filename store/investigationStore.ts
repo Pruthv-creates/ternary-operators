@@ -39,10 +39,12 @@ type InvestigationState = {
     setSelectedEntity: (entity: Entity | null) => void;
     addNode: (node: Node) => void;
     deleteNode: (id: string) => void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     updateNodeData: (id: string, data: any) => void;
     addEdge: (edge: Edge) => void;
     addStickyNote: (position: { x: number, y: number }, text?: string, prefix?: string) => void;
     updateStickyText: (id: string, text: string) => void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     addAIResult: (result: { nodes: any[], edges: any[] }) => void;
     addEvidenceCard: (title: string, position: { x: number, y: number }) => void;
 };
@@ -105,6 +107,7 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
         });
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     updateNodeData: (id: string, data: any) => {
         set({
             nodes: get().nodes.map((n) => n.id === id ? { ...n, data: { ...n.data, ...data } } : n),
@@ -162,6 +165,7 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
         });
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     addAIResult: (result: { nodes: any[], edges: any[] }) => {
         const currentNodes = get().nodes;
         const currentEdges = get().edges;

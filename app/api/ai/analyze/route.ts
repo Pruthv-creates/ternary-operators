@@ -12,6 +12,7 @@ export async function POST() {
 
     const data = await res.json();
     return NextResponse.json(data);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error("Analysis API error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

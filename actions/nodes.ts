@@ -1,18 +1,26 @@
 "use server";
 
 import { PrismaClient } from "@prisma/client";
+import { createAuditLog } from "@/app/actions/case";
 
 const prisma = new PrismaClient();
 
 export async function updateNodePosition(nodeId: string, x: number, y: number) {
     try {
-        await prisma.node.update({
+        const updatedNode = await prisma.node.update({
             where: { id: nodeId },
             data: { 
                 positionX: x,
                 positionY: y
-            }
+            },
+            include: { case: { include: { users: { take: 1 } } } }
         });
+
+        // Log the movement if possible (using first user as a placeholder if session not passed)
+        if (updatedNode.case.users[0]) {
+            await createAuditLog(updatedNode.caseId, updatedNode.case.users[0].id, `Moved node '${updatedNode.label}' to [${Math.round(x)}, ${Math.round(y)}]`, "zap");
+        }
+
         return { success: true };
     } catch (error) {
         console.error("Failed to update node position:", error);
@@ -31,8 +39,14 @@ export async function createNewNode(caseId: string, node: any) {
                 positionX: node.position.x,
                 positionY: node.position.y,
                 content: JSON.stringify(node.data)
-            }
+            },
+            include: { case: { include: { users: { take: 1 } } } }
         });
+
+        if (newNode.case.users[0]) {
+            await createAuditLog(caseId, newNode.case.users[0].id, `Created new ${newNode.type} node: '${newNode.label}'`, "zap");
+        }
+        
         return { success: true, node: newNode };
     } catch (error) {
         console.error("Failed to create node:", error);

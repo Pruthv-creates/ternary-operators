@@ -3,14 +3,14 @@
 import { motion } from "framer-motion";
 import { 
     Users, 
-    MessageSquare, 
     History, 
     CheckCircle2, 
     Shield,
     Terminal,
     Eye,
     Zap,
-    Layout
+    Layout,
+    Search
 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 import Topbar from "@/components/Topbar";
@@ -23,52 +23,91 @@ const activeAnalysts = [
     { name: "James D.", role: "OSINT Specialst", activity: "Uploading Data", color: "bg-emerald-500", status: "Active" },
 ];
 
-const auditLogs = [
-    { user: "Sarah K.", action: "Promoted 'Nicosia Bank Transfers' to Timeline", time: "2 min ago", icon: <Zap size={12} className="text-blue-400" /> },
-    { user: "James D.", action: "Resolved Conflict: Alexander Volkov identity", time: "15 min ago", icon: <CheckCircle2 size={12} className="text-emerald-400" /> },
-    { user: "Mark J.", action: "Flagged 'Project Nexus' status as High Sensitivity", time: "1h ago", icon: <Shield size={12} className="text-red-400" /> },
-    { user: "Sarah K.", action: "Generated new Case Hypothesis: Offshore Loop", time: "2h ago", icon: <Terminal size={12} className="text-purple-400" /> },
-];
 
-const tasks = [
-    { title: "Verify Synergy Corp beneficial ownership", priority: "High", status: "In Progress" },
-    { title: "Reconcile Cyprus travel logs with Swift logs", priority: "Medium", status: "To Do" },
-    { title: "Review offshore entity registration date", priority: "Low", status: "Done" },
-];
+
+
 
 import { useEffect, useState } from "react";
-import { getCaseCollaborators } from "@/app/actions/case";
+import { getCaseCollaborators, getCaseTasks, getCaseAuditLogs } from "@/app/actions/case";
 import { useInvestigationStore } from "@/store/investigationStore";
 import { User } from "@prisma/client";
 
 export default function CollaborationPage() {
     const { currentCaseId } = useInvestigationStore();
     const [realAnalysts, setRealAnalysts] = useState<any[]>([]);
+    const [realAuditLogs, setRealAuditLogs] = useState<any[]>([]);
+    const [realTasks, setRealTasks] = useState<any[]>([]);
+
+    const ICONS: Record<string, JSX.Element> = {
+        zap: <Zap size={12} className="text-blue-400" />,
+        check: <CheckCircle2 size={12} className="text-emerald-400" />,
+        shield: <Shield size={12} className="text-red-400" />,
+        terminal: <Terminal size={12} className="text-purple-400" />,
+        search: <Search size={12} className="text-amber-400" />
+    };
+
+    const timeAgo = (dateStr: string | Date) => {
+        const diff = (new Date().getTime() - new Date(dateStr).getTime()) / 1000;
+        if (diff < 60) return "just now";
+        if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
+        if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+        return `${Math.floor(diff / 86400)}d ago`;
+    };
     
     useEffect(() => {
         if (!currentCaseId) return;
 
-        async function fetchCollabs() {
-            const users = await getCaseCollaborators(currentCaseId!);
-            
-            // Generate visual details for the real users to keep the sleek UI look
-            const userColors = ["bg-purple-500", "bg-blue-500", "bg-emerald-500", "bg-amber-500", "bg-rose-500"];
-            const mockActivities = ["Viewing Timeline", "Editing Entities", "Uploading Data", "Reviewing Hypothesis", "Idle"];
-            const mockRoles = ["Lead Analyst", "Forensic Accountant", "OSINT Specialist", "Field Investigator"];
-            
-            const enriched = users.map((u, i) => ({
-                id: u.id,
-                name: u.name || u.email?.split("@")[0] || "Unknown Analyst",
-                role: mockRoles[i % mockRoles.length],
-                activity: mockActivities[i % mockActivities.length],
-                color: userColors[i % userColors.length],
-                status: Math.random() > 0.3 ? "Active" : "Idle"
-            }));
-            
-            setRealAnalysts(enriched);
+        async function fetchData() {
+            try {
+                const users = await getCaseCollaborators(currentCaseId!);
+                
+                // Generate visual details for the real users
+                const userColors = ["bg-purple-500", "bg-blue-500", "bg-emerald-500", "bg-amber-500", "bg-rose-500"];
+                const mockActivities = ["Viewing Timeline", "Editing Entities", "Uploading Data", "Reviewing Hypothesis", "Idle"];
+                const mockRoles = ["Lead Analyst", "Forensic Accountant", "OSINT Specialist", "Field Investigator"];
+                
+                const enriched = users.map((u, i) => ({
+                    id: u.id,
+                    name: u.name || u.email?.split("@")[0] || "Unknown Analyst",
+                    role: mockRoles[i % mockRoles.length],
+                    activity: mockActivities[i % mockActivities.length],
+                    color: userColors[i % userColors.length],
+                    status: Math.random() > 0.3 ? "Active" : "Idle"
+                }));
+                
+                setRealAnalysts(enriched);
+
+                // Fetch REAL audit logs
+                const logsData = await getCaseAuditLogs(currentCaseId!);
+                const logsMapped = logsData.map((l: any) => ({
+                    user: l.user,
+                    action: l.action,
+                    time: l.createdAt ? timeAgo(l.createdAt) : "just now",
+                    icon: ICONS[l.icon] || ICONS["zap"]
+                }));
+                setRealAuditLogs(logsMapped);
+
+                // Fetch REAL tasks
+                const caseTasks = await getCaseTasks(currentCaseId!);
+                if (caseTasks.length > 0) {
+                    setRealTasks(caseTasks);
+                } else if (enriched.length > 0) {
+                    // Seed mock tasks referencing real people if DB is empty
+                    const generatedTasks = [
+                        { title: "Verify Synergy Corp beneficial ownership", priority: "High", status: "In Progress" },
+                        { title: "Reconcile Cyprus travel logs with Swift logs", priority: "Medium", status: "To Do" },
+                        { title: `Review ${enriched[0]?.name || 'analyst'} findings on offshore entities`, priority: "Low", status: "Done" },
+                    ];
+                    setRealTasks(generatedTasks);
+                }
+            } catch (err) {
+                console.error("Polling error:", err);
+            }
         }
 
-        fetchCollabs();
+        fetchData();
+        const interval = setInterval(fetchData, 5000); // 5 second polling
+        return () => clearInterval(interval);
     }, [currentCaseId]);
     return (
         <div className="flex h-screen w-screen overflow-hidden bg-[#0a0f1c] font-sans text-slate-300">
@@ -90,7 +129,12 @@ export default function CollaborationPage() {
                         </div>
                         
                         <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
-                            {auditLogs.map((log, i) => (
+                            {realAuditLogs.length === 0 && (
+                                <div className="flex flex-col items-center justify-center h-full text-slate-500">
+                                    <span className="text-[10px] font-bold uppercase tracking-widest">No recent audit logs.</span>
+                                </div>
+                            )}
+                            {realAuditLogs.map((log, i) => (
                                 <motion.div 
                                     key={i}
                                     initial={{ opacity: 0, x: -10 }}
@@ -177,10 +221,10 @@ export default function CollaborationPage() {
                                 <div key={status} className="flex flex-col gap-3">
                                     <div className="flex items-center justify-between px-1">
                                         <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">{status}</span>
-                                        <span className="text-[9px] font-bold text-slate-700">{tasks.filter(t => t.status === status).length}</span>
+                                        <span className="text-[9px] font-bold text-slate-700">{realTasks.filter(t => t.status === status).length}</span>
                                     </div>
                                     <div className="flex-1 space-y-3">
-                                        {tasks.filter(t => t.status === status).map((task, i) => (
+                                        {realTasks.filter(t => t.status === status).map((task, i) => (
                                             <div key={i} className="p-3 rounded-xl bg-[#0a0f1c] border border-[#1e3a5f]/40 shadow-sm group hover:border-slate-600 transition-all">
                                                 <div className="flex items-center justify-between mb-2">
                                                     <span className={cn(
@@ -193,7 +237,7 @@ export default function CollaborationPage() {
                                                 <div className="text-[11px] font-bold text-slate-300 leading-snug line-clamp-2">{task.title}</div>
                                             </div>
                                         ))}
-                                        {tasks.filter(t => t.status === status).length === 0 && (
+                                        {realTasks.filter(t => t.status === status).length === 0 && (
                                             <div className="flex-1 border border-dashed border-slate-800/50 rounded-xl flex items-center justify-center p-4">
                                                 <span className="text-[9px] font-bold text-slate-800 uppercase italic">Empty</span>
                                             </div>
@@ -206,13 +250,7 @@ export default function CollaborationPage() {
                 </main>
             </div>
 
-            {/* Global Task Bar Overlay */}
-            <div className="fixed bottom-6 right-[300px] z-50 pointer-events-none">
-                <div className="pointer-events-auto bg-blue-600 hover:bg-blue-500 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-[0_8px_32px_rgba(59,130,246,0.4)] transition-all cursor-pointer group hover:scale-110">
-                    <MessageSquare size={24} className="group-hover:rotate-12 transition-transform" />
-                    <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 border-2 border-[#0a0f1c] flex items-center justify-center text-[9px] font-black">2</div>
-                </div>
-            </div>
+
 
             <style jsx global>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 4px; }

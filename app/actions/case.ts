@@ -225,3 +225,56 @@ export async function getCaseCollaborators(caseId: string) {
     
     return caseData?.users || [];
 }
+
+export async function getCaseTasks(caseId: string) {
+    const tasks = await prisma.node.findMany({
+        where: { 
+            caseId,
+            type: "INVESTIGATION_TASK"
+        },
+        orderBy: { createdAt: 'desc' }
+    });
+    
+    return tasks.map(t => {
+        let content: any = {};
+        try {
+            if (t.content) content = JSON.parse(t.content);
+        } catch {}
+        
+        return {
+            id: t.id,
+            title: t.label,
+            priority: content.priority || "Medium",
+            status: content.status || "To Do",
+            assigneeId: content.assigneeId
+        };
+    });
+}
+
+export async function getCaseAuditLogs(caseId: string) {
+    const logs = await prisma.auditLog.findMany({
+        where: { caseId },
+        include: { user: { select: { name: true, email: true } } },
+        orderBy: { createdAt: 'desc' },
+        take: 50 // Limit to recent 50
+    });
+    return logs.map(l => ({
+        id: l.id,
+        user: l.user.name || l.user.email?.split('@')[0] || "Unknown Analyst",
+        action: l.action,
+        icon: l.icon,
+        createdAt: l.createdAt
+    }));
+}
+
+export async function createAuditLog(caseId: string, userId: string, action: string, icon: string = "zap") {
+    return prisma.auditLog.create({
+        data: {
+            caseId,
+            userId,
+            action,
+            icon
+        }
+    });
+}
+

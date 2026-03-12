@@ -16,6 +16,7 @@ model User {
   invitationsSent     Invitation[] @relation("InvitationsSent")
   invitationsReceived Invitation[] @relation("InvitationsReceived")
   createdAt           DateTime     @default(now())
+  auditLogs           AuditLog[]
 }
 
 model Invitation {
@@ -49,6 +50,7 @@ model Case {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   invitations Invitation[]
+  auditLogs   AuditLog[]
 }
 
 model Document {
@@ -119,3 +121,17 @@ model Edge {
 
   @@unique([sourceId, targetId, relationshipType])
 }
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  caseId    String
+  case      Case     @relation(fields: [caseId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  action    String
+  icon      String   @default("zap")
+
+  createdAt DateTime @default(now())
+}
+

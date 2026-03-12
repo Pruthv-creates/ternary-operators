@@ -41,7 +41,9 @@ export async function getCaseGraph(caseId: string) {
         id: e.id,
         source: e.sourceId,
         target: e.targetId,
+        type: "relation",
         label: e.relationshipType,
+        data: { credibilityScore: 85 }, // Default high for DB established links
         style: { stroke: "#8b5cf6", strokeWidth: 2 },
         animated: e.relationshipType.includes('Money Flow')
     }));

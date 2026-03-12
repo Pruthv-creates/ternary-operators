@@ -121,7 +121,7 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
 
     onConnect: (connection: Connection) => {
         set({
-            edges: addEdge(connection, get().edges),
+            edges: addEdge({ ...connection, type: "relation", data: { credibilityScore: 50 } }, get().edges),
         });
     },
 
@@ -295,12 +295,12 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
                 id: `e-${e.source}-${e.target}-${Date.now()}`,
                 source: e.source,
                 target: e.target,
+                type: "relation",
                 label: e.label,
                 data: { credibilityScore: e.credibilityScore },
                 style: e.credibilityScore > 80 
                     ? { stroke: "#10b981", strokeWidth: 2 } 
                     : { ...dottedEdgeStyle, opacity: 0.6 },
-                labelStyle: sharedLabelStyle,
                 animated: e.credibilityScore > 70,
                 markerEnd: { 
                     type: MarkerType.ArrowClosed, 

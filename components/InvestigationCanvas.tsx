@@ -14,6 +14,7 @@ import "@xyflow/react/dist/style.css";
 import EntityNode from "./EntityNode";
 import EvidenceNode from "./EvidenceNode";
 import HypothesisNode from "./HypothesisNode";
+import RelationEdge from "./RelationEdge";
 import { entities } from "@/lib/data";
 import { Entity, EntityType } from "@/lib/data";
 import { useInvestigationStore } from "@/store/investigationStore";
@@ -26,6 +27,10 @@ const nodeTypes: any = {
     entity: EntityNode,
     evidence: EvidenceNode,
     hypothesis: HypothesisNode,
+};
+
+const edgeTypes = {
+    relation: RelationEdge,
 };
 
 function CanvasInner() {
@@ -321,6 +326,7 @@ function CanvasInner() {
                 onNodeClick={onNodeClick}
                 onPaneClick={onPaneClick}
                 nodeTypes={nodeTypes}
+                edgeTypes={edgeTypes}
                 fitView
                 fitViewOptions={{ padding: 0.1 }}
                 minZoom={0.2}

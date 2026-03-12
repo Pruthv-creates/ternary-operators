@@ -1,0 +1,19 @@
+WHISTLEBLOWER DISCLOSURE: ALPHA BANK Q4 DISCREPANCIES
+SOURCE: SARAH PATEL (FORMER LEAD AUDITOR, SYNERGY CORP)
+DATE: 2024-03-08
+--------------------------------------------------
+CONFIDENTIAL REPORT - DO NOT DISTRIBUTE
+
+During my final audit of Synergy Corp's Q4 filings, I identified a recurring 'ghost' transaction pattern involving Alpha Bank (Account: 8829-1029-XXXX).
+
+THE SMOKING GUN:
+While the books show $12.5M as 'Settlement for Nexus Project', the Alpha Bank sub-ledger reveals an additional $3.2M that was never reported in the UK consolidated balance sheet. This $3.2M was split into 50 smaller transactions, all under the $50,000 reporting threshold, and moved to an account in Panama City.
+
+KEY FINDINGS:
+1. SIGNATURE FORGERY: One of the authorization forms for the $3.2M transfer bears a digital signature that mimics Elena Petrova's, but the metadata shows it was generated from a device in Limassol (IP matches the BlueWave Corp office).
+2. LIAISON: Daniel Mercer was the primary contact at BlueWave who 'verified' these transactions.
+3. PHYSICAL EVIDENCE: I have retained copies of the original sub-ledger before my access was revoked. They are stored in a secure physical location (Ref: 'THE SMOKING GUN').
+
+THREAT ASSESSMENT:
+I believe Volkov and Mercer are aware I have this data. My restricted access was the first step; I expect a more aggressive neutralization strategy following the 'THE LUA' yacht meeting.
+--------------------------------------------------

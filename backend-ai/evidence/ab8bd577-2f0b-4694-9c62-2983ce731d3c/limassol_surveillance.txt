@@ -1,0 +1,22 @@
+SURVEILLANCE REPORT: LIMASSOL PORT OPS
+DATE: 2024-02-15
+LOCATION: MARINA BAY, LIMASSOL
+--------------------------------------------------
+OBJECTIVE: Monitor meetings at the registered address of BlueWave Corporation.
+
+OBSERVATIONS:
+- 10:15 AM: Alexander Volkov arrives in a black Mercedes S-Class.
+- 10:20 AM: Daniel Mercer (BlueWave Director) meets Volkov at the entrance.
+- 10:30 AM: A third individual, identified as Rashid Ahmad (Shareholder), joins the meeting.
+- 12:45 PM: Party exits. Large physical documents were exchanged. 
+- 01:00 PM: Group proceeds to a private yacht 'THE LUA' (MMSI: 235XXXXXX).
+
+ADDITIONAL DATA:
+Rashid Ahmad is a major shareholder in both Synergy Corp and Orion Holdings. He seems to be the connecting link between the operational arm in London and the financial arm in Nicosia.
+
+LINK IDENTIFIED:
+Volkov -> Mercer (Direct meeting)
+Mercer -> BlueWave Corp (Employment)
+Ahmad -> Synergy Corp (Ownership)
+Ahmad -> Orion Holdings (Ownership)
+--------------------------------------------------

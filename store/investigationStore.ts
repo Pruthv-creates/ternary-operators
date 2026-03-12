@@ -169,27 +169,27 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
         const nexusNode = currentNodes.find(n => n.id === "volkov") || { position: { x: 400, y: 300 } };
         const centerX = nexusNode.position.x;
         const centerY = nexusNode.position.y;
-        
+
         const filteredNodes = result.nodes.filter(n => !currentNodes.find(cn => cn.id === n.id));
-        
+
         const newNodes: Node[] = filteredNodes.map((n, i) => {
             const angle = (i / filteredNodes.length) * Math.PI * 2;
             const radius = 350 + Math.random() * 50;
-            
+
             return {
                 id: n.id,
                 type: "entity",
-                position: { 
-                    x: centerX + Math.cos(angle) * radius, 
-                    y: centerY + Math.sin(angle) * radius 
+                position: {
+                    x: centerX + Math.cos(angle) * radius,
+                    y: centerY + Math.sin(angle) * radius
                 },
-                data: { 
-                    name: n.name, 
-                    role: n.role, 
-                    type: n.type, 
+                data: {
+                    name: n.name,
+                    role: n.role,
+                    type: n.type,
                     status: n.status || "Active",
                     avatar: n.type === "person" ? `https://i.pravatar.cc/150?u=${n.id}` : undefined,
-                    isNew: true 
+                    isNew: true
                 },
             };
         });
@@ -202,14 +202,14 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
                 target: e.target,
                 label: e.label,
                 data: { credibilityScore: e.credibilityScore },
-                style: e.credibilityScore > 80 
-                    ? { stroke: "#10b981", strokeWidth: 2 } 
+                style: e.credibilityScore > 80
+                    ? { stroke: "#10b981", strokeWidth: 2 }
                     : { ...dottedEdgeStyle, opacity: 0.6 },
                 labelStyle: sharedLabelStyle,
                 animated: e.credibilityScore > 70,
-                markerEnd: { 
-                    type: MarkerType.ArrowClosed, 
-                    color: e.credibilityScore > 80 ? "#10b981" : "#06b6d4" 
+                markerEnd: {
+                    type: MarkerType.ArrowClosed,
+                    color: e.credibilityScore > 80 ? "#10b981" : "#06b6d4"
                 },
             }));
 
@@ -220,7 +220,7 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
 
         setTimeout(() => {
             set({
-                nodes: get().nodes.map(n => ({...n, data: {...n.data, isNew: false }}))
+                nodes: get().nodes.map(n => ({ ...n, data: { ...n.data, isNew: false } }))
             });
         }, 3000);
     },

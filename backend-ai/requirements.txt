@@ -17,3 +17,4 @@ pillow
 pymupdf
 pandas
 openpyxl
+xlrd

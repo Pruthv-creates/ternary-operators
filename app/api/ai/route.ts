@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
     try {
-        const { question } = await req.json();
+        const { question, caseId } = await req.json();
 
         // Pointing to your LOCAL FastAPI server (uvicorn)
         // Adjust the port if yours is different (standard uvicorn is 8000)
@@ -11,7 +11,10 @@ export async function POST(req: NextRequest) {
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ question }),
+            body: JSON.stringify({ 
+                question, 
+                case_id: caseId // Backend expects case_id
+            }),
         });
 
         const data = await response.json();

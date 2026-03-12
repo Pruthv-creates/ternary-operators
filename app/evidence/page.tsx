@@ -330,11 +330,9 @@ export default function EvidencePage() {
                 </div>
               </div>
 
-              {/* Right Column: AI Panel */}
-              <div className="col-span-12 lg:col-span-5 flex flex-col gap-6">
-                
-                {/* Astra AI Query Panel */}
-                <div className="flex flex-col h-full bg-[#0d1424] border border-slate-800 rounded-3xl overflow-hidden shadow-2xl relative">
+              {/* Right Column: AI Panel - STICKY to prevent disappearing on long lists */}
+              <div className="col-span-12 lg:col-span-5 relative">
+                <div className="sticky top-8 flex flex-col h-[calc(100vh-200px)] min-h-[600px] bg-[#0d1424] border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
                     <div className="absolute inset-0 bg-blue-500/[0.02] pointer-events-none" />
                     
                     {/* Header */}
@@ -485,7 +483,6 @@ export default function EvidencePage() {
                             )}
                         </AnimatePresence>
                     </div>
-
                     {/* Input Area */}
                     <div className="p-6 bg-slate-900/60 border-t border-slate-800 relative z-10">
                         <div className="relative">
@@ -506,21 +503,20 @@ export default function EvidencePage() {
                             </button>
                         </div>
                     </div>
-                </div>
 
-                {/* Helpful Hints/Status */}
-                <div className="p-4 rounded-2xl bg-slate-900/20 border border-slate-800 flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-500">
-                        <Info size={18} />
-                    </div>
-                    <div>
-                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Protocol Hint</div>
-                        <p className="text-[11px] text-slate-600 leading-tight mt-0.5">
-                            AIs context window is grounded in your library. Complex queries regarding financial ties yield higher sig clusters.
-                        </p>
+                    {/* Helpful Hints/Status - Integrated into sticky panel */}
+                    <div className="p-4 border-t border-slate-800/50 bg-slate-900/20 flex items-center gap-4">
+                        <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 flex-shrink-0">
+                            <Info size={14} />
+                        </div>
+                        <div>
+                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Protocol Hint</div>
+                            <p className="text-[10px] text-slate-600 leading-tight mt-0.5">
+                                AIs context window is grounded in your library. Complex queries regarding financial ties yield higher sig clusters.
+                            </p>
+                        </div>
                     </div>
                 </div>
-
               </div>
             </div>
           </div>

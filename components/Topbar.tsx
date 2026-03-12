@@ -37,6 +37,14 @@ export default function Topbar() {
         try {
             const result = await deleteCase(currentCaseId, fullUser.id);
             if (result.success) {
+                // Clear store state so stale case ID is not re-loaded
+                useInvestigationStore.setState({ 
+                    currentCaseId: null, 
+                    nodes: [], 
+                    edges: [],
+                    selectedEntity: null
+                });
+                localStorage.removeItem("astraeus_last_case_id");
                 router.push("/cases");
             } else {
                 alert("Failed to delete case: " + result.error);

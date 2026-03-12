@@ -4,8 +4,10 @@ import shutil
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from typing import Any, Dict, List, Optional
 
 from rag_engine import ingest_documents, query_rag
+from case_analyzer import analyze_case_quality
 
 app = FastAPI()
 
@@ -150,4 +152,38 @@ Valid relationship types: related_to, associates_with, controls, owns, employs, 
             "relationship_type": "related_to",
             "confidence": 0,
             "reasoning": f"Error: {str(e)}"
+        }
+
+
+class CaseAnalysisRequest(BaseModel):
+    title: str
+    nodes: list = []
+    edges: list = []
+
+
+@app.post("/analyze-case")
+async def analyze_case(data: CaseAnalysisRequest):
+    """
+    Deep-analyzes a case's graph data using LLM + RAG to produce:
+    - Overall quality score and grade
+    - Breakdown scores (density, connectivity, diversity, evidence)
+    - Loose ends (missing or unexplored investigative threads)
+    - Points of interest (AI-flagged leads and anomalies)
+    """
+    try:
+        result = analyze_case_quality({
+            "title": data.title,
+            "nodes": data.nodes,
+            "edges": data.edges,
+        })
+        return result
+    except Exception as e:
+        print(f"Error analyzing case: {e}")
+        return {
+            "overallScore": 0,
+            "grade": "N/A",
+            "breakdown": {"dataDensity": 0, "connectivity": 0, "entityDiversity": 0, "evidenceCoverage": 0},
+            "summary": f"Analysis failed: {str(e)}",
+            "looseEnds": [],
+            "pointsOfInterest": [],
         }

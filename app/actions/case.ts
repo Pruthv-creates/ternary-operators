@@ -15,17 +15,26 @@ export async function getCaseGraph(caseId: string) {
     });
 
     // Transform DB nodes to React Flow format
-    const rfNodes = nodes.map((n) => ({
-        id: n.id,
-        type: n.type.toLowerCase().includes('entity') ? 'entity' : (n.type === 'DOCUMENT' ? 'evidence' : 'hypothesis'),
-        position: { x: n.positionX, y: n.positionY },
-        data: { 
-            name: n.label, // React Flow expects 'name' or 'label'
-            label: n.label,
-            type: n.type,
-            content: n.content,
-        },
-    }));
+    const rfNodes = nodes.map((n) => {
+        let parsedData = {};
+        try {
+            parsedData = n.content ? JSON.parse(n.content) : {};
+        } catch (e) {
+            console.error("Failed to parse node content", e);
+        }
+
+        return {
+            id: n.id,
+            type: n.type.toLowerCase().includes('entity') ? 'entity' : (n.type === 'DOCUMENT' ? 'evidence' : 'hypothesis'),
+            position: { x: n.positionX, y: n.positionY },
+            data: { 
+                ...parsedData,
+                name: n.label, // Source of truth for identity
+                label: n.label,
+                type: n.type,
+            },
+        };
+    });
 
     // Transform DB edges to React Flow format
     const rfEdges = edges.map((e) => ({

@@ -105,10 +105,17 @@ function EntityNode({ id, data, selected }: any) {
                     </div>
                 )}
 
-                {/* Credibility Score indicator */}
+                {/* Risk Score badge (Top Right) */}
+                {data.riskScore !== undefined && data.riskScore > 0 && (
+                    <div className="absolute -top-1 -right-1 z-10 bg-red-600 text-white text-[8px] font-black px-1 rounded-sm border border-red-700 shadow-sm">
+                        R:{data.riskScore}%
+                    </div>
+                )}
+
+                {/* Credibility Score badge (Bottom Right) */}
                 {data.credibilityScore !== undefined && (
-                    <div className="absolute -bottom-1 -right-1 z-10 bg-emerald-500 text-white text-[8px] font-black px-1 rounded-sm border border-emerald-600">
-                        {data.credibilityScore}%
+                    <div className="absolute -bottom-1 -right-1 z-10 bg-emerald-500 text-white text-[8px] font-black px-1 rounded-sm border border-emerald-600 shadow-sm">
+                        C:{data.credibilityScore}%
                     </div>
                 )}
             </div>

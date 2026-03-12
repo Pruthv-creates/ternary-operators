@@ -49,6 +49,7 @@ export const entities: Entity[] = [
         type: "person",
         avatar: "https://i.pravatar.cc/150?u=volkov",
         riskScore: 87,
+        credibilityScore: 65,
     },
     {
         id: "synergy",
@@ -56,6 +57,7 @@ export const entities: Entity[] = [
         role: "Company",
         type: "company",
         riskScore: 74,
+        credibilityScore: 82,
     },
     {
         id: "alpha-bank",
@@ -63,6 +65,7 @@ export const entities: Entity[] = [
         role: "Bank Account",
         type: "bank",
         riskScore: 91,
+        credibilityScore: 40,
     },
     {
         id: "offshore",
@@ -70,6 +73,7 @@ export const entities: Entity[] = [
         role: "Seychelles",
         type: "offshore",
         riskScore: 95,
+        credibilityScore: 20,
     },
     {
         id: "london",
@@ -77,6 +81,7 @@ export const entities: Entity[] = [
         role: "",
         type: "location",
         riskScore: 32,
+        credibilityScore: 90,
     },
     {
         id: "rashid",
@@ -85,6 +90,7 @@ export const entities: Entity[] = [
         type: "person",
         avatar: "https://i.pravatar.cc/150?u=rashid",
         riskScore: 54,
+        credibilityScore: 70,
     },
     {
         id: "petrova",
@@ -93,6 +99,7 @@ export const entities: Entity[] = [
         type: "person",
         avatar: "https://i.pravatar.cc/150?u=petrova",
         riskScore: 48,
+        credibilityScore: 85,
     },
     {
         id: "architect",
@@ -101,7 +108,7 @@ export const entities: Entity[] = [
         type: "person",
         status: "Abnormal",
         riskScore: 98,
-        credibilityScore: 40,
+        credibilityScore: 30,
     },
     {
         id: "the-lua",
@@ -110,6 +117,27 @@ export const entities: Entity[] = [
         type: "location",
         status: "Flagged",
         riskScore: 85,
+        credibilityScore: 50,
+    },
+    {
+        id: "banco-sombras",
+        name: "Banco de Sombras",
+        role: "Shadow Bank",
+        type: "bank",
+        location: "Panama City",
+        status: "Flagged",
+        riskScore: 92,
+        credibilityScore: 15,
+    },
+    {
+        id: "sarah-patel",
+        name: "Sarah Patel",
+        role: "Whistleblower / Auditor",
+        type: "person",
+        status: "Abnormal",
+        riskScore: 15,
+        credibilityScore: 98,
+        avatar: "https://i.pravatar.cc/150?u=sarah",
     },
 ];
 

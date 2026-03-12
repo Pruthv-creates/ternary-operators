@@ -18,6 +18,23 @@ import { getCaseGraph } from "@/app/actions/case";
 import { updateNodePosition, createNewNode, updateNodeContent } from "@/actions/nodes";
 import { supabase } from "@/lib/supabase";
 
+const initialNodes: Node[] = [
+    {
+        id: "volkov",
+        type: "entity",
+        position: { x: 440, y: 150 },
+        data: { 
+            name: "Alexander Volkov", 
+            role: "CEO", 
+            type: "person", 
+            avatar: "https://i.pravatar.cc/150?u=volkov", 
+            status: "Active",
+            riskScore: 87,
+            credibilityScore: 65
+        },
+    }
+];
+
 const sharedLabelStyle = { fill: "#60a5fa", fontSize: 10, fontWeight: 500, fontFamily: "sans-serif" };
 const dottedEdgeStyle = { stroke: "#06b6d4", strokeWidth: 1.5, strokeDasharray: "3,3" };
 
@@ -49,7 +66,7 @@ type InvestigationState = {
 };
 
 export const useInvestigationStore = create<InvestigationState>((set, get) => ({
-    nodes: [],
+    nodes: initialNodes,
     edges: [],
     currentCaseId: null,
     selectedEntity: null,
@@ -204,8 +221,9 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
                 }
             }
         };
+        
         set({ nodes: [...get().nodes, newNode] });
-        await createNewNode(caseId, newNode);
+        await createNewNode(caseId, { ...newNode, nodeType: 'DOCUMENT' });
     },
 
     updateStickyText: (id: string, text: string) => {

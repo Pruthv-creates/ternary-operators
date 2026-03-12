@@ -223,8 +223,13 @@ export default function ContextPanel({ entity, onClose }: ContextPanelProps) {
                                     )}
                                 </div>
 
-                                <div className="flex justify-between items-center h-6">
-                                    <span className="text-[10px] text-slate-500">Risk Score:</span>
+                                <div className="flex justify-between items-center h-6 group relative">
+                                    <div className="flex items-center gap-1 cursor-help">
+                                        <span className="text-[10px] text-slate-500 underline decoration-slate-700 decoration-dotted underline-offset-2">Risk Score:</span>
+                                        <div className="hidden group-hover:block absolute left-0 bottom-full mb-2 w-48 p-2 bg-slate-900 border border-red-500/30 rounded text-[9px] text-slate-400 z-50">
+                                            Probability of involvement in illicit financial activity. Higher is more dangerous.
+                                        </div>
+                                    </div>
                                     {isEditing ? (
                                         <input 
                                             type="number"
@@ -242,8 +247,13 @@ export default function ContextPanel({ entity, onClose }: ContextPanelProps) {
                                     )}
                                 </div>
 
-                                <div className="flex justify-between items-center h-6">
-                                    <span className="text-[10px] text-slate-500">Credibility:</span>
+                                <div className="flex justify-between items-center h-6 group relative">
+                                    <div className="flex items-center gap-1 cursor-help">
+                                        <span className="text-[10px] text-slate-500 underline decoration-slate-700 decoration-dotted underline-offset-2">Credibility:</span>
+                                        <div className="hidden group-hover:block absolute left-0 bottom-full mb-2 w-48 p-2 bg-slate-900 border border-emerald-500/30 rounded text-[9px] text-slate-400 z-50">
+                                            Trustworthiness of the entity based on verified data sources. Higher is more reliable.
+                                        </div>
+                                    </div>
                                     {isEditing ? (
                                         <input 
                                             type="number"

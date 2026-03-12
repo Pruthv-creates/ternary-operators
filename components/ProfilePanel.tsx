@@ -106,7 +106,7 @@ export default function ProfilePanel({ isOpen, onClose, user }: ProfilePanelProp
                                     <div className="flex items-center justify-between px-4 py-3">
                                         <div className="text-[10px] font-bold text-amber-500 uppercase tracking-widest flex items-center gap-2">
                                             <Bell size={12} />
-                                            Pending Clearances
+                                            Pending Invitations
                                         </div>
                                         <span className="bg-amber-500/20 text-amber-400 text-[9px] font-bold px-1.5 py-0.5 rounded-md">
                                             {invitations.length}

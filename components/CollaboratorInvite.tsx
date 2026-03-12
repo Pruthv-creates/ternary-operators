@@ -113,7 +113,7 @@ export default function CollaboratorInvite() {
                                     <div>
                                         <h2 className="text-sm font-bold text-white tracking-wide">Add Investigator</h2>
                                         <p className="text-[10px] text-slate-500 uppercase tracking-widest">
-                                            {currentCaseId ? "Grant Intel Clearance" : "⚠ Select a case first"}
+                                            {currentCaseId ? "Invite to Case" : "⚠ Select a case first"}
                                         </p>
                                     </div>
                                 </div>
@@ -132,9 +132,9 @@ export default function CollaboratorInvite() {
                                         <CheckCircle2 size={56} className="text-emerald-500" />
                                     </motion.div>
                                     <div className="text-center">
-                                        <p className="text-base font-bold text-white">Clearance Request Sent</p>
+                                        <p className="text-base font-bold text-white">Invitation Sent</p>
                                         <p className="text-sm text-slate-400 mt-1">
-                                            A secure access request has been sent to <span className="text-emerald-400 font-semibold">{selected?.name || selected?.email}</span>.
+                                            An invitation has been sent to <span className="text-emerald-400 font-semibold">{selected?.name || selected?.email}</span>.
                                         </p>
 
                                     </div>
@@ -251,7 +251,7 @@ export default function CollaboratorInvite() {
                                             {status === "loading" ? (
                                                 <><Loader2 size={14} className="animate-spin" /> Sending...</>
                                             ) : (
-                                                <><UserPlus size={14} /> Send Clearance Request</>
+                                                <><UserPlus size={14} /> Send Invitation</>
                                             )}
                                         </button>
                                     </div>

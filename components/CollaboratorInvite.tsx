@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { UserPlus, Loader2, X, CheckCircle2, Search, Shield, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { inviteCollaboratorById, searchAgents } from "@/app/actions/case";
+import { createInvitation, searchAgents } from "@/app/actions/case";
 import { useInvestigationStore } from "@/store/investigationStore";
 import { supabase } from "@/lib/supabase";
 
@@ -51,16 +51,17 @@ export default function CollaboratorInvite() {
     }, [query, currentUserId]);
 
     const handleInvite = async () => {
-        if (!currentCaseId || !selected) return;
+        if (!currentCaseId || !selected || !currentUserId) return;
         setStatus("loading");
         try {
-            await inviteCollaboratorById(currentCaseId, selected.id);
+            await createInvitation(currentCaseId, currentUserId, selected.id);
             setStatus("success");
         } catch (e: any) {
             setStatus("error");
-            setErrorMsg(e.message || "Failed to add collaborator.");
+            setErrorMsg(e.message || "Failed to send invitation.");
         }
     };
+
 
     const handleClose = () => {
         setIsOpen(false);
@@ -131,10 +132,11 @@ export default function CollaboratorInvite() {
                                         <CheckCircle2 size={56} className="text-emerald-500" />
                                     </motion.div>
                                     <div className="text-center">
-                                        <p className="text-base font-bold text-white">Agent Cleared</p>
+                                        <p className="text-base font-bold text-white">Clearance Request Sent</p>
                                         <p className="text-sm text-slate-400 mt-1">
-                                            <span className="text-emerald-400 font-semibold">{selected?.name || selected?.email}</span> now has access to this case.
+                                            A secure access request has been sent to <span className="text-emerald-400 font-semibold">{selected?.name || selected?.email}</span>.
                                         </p>
+
                                     </div>
                                     <button
                                         onClick={handleClose}
@@ -247,9 +249,9 @@ export default function CollaboratorInvite() {
                                             className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-bold transition-all flex items-center justify-center gap-2"
                                         >
                                             {status === "loading" ? (
-                                                <><Loader2 size={14} className="animate-spin" /> Granting Access...</>
+                                                <><Loader2 size={14} className="animate-spin" /> Sending...</>
                                             ) : (
-                                                <><UserPlus size={14} /> Grant Intel Clearance</>
+                                                <><UserPlus size={14} /> Send Clearance Request</>
                                             )}
                                         </button>
                                     </div>

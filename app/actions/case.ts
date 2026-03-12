@@ -142,3 +142,66 @@ export async function createCase(title: string, userId: string) {
 
     return newCase;
 }
+
+export async function createInvitation(caseId: string, inviterId: string, inviteeId: string, role: string = "VIEWER") {
+    // Check if user is already in case
+    const existingCase = await prisma.case.findFirst({
+        where: { id: caseId, users: { some: { id: inviteeId } } }
+    });
+    if (existingCase) throw new Error("Agent is already assigned to this case.");
+
+    // Check for pending invite
+    const existingInvite = await prisma.invitation.findFirst({
+        where: { caseId, inviteeId, status: "PENDING" }
+    });
+    if (existingInvite) throw new Error("An invitation is already pending for this agent.");
+
+    await prisma.invitation.create({
+        data: {
+            caseId,
+            inviterId,
+            inviteeId,
+            role,
+        }
+    });
+
+    return { success: true };
+}
+
+export async function getPendingInvitations(userId: string) {
+    return prisma.invitation.findMany({
+        where: { inviteeId: userId, status: "PENDING" },
+        include: {
+            case: { select: { title: true } },
+            inviter: { select: { name: true, email: true } }
+        },
+        orderBy: { createdAt: 'desc' }
+    });
+}
+
+export async function acceptInvitation(invitationId: string) {
+    const invite = await prisma.invitation.findUnique({ where: { id: invitationId } });
+    if (!invite) throw new Error("Invitation not found");
+
+    // Add user to case
+    await prisma.case.update({
+        where: { id: invite.caseId },
+        data: { users: { connect: { id: invite.inviteeId } } }
+    });
+
+    // Mark as accepted
+    await prisma.invitation.update({
+        where: { id: invitationId },
+        data: { status: "ACCEPTED" }
+    });
+
+    return { success: true };
+}
+
+export async function rejectInvitation(invitationId: string) {
+    await prisma.invitation.update({
+        where: { id: invitationId },
+        data: { status: "REJECTED" }
+    });
+    return { success: true };
+}

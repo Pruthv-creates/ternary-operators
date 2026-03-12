@@ -126,6 +126,7 @@ type InvestigationState = {
   setPlaybackTime: (time: number | ((prev: number) => number)) => void;
   isPlaybackPlaying: boolean;
   setIsPlaybackPlaying: (playing: boolean) => void;
+  refreshLocationEvents: () => Promise<void>;
 
   // Auto-Layout
   autoLayout: () => void;
@@ -165,6 +166,13 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
   })),
   isPlaybackPlaying: false,
   setIsPlaybackPlaying: (playing) => set({ isPlaybackPlaying: playing }),
+  refreshLocationEvents: async () => {
+    const caseId = get().currentCaseId;
+    if (caseId) {
+      const events = await getLocationEvents(caseId);
+      set({ locationEvents: events });
+    }
+  },
 
   autoLayout: () => {
     const { nodes, edges } = get();

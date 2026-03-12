@@ -80,7 +80,9 @@ export async function getCaseGraph(caseId: string) {
 }
 
 export async function getLocationEvents(caseId: string) {
-  return (prisma as any).locationEvent.findMany({
+  const p = prisma as any;
+  if (!p.locationEvent) return [];
+  return p.locationEvent.findMany({
     where: { node: { caseId } },
     orderBy: { timestamp: "asc" },
   });

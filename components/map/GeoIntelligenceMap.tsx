@@ -61,7 +61,13 @@ function MapController({ hoveredNodeId }: { hoveredNodeId: string | null }) {
 }
 
 export default function GeoIntelligenceMap() {
-  const { nodes, activeMapNodeId, setActiveMapNodeId, setHighlightedGraphNodeId } = useInvestigationStore();
+  const { 
+    nodes, 
+    activeMapNodeId, 
+    setActiveMapNodeId, 
+    setHighlightedGraphNodeId,
+    refreshLocationEvents 
+  } = useInvestigationStore();
   const [showHeatmap, setShowHeatmap] = useState(true);
   const [showPaths, setShowPaths] = useState(true);
 
@@ -132,6 +138,15 @@ export default function GeoIntelligenceMap() {
 
       {/* Map Controls */}
       <div className="absolute right-6 top-6 z-[1000] flex flex-col gap-2">
+        <button
+          onClick={async () => {
+            await fetch('/api/simulate-geo');
+            refreshLocationEvents();
+          }}
+          className="px-3 py-2 rounded-xl border border-emerald-500/50 bg-emerald-500/20 text-emerald-400 font-mono text-[9px] font-black uppercase tracking-widest transition-all hover:bg-emerald-500/30"
+        >
+          Trigger Real-time Intel
+        </button>
         <button
           onClick={() => setShowHeatmap(!showHeatmap)}
           className={cn(

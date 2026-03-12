@@ -1,0 +1,49 @@
+"INTEL-G-1992-MEHTA-PATHFINDER
+---------------------------------------
+CONFIDENTIAL: GEO-SPATIAL RECONSTRUCTION
+CASE: THE BIG BULL (1992 SECURITIES SCAM)
+---------------------------------------
+
+SIGNAL LOG: SUBJECT HM-01 (HARSHAD MEHTA)
+PERIOD: APRIL 1992 - MAY 1992
+
+[GEO-LOG-001]
+TIMESTAMP: 1992-04-10T10:30:00Z
+LOCATION: 18.9284, 72.8340
+LABEL: Phiroze Jeejeebhoy Towers (BSE), Mumbai
+ACTIVITY: Market surge detected. ACC Ltd share price pumping.
+SIGNAL_STRENGTH: HIGH
+
+[GEO-LOG-002]
+TIMESTAMP: 1992-04-12T14:45:00Z
+LOCATION: 18.9322, 72.8335
+LABEL: SBI Main Branch, Fort, Mumbai
+ACTIVITY: HM-01 seen entering SBI building. Suspected meeting with Treasury Department.
+SIGNAL_STRENGTH: MEDIUM
+
+[GEO-LOG-003]
+TIMESTAMP: 1992-04-14T20:15:00Z
+LOCATION: 19.0118, 72.8441
+LABEL: Madhuli Apartment, Worli, Mumbai
+ACTIVITY: Meeting at residence. Blue Lexus LS400 identified in driveway.
+SIGNAL_STRENGTH: OPTICAL
+
+[GEO-LOG-004]
+TIMESTAMP: 1992-04-23T11:00:00Z
+LOCATION: 28.6129, 77.2295
+LABEL: National Housing Bank (NHB), New Delhi
+ACTIVITY: HM-01 movements detected in Lutyens Delhi. SGL account transfers initiated.
+SIGNAL_STRENGTH: SIGINT
+
+[GEO-LOG-005]
+TIMESTAMP: 1992-04-28T09:30:00Z
+LOCATION: 18.9402, 72.8351
+LABEL: Bombay High Court
+ACTIVITY: Legal consultation. Investigative trail intensifies after Dalal report.
+SIGNAL_STRENGTH: HIGH
+
+[ANALYTICAL_NOTE]
+Spatial convergence detected between HM-01 and SBI Treasury handlers at the following coordinates: [18.9322, 72.8335]. Risk heat signature is critical.
+
+--- END OF FILE ---
+"

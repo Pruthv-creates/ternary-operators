@@ -27,7 +27,7 @@ export function TimelineMarker({ event }: TimelineMarkerProps) {
             )} />
 
             {/* Date below */}
-            <div className="absolute top-full mt-2 text-[10px] font-bold text-slate-500 uppercase tracking-tighter w-max">
+            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 text-[10px] font-bold text-slate-500 uppercase tracking-tighter whitespace-nowrap text-center">
                 {event.date}
             </div>
         </div>

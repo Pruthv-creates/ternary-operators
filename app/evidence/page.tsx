@@ -237,7 +237,7 @@ export default function EvidencePage() {
                     onChange={(e) => e.target.files && handleFiles(Array.from(e.target.files))}
                   />
 
-                  <div className="p-12 flex flex-col items-center text-center">
+                  <div className="p-8 flex flex-col items-center text-center">
                     <div className="mb-4 relative">
                         <div className="absolute inset-0 bg-blue-500/20 blur-xl rounded-full scale-150 group-hover:scale-[2] transition-transform duration-500" />
                         <div className="w-16 h-16 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center relative z-10">
@@ -276,7 +276,7 @@ export default function EvidencePage() {
                         )}
                     </div>
 
-                    <div className="min-h-[200px] max-h-[400px] overflow-y-auto custom-scrollbar">
+                    <div className="min-h-[150px] max-h-[350px] overflow-y-auto custom-scrollbar">
                         <AnimatePresence initial={false}>
                             {files.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-16 opacity-30">
@@ -332,7 +332,7 @@ export default function EvidencePage() {
 
               {/* Right Column: AI Panel - STICKY to prevent disappearing on long lists */}
               <div className="col-span-12 lg:col-span-5 relative">
-                <div className="sticky top-8 flex flex-col h-[calc(100vh-200px)] min-h-[600px] bg-[#0d1424] border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
+                <div className="sticky top-8 flex flex-col h-[calc(100vh-240px)] min-h-[450px] bg-[#0d1424] border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
                     <div className="absolute inset-0 bg-blue-500/[0.02] pointer-events-none" />
                     
                     {/* Header */}
@@ -483,8 +483,9 @@ export default function EvidencePage() {
                             )}
                         </AnimatePresence>
                     </div>
-                    {/* Input Area */}
-                    <div className="p-6 bg-slate-900/60 border-t border-slate-800 relative z-10">
+
+                    {/* Input Area - Fixed at bottom of panel */}
+                    <div className="p-6 bg-slate-900/60 border-t border-slate-800">
                         <div className="relative">
                             <input
                                 value={question}
@@ -505,7 +506,7 @@ export default function EvidencePage() {
                     </div>
 
                     {/* Helpful Hints/Status - Integrated into sticky panel */}
-                    <div className="p-4 border-t border-slate-800/50 bg-slate-900/20 flex items-center gap-4">
+                    <div className="p-4 mt-auto border-t border-slate-800/50 bg-slate-900/20 flex items-center gap-4 text-left">
                         <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 flex-shrink-0">
                             <Info size={14} />
                         </div>

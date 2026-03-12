@@ -87,7 +87,7 @@ export default function Timeline({ events }: TimelineProps) {
                         <div key={event.id} className="relative group flex flex-col items-center">
                             {/* Floating Label */}
                             <div className="absolute bottom-full mb-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 pointer-events-none z-20">
-                                <div className="bg-[#0f172a] border border-cyan-500/30 rounded-lg p-2 shadow-2xl backdrop-blur-xl min-w-[120px]">
+                                <div className="bg-[#0f172a] border border-cyan-500/50 rounded-lg p-3 shadow-[0_4px_20px_rgba(0,0,0,0.5)] min-w-[140px]">
                                     <div className="text-[9px] font-black text-cyan-400 uppercase mb-1">{event.date}</div>
                                     <div className="text-[11px] font-bold text-white mb-1 leading-tight">{event.label}</div>
                                     <div className="text-[9px] text-slate-400 leading-snug">{event.description}</div>
@@ -117,7 +117,7 @@ export default function Timeline({ events }: TimelineProps) {
                 <button 
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploading}
-                    className="group flex items-center gap-2 px-5 py-2 rounded-xl bg-[#0d1424]/80 border border-slate-700/50 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all disabled:opacity-50"
+                    className="group flex items-center gap-2 px-5 py-2 rounded-xl bg-[#0d1424] border border-slate-700 hover:border-blue-500/50 hover:bg-[#1e293b] transition-all disabled:opacity-50 shadow-lg shadow-black/20"
                 >
                     <div className="w-6 h-6 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:bg-blue-500/20">
                         {uploading ? (

@@ -1,6 +1,11 @@
 import os
 import ollama
 import base64
+import fitz # PyMuPDF
+import pandas as pd
+import re
+import io
+from PIL import Image
 from langchain_core.documents import Document as LCDocument
 
 from langchain_community.document_loaders import TextLoader
@@ -44,26 +49,86 @@ def ingest_documents(case_id: str):
         file_lower = file.lower()
         file_path = os.path.join(case_evidence_dir, file)
         
-        if file_lower.endswith((".txt", ".pdf", ".md")):
+        # 1. TEXT / MARKDOWN
+        if file_lower.endswith((".txt", ".md")):
             try:
-                # Basic TextLoader for txt/md.
                 loader = TextLoader(file_path)
                 docs = loader.load()
                 for d in docs:
-                    d.metadata["case_id"] = case_id
-                    d.metadata["source"] = file
+                    urls = re.findall(r'https?://[^\s<>"]+|www\.[^\s<>"]+', d.page_content)
+                    d.metadata.update({"case_id": case_id, "source": file, "urls": urls})
                 documents.extend(docs)
             except Exception as e:
                 print(f"Error loading {file}: {e}")
+
+        # 2. PDF (Text + Embedded Images)
+        elif file_lower.endswith(".pdf"):
+            try:
+                print(f"Deep-analyzing PDF: {file}")
+                pdf_doc = fitz.open(file_path)
+                pdf_text = ""
+                
+                for page_index in range(len(pdf_doc)):
+                    page = pdf_doc[page_index]
+                    pdf_text += page.get_text()
+                    
+                    # Extract images from PDF page
+                    image_list = page.get_images(full=True)
+                    for img_index, img in enumerate(image_list):
+                        try:
+                            xref = img[0]
+                            base_image = pdf_doc.extract_image(xref)
+                            image_bytes = base_image["image"]
+                            
+                            # Run vision analysis on PDF image
+                            response = ollama.generate(
+                                model=VISION_MODEL,
+                                prompt="Extract all text and describe visual details from this image found in an investigative PDF. Focus on names, dates, amounts, and location data.",
+                                images=[image_bytes]
+                            )
+                            description = response.get('response', '')
+                            if description:
+                                img_doc = LCDocument(
+                                    page_content=f"[PDF EMBEDDED IMAGE ANALYSIS - Page {page_index+1}]\n{description}",
+                                    metadata={"case_id": case_id, "source": f"{file}#img{img_index}", "type": "pdf_image"}
+                                )
+                                documents.append(img_doc)
+                        except: pass
+                
+                urls = re.findall(r'https?://[^\s<>"]+|www\.[^\s<>"]+', pdf_text)
+                documents.append(LCDocument(
+                    page_content=pdf_text,
+                    metadata={"case_id": case_id, "source": file, "urls": urls}
+                ))
+            except Exception as e:
+                print(f"PDF Error {file}: {e}")
+
+        # 3. EXCEL
+        elif file_lower.endswith((".xlsx", ".xls")):
+            try:
+                print(f"Parsing structured data: {file}")
+                excel_data = pd.read_excel(file_path, sheet_name=None)
+                for sheet_name, df in excel_data.items():
+                    # Flatten sheet to readable text
+                    sheet_text = f"SHEET: {sheet_name}\n" + df.to_string()
+                    urls = re.findall(r'https?://[^\s<>"]+|www\.[^\s<>"]+', sheet_text)
+                    documents.append(LCDocument(
+                        page_content=sheet_text,
+                        metadata={"case_id": case_id, "source": f"{file}/{sheet_name}", "urls": urls}
+                    ))
+            except Exception as e:
+                print(f"Excel Error {file}: {e}")
         
+        # 4. STANDALONE IMAGES
         elif file_lower.endswith((".png", ".jpg", ".jpeg", ".webp")):
             try:
                 print(f"Processing visual evidence: {file}")
                 description = describe_image(file_path)
                 if description:
+                    urls = re.findall(r'https?://[^\s<>"]+|www\.[^\s<>"]+', description)
                     doc = LCDocument(
                         page_content=description,
-                        metadata={"case_id": case_id, "source": file, "type": "image_analysis"}
+                        metadata={"case_id": case_id, "source": file, "type": "image_analysis", "urls": urls}
                     )
                     documents.append(doc)
             except Exception as e:

@@ -232,7 +232,7 @@ export default function EvidencePage() {
                     ref={fileInputRef}
                     type="file"
                     multiple
-                    accept=".txt,.pdf,.md,.csv,.png,.jpg,.jpeg,.webp"
+                    accept=".txt,.pdf,.md,.csv,.png,.jpg,.jpeg,.webp,.xlsx,.xls"
                     className="hidden"
                     onChange={(e) => e.target.files && handleFiles(Array.from(e.target.files))}
                   />
@@ -249,8 +249,8 @@ export default function EvidencePage() {
                         {dragging ? "Release to Index" : "Deploy Evidence Base"}
                     </h3>
                     <p className="text-sm text-slate-400 max-w-sm mx-auto mb-6">
-                        Drop high-sig Intel reports, financial logs, or <span className="text-blue-400 font-bold">visual evidence</span> here. <br/>
-                        <span className="text-slate-600">Supports text, PDF, and high-res imagery for OCR analysis.</span>
+                        Drop high-sig Intel reports, <span className="text-blue-400 font-bold">financial Excel logs</span>, or <span className="text-blue-400 font-bold">PDF evidence</span> here. <br/>
+                        <span className="text-slate-600">Supports text, PDF (with images), and Excel for complete analysis.</span>
                     </p>
 
                     <button className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold shadow-lg shadow-blue-900/20 transition-all">

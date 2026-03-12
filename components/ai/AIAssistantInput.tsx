@@ -110,7 +110,7 @@ export function AIAssistantInput({
                                 ref={fileInputRef}
                                 type="file"
                                 multiple
-                                accept=".txt,.csv,.json,.md,.pdf,.xlsx,.xls,.docx,.doc,text/*"
+                                accept=".txt,.csv,.json,.md,.pdf,.xlsx,.xls,text/*"
                                 className="hidden"
                                 onChange={handleFileChange}
                             />

@@ -9,8 +9,10 @@ import { useAI } from "@/hooks/useAI";
 import { cn } from "@/lib/utils";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
-    const { aiPanelOpen, setAIPanelOpen } = useInvestigationStore();
+    const { aiPanelOpen, setAIPanelOpen, currentCaseId } = useInvestigationStore();
     const { askAI } = useAI();
+
+    const handleAskAI = (q: string) => askAI(q, currentCaseId || undefined);
 
     return (
         <div className="flex h-screen w-screen overflow-hidden bg-[#0a0f1c] font-sans text-slate-300">
@@ -35,7 +37,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     )}>
                         <AIAssistant
                             actions={aiActions}
-                            askAI={askAI}
+                            askAI={handleAskAI}
                             isPanel={true}
                             onClose={() => setAIPanelOpen(false)}
                         />

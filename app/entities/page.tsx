@@ -32,8 +32,10 @@ import AIAssistant from "@/components/AIAssistant";
 import { aiActions } from "@/lib/data";
 
 export default function EntitiesPage() {
-    const { aiPanelOpen, setAIPanelOpen } = useInvestigationStore();
+    const { aiPanelOpen, setAIPanelOpen, currentCaseId } = useInvestigationStore();
     const { askAI } = useAI();
+    
+    const handleAskAI = (q: string) => askAI(q, currentCaseId || undefined);
     const [selectedEntity, setSelectedEntity] = useState(pendingEntities[0]);
 
     return (
@@ -222,7 +224,7 @@ export default function EntitiesPage() {
                     )}>
                         <AIAssistant 
                             actions={aiActions} 
-                            askAI={askAI} 
+                            askAI={handleAskAI} 
                             isPanel={true} 
                             onClose={() => setAIPanelOpen(false)} 
                         />

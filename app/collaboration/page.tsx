@@ -12,8 +12,8 @@ import {
     Layout,
     Search
 } from "lucide-react";
-import Sidebar from "@/components/Sidebar";
-import Topbar from "@/components/Topbar";
+import Sidebar from "@/components/sidebar/Sidebar";
+import Topbar from "@/components/topbar/Topbar";
 import { cn } from "@/lib/utils";
 
 // --- Mock Data ---

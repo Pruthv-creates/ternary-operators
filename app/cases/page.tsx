@@ -1,8 +1,8 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import Sidebar from "@/components/Sidebar";
-import Topbar from "@/components/Topbar";
+import Sidebar from "@/components/sidebar/Sidebar";
+import Topbar from "@/components/topbar/Topbar";
 import { useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";

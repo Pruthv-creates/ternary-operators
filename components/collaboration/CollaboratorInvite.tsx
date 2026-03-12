@@ -4,8 +4,8 @@ import { UserPlus, X, CheckCircle2, Shield, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useInvestigationStore } from "@/store/investigationStore";
 import { useCollaboratorInvite } from "@/hooks/useCollaboratorInvite";
-import { AgentSearch } from "./collaboration/AgentSearch";
-import { AgentResultItem } from "./collaboration/AgentResultItem";
+import { AgentSearch } from "@/components/collaboration/AgentSearch";
+import { AgentResultItem } from "@/components/collaboration/AgentResultItem";
 
 export default function CollaboratorInvite() {
     const { currentCaseId } = useInvestigationStore();

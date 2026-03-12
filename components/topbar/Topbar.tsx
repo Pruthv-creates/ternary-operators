@@ -4,16 +4,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { MessageSquare, Trash2, Radio } from "lucide-react";
 import { useState } from "react";
-import ProfilePanel from "./ProfilePanel";
-import CollaboratorInvite from "./CollaboratorInvite";
-import ChatSidePanel from "./topbar/ChatSidePanel";
-import VoiceCommsOverlay from "./topbar/VoiceCommsOverlay";
+import ProfilePanel from "@/components/profile/ProfilePanel";
+import CollaboratorInvite from "@/components/collaboration/CollaboratorInvite";
+import ChatSidePanel from "@/components/topbar/ChatSidePanel";
+import VoiceCommsOverlay from "@/components/topbar/VoiceCommsOverlay";
 import { useInvestigationStore } from "@/store/investigationStore";
 import { useTopbarPresence } from "@/hooks/useTopbarPresence";
 import { useCaseActions } from "@/hooks/useCaseActions";
-import { TopbarSearch } from "./topbar/TopbarSearch";
-import { PresenceIndicator } from "./topbar/PresenceIndicator";
-import { UserNav } from "./topbar/UserNav";
+import { TopbarSearch } from "@/components/topbar/TopbarSearch";
+import { PresenceIndicator } from "@/components/topbar/PresenceIndicator";
+import { UserNav } from "@/components/topbar/UserNav";
 
 export default function Topbar() {
     const { currentCaseId } = useInvestigationStore();

@@ -7,8 +7,8 @@ export const metadata: Metadata = {
   keywords: ["investigation", "intelligence", "financial crime", "entity analysis", "OSINT"],
 };
 
-import AuthGate from "@/components/AuthGate";
-import AppShell from "@/components/AppShell";
+import AuthGate from "@/components/auth/AuthGate";
+import AppShell from "@/components/layout/AppShell";
 
 export default function RootLayout({
   children,

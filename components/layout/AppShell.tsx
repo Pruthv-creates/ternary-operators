@@ -1,8 +1,8 @@
 "use client";
 
-import Sidebar from "@/components/Sidebar";
-import Topbar from "@/components/Topbar";
-import AIAssistant from "@/components/AIAssistant";
+import Sidebar from "@/components/sidebar/Sidebar";
+import Topbar from "@/components/topbar/Topbar";
+import AIAssistant from "@/components/ai/AIAssistant";
 import { aiActions } from "@/lib/data";
 import { useInvestigationStore } from "@/store/investigationStore";
 import { useAI } from "@/hooks/useAI";

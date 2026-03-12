@@ -3,8 +3,8 @@
 import { cn } from "@/lib/utils";
 import { TimelineEvent } from "@/lib/data";
 import { useTimelineLogic } from "@/hooks/useTimelineLogic";
-import { TimelineMarker } from "./timeline/TimelineMarker";
-import { TimelineActions } from "./timeline/TimelineActions";
+import { TimelineMarker } from "@/components/timeline/TimelineMarker";
+import { TimelineActions } from "@/components/timeline/TimelineActions";
 
 interface TimelineProps {
     events: TimelineEvent[];

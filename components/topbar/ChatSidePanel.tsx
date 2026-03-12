@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { X, MessageSquare } from "lucide-react";
-import TeamChat from "../TeamChat";
+import TeamChat from "@/components/chat/TeamChat";
 
 interface ChatSidePanelProps {
     setIsOpen: (val: boolean) => void;

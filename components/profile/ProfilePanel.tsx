@@ -2,10 +2,10 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Shield, Bell, LogOut, ChevronRight, Settings } from "lucide-react";
-import InvitationWizard from "./profile/InvitationWizard";
+import InvitationWizard from "@/components/profile/InvitationWizard";
 import { useProfileLogic } from "@/hooks/useProfileLogic";
-import { ProfileHeader } from "./profile/ProfileHeader";
-import { ProfileMenuItem } from "./profile/ProfileMenuItem";
+import { ProfileHeader } from "@/components/profile/ProfileHeader";
+import { ProfileMenuItem } from "@/components/profile/ProfileMenuItem";
 
 interface ProfilePanelProps {
     isOpen: boolean;

@@ -1,8 +1,8 @@
 "use client";
 
-import InvestigationCanvas from "@/components/InvestigationCanvas";
-import Timeline from "@/components/Timeline";
-import ContextPanel from "@/components/ContextPanel";
+import InvestigationCanvas from "@/components/canvas/InvestigationCanvas";
+import Timeline from "@/components/timeline/Timeline";
+import ContextPanel from "@/components/sidebar/ContextPanel";
 import { timelineEvents } from "@/lib/data";
 import { useInvestigationStore } from "@/store/investigationStore";
 

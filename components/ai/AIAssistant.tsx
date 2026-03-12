@@ -2,14 +2,14 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { AlertTriangle } from "lucide-react";
-import { AIAssistantProps, Message, AttachedFile, SpeechRecognition } from "./ai/types";
+import { AIAssistantProps, Message, AttachedFile, SpeechRecognition } from "@/components/ai/types";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
-import { AIAssistantHeader } from "./ai/AIAssistantHeader";
-import { AIAssistantMessageBubble } from "./ai/AIAssistantMessageBubble";
-import { AIAssistantInput } from "./ai/AIAssistantInput";
-import { AIAssistantSuggestions } from "./ai/AIAssistantSuggestions";
-import { AIAssistantLoading } from "./ai/AIAssistantLoading";
+import { AIAssistantHeader } from "@/components/ai/AIAssistantHeader";
+import { AIAssistantMessageBubble } from "@/components/ai/AIAssistantMessageBubble";
+import { AIAssistantInput } from "@/components/ai/AIAssistantInput";
+import { AIAssistantSuggestions } from "@/components/ai/AIAssistantSuggestions";
+import { AIAssistantLoading } from "@/components/ai/AIAssistantLoading";
 
 export default function AIAssistant({ actions, askAI, isPanel, onClose }: AIAssistantProps) {
     const [messages, setMessages] = useState<Message[]>([

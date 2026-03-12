@@ -10,17 +10,17 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
-import EntityNode from "./graph/nodes/EntityNode";
-import EvidenceNode from "./graph/nodes/EvidenceNode";
-import HypothesisNode from "./graph/nodes/HypothesisNode";
-import RelationEdge from "./graph/RelationEdge";
-import EdgeEditModal from "./graph/EdgeEditModal";
+import EntityNode from "@/components/graph/nodes/EntityNode";
+import EvidenceNode from "@/components/graph/nodes/EvidenceNode";
+import HypothesisNode from "@/components/graph/nodes/HypothesisNode";
+import RelationEdge from "@/components/graph/RelationEdge";
+import EdgeEditModal from "@/components/graph/EdgeEditModal";
 import { entities } from "@/lib/data";
 import { Entity, EntityType } from "@/lib/data";
 import { useInvestigationStore } from "@/store/investigationStore";
-import CanvasToolbarLeft from "./canvas/CanvasToolbarLeft";
-import CanvasToolbarRight from "./canvas/CanvasToolbarRight";
-import GhostCursors from "./canvas/GhostCursors";
+import CanvasToolbarLeft from "@/components/canvas/CanvasToolbarLeft";
+import CanvasToolbarRight from "@/components/canvas/CanvasToolbarRight";
+import GhostCursors from "@/components/canvas/GhostCursors";
 import { useCanvasCollaborators } from "@/hooks/useCanvasCollaborators";
 import { useCanvasAI } from "@/hooks/useCanvasAI";
 import { useCanvasSearch } from "@/hooks/useCanvasSearch";

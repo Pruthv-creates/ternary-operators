@@ -17,7 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useVoiceComms } from "@/hooks/useVoiceComms";
-import { PeerAudioPlayer } from "./voice/PeerAudioPlayer";
+import { PeerAudioPlayer } from "@/components/voice/PeerAudioPlayer";
 
 interface VoiceCommsProps {
   caseId: string;

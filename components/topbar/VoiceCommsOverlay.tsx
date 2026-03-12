@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { Radio } from "lucide-react";
-import VoiceComms from "../VoiceComms";
+import VoiceComms from "@/components/voice/VoiceComms";
 
 interface VoiceCommsOverlayProps {
     fullUser: any;

@@ -1,9 +1,9 @@
 "use client";
 
 import { useSidebarCases } from "@/hooks/useSidebarCases";
-import { SidebarCases } from "./sidebar/SidebarCases";
-import { SidebarNav } from "./sidebar/SidebarNav";
-import { CreateCaseModal } from "./modals/CreateCaseModal";
+import { SidebarCases } from "@/components/sidebar/SidebarCases";
+import { SidebarNav } from "@/components/sidebar/SidebarNav";
+import { CreateCaseModal } from "@/components/modals/CreateCaseModal";
 
 export default function Sidebar() {
     const {

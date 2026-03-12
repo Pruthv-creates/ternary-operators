@@ -79,11 +79,13 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
         const currentCase = get().currentCaseId;
         if (currentCase === caseId) return;
         
+        // Immediately clear for fast UX
+        set({ nodes: [], edges: [], currentCaseId: caseId });
+        
         const { nodes: backendNodes, edges: backendEdges } = await getCaseGraph(caseId);
         set({ 
             nodes: backendNodes as any, 
-            edges: backendEdges as any,
-            currentCaseId: caseId 
+            edges: backendEdges as any
         });
     },
 
@@ -100,14 +102,21 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
             if (change.type === 'position' && change.position) {
                 updateNodePosition(change.id, change.position.x, change.position.y);
                 
-                // BROADCAST position for real-time
-                const caseId = get().currentCaseId;
-                if (caseId) {
-                    supabase.channel(`case:${caseId}`).send({
-                        type: "broadcast",
-                        event: "node-move",
-                        payload: { id: change.id, position: change.position }
-                    });
+                // BROADCAST position via WebRTC (Yjs)
+                const ynodesMap = (window as any).__yjs_nodesMap;
+                if (ynodesMap) {
+                    const currentNode = get().nodes.find(n => n.id === change.id);
+                    if (currentNode) {
+                        try {
+                            ynodesMap.set(change.id, { 
+                                id: change.id, 
+                                position: change.position, 
+                                data: currentNode.data 
+                            });
+                        } catch (e) {
+                            console.error("Yjs sync error:", e);
+                        }
+                    }
                 }
             }
         });

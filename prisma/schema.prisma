@@ -22,7 +22,7 @@ model User {
 model Invitation {
   id        String @id @default(uuid())
   caseId    String
-  case      Case   @relation(fields: [caseId], references: [id])
+  case      Case   @relation(fields: [caseId], references: [id], onDelete: Cascade)
   inviterId String
   inviter   User   @relation("InvitationsSent", fields: [inviterId], references: [id])
   inviteeId String
@@ -61,7 +61,7 @@ model ChatMessage {
   senderName   String    @map("sender_name")
   senderAvatar String?   @map("sender_avatar")
   caseId       String    @map("case_id")
-  case          Case     @relation(fields: [caseId], references: [id])
+  case          Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@map("chat_messages")
@@ -70,7 +70,7 @@ model ChatMessage {
 model Document {
   id     String @id @default(uuid())
   caseId String
-  case   Case   @relation(fields: [caseId], references: [id])
+  case   Case   @relation(fields: [caseId], references: [id], onDelete: Cascade)
 
   title       String
   sourceUrl   String?
@@ -99,7 +99,7 @@ enum NodeType {
 model Node {
   id     String @id @default(uuid())
   caseId String
-  case   Case   @relation(fields: [caseId], references: [id])
+  case   Case   @relation(fields: [caseId], references: [id], onDelete: Cascade)
 
   type    NodeType
   label   String // Display name in React Flow
@@ -122,7 +122,7 @@ model Node {
 model Edge {
   id     String @id @default(uuid())
   caseId String
-  case   Case   @relation(fields: [caseId], references: [id])
+  case   Case   @relation(fields: [caseId], references: [id], onDelete: Cascade)
 
   sourceId String
   targetId String
@@ -139,7 +139,7 @@ model Edge {
 model AuditLog {
   id        String   @id @default(uuid())
   caseId    String
-  case      Case     @relation(fields: [caseId], references: [id])
+  case      Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
   userId    String
   user      User     @relation(fields: [userId], references: [id])
 

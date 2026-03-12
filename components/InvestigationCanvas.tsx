@@ -16,6 +16,7 @@ import EvidenceNode from "./EvidenceNode";
 import HypothesisNode from "./HypothesisNode";
 import RelationEdge from "./RelationEdge";
 import EdgeEditModal from "./EdgeEditModal";
+import CollaboratorsBar from "./CollaboratorsBar";
 import { entities } from "@/lib/data";
 import { Entity, EntityType } from "@/lib/data";
 import { useInvestigationStore } from "@/store/investigationStore";
@@ -239,6 +240,9 @@ function CanvasInner() {
             className="relative flex-1 overflow-hidden bg-[#0a0f1c] canvas-grid"
             onMouseMove={handleMouseMove}
         >
+            {/* UI Overlays */}
+            <CollaboratorsBar />
+            
             {/* Canvas header */}
             <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
                 <div className="flex items-center gap-3">

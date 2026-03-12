@@ -54,8 +54,13 @@ export default function Sidebar() {
                 const casesData = await getUserCases(user.id);
                 setUserCases(casesData);
                 
-                // Auto-load first case if none selected
-                if (casesData.length > 0 && !currentCaseId) {
+                // Get last active case from localStorage
+                const lastCaseId = localStorage.getItem("astraeus_last_case_id");
+                const caseExists = casesData.find(c => c.id === lastCaseId);
+
+                if (caseExists) {
+                    loadCaseData(lastCaseId as string);
+                } else if (casesData.length > 0 && !currentCaseId) {
                     loadCaseData(casesData[0].id);
                 }
             }
@@ -64,6 +69,11 @@ export default function Sidebar() {
         fetchCases();
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    const handleSelectCase = (caseId: string) => {
+        localStorage.setItem("astraeus_last_case_id", caseId);
+        loadCaseData(caseId);
+    };
 
     const handleCreateCase = async () => {
         const title = prompt("Enter Case Title:");
@@ -124,7 +134,7 @@ export default function Sidebar() {
                             return (
                                 <div
                                     key={c.id}
-                                    onClick={() => loadCaseData(c.id)}
+                                    onClick={() => handleSelectCase(c.id)}
                                     className={cn(
                                         "flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all duration-150 group",
                                         isActive

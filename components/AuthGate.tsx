@@ -19,13 +19,16 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   // Properly initialize and listen to session changes
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUser(session.user);
-        syncUser(session.user);
+        await syncUser(session.user);
       }
       setAuthReady(true);
-    });
+    };
+    
+    checkSession();
 
     // Listen for all auth events (login, logout, token refresh)
     const {

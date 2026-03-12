@@ -243,6 +243,7 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
           collaborators: {
             ...state.collaborators,
             [event.userId]: {
+              ...state.collaborators[event.userId],
               userId: event.userId,
               name: event.name,
               color: event.color,
@@ -252,6 +253,26 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
             },
           },
         }));
+        break;
+      }
+      case "presence-sync": {
+        const newCollaborators: Record<string, any> = {};
+        const colors = ["#3b82f6", "#8b5cf6", "#10b981", "#f59e0b", "#ef4444"];
+        
+        Object.values(event.users).forEach((u: any) => {
+          const existing = currentState.collaborators[u.userId];
+          const color = existing?.color || colors[Math.abs(u.userId.charCodeAt(0)) % colors.length];
+          
+          newCollaborators[u.userId] = {
+            userId: u.userId,
+            name: u.name,
+            color,
+            x: existing?.x || 0,
+            y: existing?.y || 0,
+            lastSeen: existing?.lastSeen || Date.now()
+          };
+        });
+        set({ collaborators: newCollaborators });
         break;
       }
     }
@@ -594,11 +615,26 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
     }
   },
 
-  updateStickyText: (id: string, text: string) => {
+  updateStickyText: async (id: string, text: string) => {
+    const node = get().nodes.find((n) => n.id === id);
+    if (!node) return;
+
+    const { version, versionNonce } = nextVersion((node.data?.__version as number) ?? 0);
+    const newData = { ...node.data, text, __version: version, __versionNonce: versionNonce };
+
     set({
       nodes: get().nodes.map((n) =>
-        n.id === id ? { ...n, data: { ...n.data, text } } : n,
+        n.id === id ? { ...n, data: newData } : n,
       ),
+    });
+
+    await updateNodeContent(id, newData);
+    await realtimeSyncManager.broadcast({
+      type: "node-update",
+      id,
+      data: newData,
+      version,
+      versionNonce,
     });
   },
 

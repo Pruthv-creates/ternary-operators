@@ -30,7 +30,8 @@ export type SyncEvent =
     }
   | { type: "edge-delete"; edgeId: string }
   | { type: "graph-full-update"; nodes: Node[]; edges: Edge[] }
-  | { type: "cursor-move"; userId: string; name: string; color: string; x: number; y: number };
+  | { type: "cursor-move"; userId: string; name: string; color: string; x: number; y: number }
+  | { type: "presence-sync"; users: Record<string, { userId: string, name: string }> };
 
 export class RealtimeSyncManager {
   private channel: RealtimeChannel | null = null;
@@ -101,20 +102,36 @@ export class RealtimeSyncManager {
     this.channel.on("presence", { event: "sync" }, () => {
       const state = this.channel?.presenceState();
       if (state) {
+        const activeUsers: Record<string, { userId: string, name: string }> = {};
+        Object.values(state).forEach((presences: any) => {
+          presences.forEach((p: any) => {
+            if (p.userId) {
+              activeUsers[p.userId] = { userId: p.userId, name: p.name };
+            }
+          });
+        });
+        
         onEvent({
-          type: "graph-full-update",
-          nodes: [],
-          edges: [],
+          type: "presence-sync",
+          users: activeUsers
         });
       }
     });
 
-    await this.channel.subscribe((status) => {
+    await this.channel.subscribe(async (status) => {
       console.log(`[Realtime] Subscribed to case ${caseId}:`, status);
+      if (status === 'SUBSCRIBED') {
+        // Get current user to track presence accurately
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await this.channel?.track({ 
+            userId: user.id,
+            name: user.user_metadata?.full_name || user.email?.split('@')[0] || "Analyst",
+            online_at: new Date().toISOString()
+          });
+        }
+      }
     });
-
-    // Update presence
-    await this.channel.track({ investigator: true, timestamp: Date.now() });
   }
 
   async broadcast(event: SyncEvent): Promise<void> {

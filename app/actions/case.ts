@@ -320,17 +320,8 @@ export async function deleteCase(caseId: string, userId: string) {
       return { success: false, error: "Unauthorized" };
     }
 
-    // Delete all related data
-    await prisma.edge.deleteMany({ where: { caseId } });
-    await prisma.node.deleteMany({ where: { caseId } });
-    await prisma.auditLog.deleteMany({ where: { caseId } });
-    await prisma.chatMessage.deleteMany({ where: { caseId } });
-    await prisma.invitation.deleteMany({ where: { caseId } });
-    await prisma.document.deleteMany({ where: { caseId } });
-    await prisma.case.update({
-      where: { id: caseId },
-      data: { users: { deleteMany: {} } },
-    });
+    // Delete the case - all related data (nodes, edges, logs, invitations, etc.) 
+    // will now be deleted automatically via 'onDelete: Cascade' in the schema.
     await prisma.case.delete({ where: { id: caseId } });
 
     return { success: true };

@@ -5,6 +5,18 @@ export const metadata: Metadata = {
   title: "ASTRAEUS – Intelligence Command Centre",
   description: "Enterprise investigation intelligence platform for financial crime analysis and entity relationship mapping.",
   keywords: ["investigation", "intelligence", "financial crime", "entity analysis", "OSINT"],
+  icons: [
+    {
+      media: '(prefers-color-scheme: light)',
+      url: '/favicon.png',
+      href: '/favicon.png',
+    },
+    {
+      media: '(prefers-color-scheme: dark)',
+      url: '/favicon-inverted.png',
+      href: '/favicon-inverted.png',
+    }
+  ],
 };
 
 import AuthGate from "@/components/auth/AuthGate";

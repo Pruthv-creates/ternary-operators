@@ -48,6 +48,7 @@ model Case {
   edges        Edge[]
   invitations  Invitation[]
   nodes        Node[]
+  news         News[]
   chatMessages ChatMessage[]
   users        User[]        @relation("CaseInvestigators")
 }
@@ -129,4 +130,19 @@ enum NodeType {
   ENTITY_ORG
   ENTITY_LOCATION
   EVENT
+}
+
+model News {
+  id          String   @id @default(uuid())
+  caseId      String
+  title       String
+  summary     String
+  content     String?
+  source      String
+  url         String?
+  publishedAt DateTime @default(now())
+  sentiment   String?
+  case        Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@map("news")
 }

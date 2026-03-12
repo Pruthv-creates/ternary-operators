@@ -21,6 +21,7 @@ import { Entity, EntityType } from "@/lib/data";
 import { useInvestigationStore } from "@/store/investigationStore";
 import { Brain, Loader2, Plus, Shield, Search, Users, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const nodeTypes: any = {
@@ -43,9 +44,62 @@ function CanvasInner() {
         setSelectedEntity,
         addStickyNote,
         currentCaseId,
+        collaborators,
+        broadcastCursor,
     } = useInvestigationStore();
 
     const { setCenter } = useReactFlow();
+    const canvasRef = useRef<HTMLDivElement>(null);
+    const cursorThrottleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const CURSOR_THROTTLE_MS = 40; // ~25fps, matches Excalidraw's approach
+    const CURSOR_TIMEOUT_MS = 5000; // remove ghost cursor after 5s of no updates
+
+    // Current user metadata for cursor broadcasting
+    const [currentUser, setCurrentUser] = useState<{ id: string; name: string; color: string } | null>(null);
+
+    useEffect(() => {
+        supabase.auth.getUser().then(({ data }) => {
+            if (data.user) {
+                const colors = ["#3b82f6", "#8b5cf6", "#10b981", "#f59e0b", "#ef4444"];
+                const color = colors[Math.abs(data.user.id.charCodeAt(0)) % colors.length];
+                setCurrentUser({
+                    id: data.user.id,
+                    name: data.user.user_metadata?.full_name || data.user.email?.split("@")[0] || "Analyst",
+                    color,
+                });
+            }
+        });
+    }, []);
+
+    // Heartbeat: evict collaborators who haven't sent a cursor update in CURSOR_TIMEOUT_MS
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const now = Date.now();
+            const { collaborators: current } = useInvestigationStore.getState();
+            const pruned = Object.fromEntries(
+                Object.entries(current).filter(([, u]) => now - u.lastSeen < CURSOR_TIMEOUT_MS)
+            );
+            if (Object.keys(pruned).length !== Object.keys(current).length) {
+                useInvestigationStore.setState({ collaborators: pruned });
+            }
+        }, 1000);
+        return () => clearInterval(interval);
+    }, []);
+
+    // Throttled mouse-move handler on the canvas wrapper
+    const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+        if (!currentUser || !canvasRef.current) return;
+        if (cursorThrottleRef.current) return; // still within throttle window
+
+        cursorThrottleRef.current = setTimeout(() => {
+            cursorThrottleRef.current = null;
+        }, CURSOR_THROTTLE_MS);
+
+        const rect = canvasRef.current.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        broadcastCursor(currentUser.id, currentUser.name, currentUser.color, x, y);
+    }, [currentUser, broadcastCursor]);
 
     const [analyzing, setAnalyzing] = useState(false);
     const [aiMessage, setAiMessage] = useState<string | null>(null);
@@ -183,7 +237,11 @@ function CanvasInner() {
     });
 
     return (
-        <div className="relative flex-1 overflow-hidden bg-[#0a0f1c] canvas-grid">
+        <div
+            ref={canvasRef}
+            className="relative flex-1 overflow-hidden bg-[#0a0f1c] canvas-grid"
+            onMouseMove={handleMouseMove}
+        >
             {/* Canvas header */}
             <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
                 <div className="flex items-center gap-3">
@@ -331,30 +389,39 @@ function CanvasInner() {
                 <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="rgba(255,255,255,0.04)" />
             </ReactFlow>
 
-            {/* Edge Edit Modal */}
-            {editingEdgeId && (
-                (() => {
-                    const edge = edges.find(e => e.id === editingEdgeId);
-                    const sourceNode = nodes.find(n => n.id === edge?.source);
-                    const targetNode = nodes.find(n => n.id === edge?.target);
-                    
-                    if (!edge || !sourceNode || !targetNode) return null;
-                    
-                    return (
-                        <EdgeEditModal
-                            edgeId={editingEdgeId}
-                            sourceLabel={(sourceNode.data?.name || sourceNode.data?.label) as string}
-                            targetLabel={(targetNode.data?.name || targetNode.data?.label) as string}
-                            currentLabel={edge.label as string}
-                            onClose={() => setEditingEdgeId(null)}
-                            onDeleteEdge={() => {
-                                deleteEdgeByIds(edge.source as string, edge.target as string);
-                                setEditingEdgeId(null);
-                            }}
-                        />
-                    );
-                })()
-            )}
+            {/* Ghost cursor overlay — separate layer so ReactFlow canvas doesn't re-render on moves */}
+            <div className="absolute inset-0 pointer-events-none z-20">
+                {Object.values(collaborators).map((user) => (
+                    <div
+                        key={user.userId}
+                        className="absolute flex flex-col items-start"
+                        style={{
+                            left: user.x,
+                            top: user.y,
+                            // CSS transition = Excalidraw-style lerp without JS animation loop
+                            transition: `left ${CURSOR_THROTTLE_MS}ms linear, top ${CURSOR_THROTTLE_MS}ms linear`,
+                            transform: "translate(-2px, -2px)",
+                        }}
+                    >
+                        {/* Cursor SVG */}
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path
+                                d="M0 0 L0 11 L3 8.5 L5.5 14 L7 13.5 L4.5 8 L8 8 Z"
+                                fill={user.color}
+                                stroke="rgba(0,0,0,0.4)"
+                                strokeWidth="0.8"
+                            />
+                        </svg>
+                        {/* Name tag */}
+                        <span
+                            className="text-[9px] font-bold px-1.5 py-0.5 rounded-sm mt-0.5 whitespace-nowrap shadow-md tracking-widest uppercase"
+                            style={{ backgroundColor: user.color, color: "#fff" }}
+                        >
+                            {user.name}
+                        </span>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 }

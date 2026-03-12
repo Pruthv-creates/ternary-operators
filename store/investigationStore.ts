@@ -25,7 +25,23 @@ import {
   deleteEdgeAction,
 } from "@/actions/nodes";
 import { supabase } from "@/lib/supabase";
-import { realtimeSyncManager, SyncEvent } from "@/lib/realtimeSync";
+import { realtimeSyncManager, SyncEvent, CursorUser } from "@/lib/realtimeSync";
+
+/** Increment version and attach a random nonce for conflict resolution */
+function nextVersion(current: number = 0) {
+  return { version: current + 1, versionNonce: Math.floor(Math.random() * 1_000_000) };
+}
+
+/** True if incoming (a) should win over stored (b) — higher version, or same version + lower nonce */
+function winsConflict(
+  aVersion: number,
+  aNonce: number,
+  bVersion: number,
+  bNonce: number,
+): boolean {
+  if (aVersion !== bVersion) return aVersion > bVersion;
+  return aNonce < bNonce; // lower nonce wins (deterministic tiebreak)
+}
 
 const initialNodes: Node[] = [
   {
@@ -61,6 +77,8 @@ type InvestigationState = {
   edges: Edge[];
   currentCaseId: string | null;
   selectedEntity: Entity | null;
+  /** Live cursors of other investigators — keyed by userId */
+  collaborators: Record<string, CursorUser>;
   onNodesChange: OnNodesChange;
   onEdgesChange: OnEdgesChange;
   onConnect: OnConnect;
@@ -83,6 +101,7 @@ type InvestigationState = {
   aiPanelOpen: boolean;
   setAIPanelOpen: (open: boolean) => void;
   toggleAIPanel: () => void;
+  broadcastCursor: (userId: string, name: string, color: string, x: number, y: number) => void;
 
   // Real-time sync methods
   syncNodes: (nodes: Node[]) => void;
@@ -95,6 +114,7 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
   edges: [],
   currentCaseId: null,
   selectedEntity: null,
+  collaborators: {},
   aiPanelOpen: false,
 
   setAIPanelOpen: (open: boolean) => set({ aiPanelOpen: open }),
@@ -128,44 +148,55 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
 
     switch (event.type) {
       case "node-move": {
-        const updatedNodes = currentState.nodes.map((n) =>
-          n.id === event.id
-            ? {
-                ...n,
-                position: event.position,
-              }
-            : n,
-        );
-        set({ nodes: updatedNodes });
-        break;
-      }
+        // Conflict resolution: only apply if incoming version wins
+        const existing = currentState.nodes.find((n) => n.id === event.id);
+        const existingVersion: number = (existing?.data?.__version as number) ?? 0;
+        const existingNonce: number = (existing?.data?.__versionNonce as number) ?? 0;
 
-      case "node-create": {
-        // Avoid duplicates
-        if (!currentState.nodes.find((n) => n.id === event.node.id)) {
+        if (!existing || winsConflict(event.version, event.versionNonce, existingVersion, existingNonce)) {
           set({
-            nodes: [...currentState.nodes, event.node],
+            nodes: currentState.nodes.map((n) =>
+              n.id === event.id
+                ? { ...n, position: event.position, data: { ...n.data, __version: event.version, __versionNonce: event.versionNonce } }
+                : n,
+            ),
           });
         }
         break;
       }
 
+      case "node-create": {
+        // Avoid duplicates — check by id
+        if (!currentState.nodes.find((n) => n.id === event.node.id)) {
+          set({ nodes: [...currentState.nodes, event.node] });
+        }
+        break;
+      }
+
       case "node-update": {
-        const updatedNodes = currentState.nodes.map((n) =>
-          n.id === event.id
-            ? {
-                ...n,
-                data: { ...n.data, ...event.data },
-              }
-            : n,
-        );
-        set({ nodes: updatedNodes });
+        // Conflict resolution for content edits
+        const existing = currentState.nodes.find((n) => n.id === event.id);
+        const existingVersion: number = (existing?.data?.__version as number) ?? 0;
+        const existingNonce: number = (existing?.data?.__versionNonce as number) ?? 0;
+
+        if (!existing || winsConflict(event.version, event.versionNonce, existingVersion, existingNonce)) {
+          set({
+            nodes: currentState.nodes.map((n) =>
+              n.id === event.id
+                ? { ...n, data: { ...n.data, ...event.data, __version: event.version, __versionNonce: event.versionNonce } }
+                : n,
+            ),
+          });
+        }
         break;
       }
 
       case "node-delete": {
+        // Tombstone: mark isDeleted instead of removing — prevents re-appearing from late peers
         set({
-          nodes: currentState.nodes.filter((n) => n.id !== event.id),
+          nodes: currentState.nodes.map((n) =>
+            n.id === event.id ? { ...n, data: { ...n.data, isDeleted: true }, hidden: true } : n,
+          ),
           edges: currentState.edges.filter(
             (e) => e.source !== event.id && e.target !== event.id,
           ),
@@ -174,48 +205,53 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
       }
 
       case "edge-create": {
-        // Avoid duplicates
         if (
           !currentState.edges.find(
             (e) =>
               e.source === event.edge.source && e.target === event.edge.target,
           )
         ) {
-          set({
-            edges: [...currentState.edges, event.edge],
-          });
+          set({ edges: [...currentState.edges, event.edge] });
         }
         break;
       }
 
       case "edge-update": {
-        const updatedEdges = currentState.edges.map((e) =>
-          e.id === event.edgeId
-            ? {
-                ...e,
-                label: event.relationshipType,
-              }
-            : e,
-        );
-        set({ edges: updatedEdges });
-        break;
-      }
-
-      case "edge-delete": {
         set({
-          edges: currentState.edges.filter((e) => e.id !== event.edgeId),
+          edges: currentState.edges.map((e) =>
+            e.id === event.edgeId ? { ...e, label: event.relationshipType } : e,
+          ),
         });
         break;
       }
 
+      case "edge-delete": {
+        set({ edges: currentState.edges.filter((e) => e.id !== event.edgeId) });
+        break;
+      }
+
       case "graph-full-update": {
-        // Full refresh (optional - usually not needed)
         if (event.nodes.length > 0) {
-          set({
-            nodes: event.nodes,
-            edges: event.edges,
-          });
+          set({ nodes: event.nodes, edges: event.edges });
         }
+        break;
+      }
+
+      case "cursor-move": {
+        // Update this collaborator's cursor position and refresh lastSeen
+        set((state) => ({
+          collaborators: {
+            ...state.collaborators,
+            [event.userId]: {
+              userId: event.userId,
+              name: event.name,
+              color: event.color,
+              x: event.x,
+              y: event.y,
+              lastSeen: Date.now(),
+            },
+          },
+        }));
         break;
       }
     }
@@ -226,16 +262,30 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
     const updatedNodes = applyNodeChanges(changes, currentNodes);
     set({ nodes: updatedNodes });
 
-    // PERSIST POSITIONS AND BROADCAST!
     changes.forEach((change) => {
       if (change.type === "position" && change.position) {
         updateNodePosition(change.id, change.position.x, change.position.y);
 
-        // BROADCAST position via real-time sync
+        // Get current version and bump it
+        const node = currentNodes.find((n) => n.id === change.id);
+        const { version, versionNonce } = nextVersion((node?.data?.__version as number) ?? 0);
+
+        // BROADCAST with conflict-resolution metadata
         realtimeSyncManager.broadcast({
           type: "node-move",
           id: change.id,
           position: change.position,
+          version,
+          versionNonce,
+        });
+
+        // Update our own node's version in state so we can compare later
+        set({
+          nodes: get().nodes.map((n) =>
+            n.id === change.id
+              ? { ...n, data: { ...n.data, __version: version, __versionNonce: versionNonce } }
+              : n,
+          ),
         });
       }
     });
@@ -373,21 +423,20 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
   deleteNode: async (id: string) => {
     const caseId = get().currentCaseId;
 
+    // Local: tombstone immediately (hidden: true) so React Flow stops rendering it
     set({
-      nodes: get().nodes.filter((n) => n.id !== id),
+      nodes: get().nodes.map((n) =>
+        n.id === id ? { ...n, data: { ...n.data, isDeleted: true }, hidden: true } : n,
+      ),
       edges: get().edges.filter((e) => e.source !== id && e.target !== id),
-      selectedEntity:
-        get().selectedEntity?.id === id ? null : get().selectedEntity,
+      selectedEntity: get().selectedEntity?.id === id ? null : get().selectedEntity,
     });
 
     if (caseId) {
       const result = await deleteNodeAction(id, caseId);
       if (result.success) {
-        // Broadcast deletion
-        await realtimeSyncManager.broadcast({
-          type: "node-delete",
-          id,
-        });
+        // Broadcast tombstone to peers
+        await realtimeSyncManager.broadcast({ type: "node-delete", id });
       }
     }
   },
@@ -449,33 +498,27 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
   },
 
   updateNodeData: async (id: string, data: any) => {
+    const node = get().nodes.find((n) => n.id === id);
+    const { version, versionNonce } = nextVersion((node?.data?.__version as number) ?? 0);
+
     const updatedNodes = get().nodes.map((n) =>
-      n.id === id ? { ...n, data: { ...n.data, ...data } } : n,
+      n.id === id ? { ...n, data: { ...n.data, ...data, __version: version, __versionNonce: versionNonce } } : n,
     );
     const selectedEntity = get().selectedEntity;
     let newSelectedEntity = selectedEntity;
+    if (selectedEntity?.id === id) newSelectedEntity = { ...selectedEntity, ...data };
 
-    if (selectedEntity?.id === id) {
-      newSelectedEntity = {
-        ...selectedEntity,
-        ...data,
-      };
-    }
-
-    set({
-      nodes: updatedNodes,
-      selectedEntity: newSelectedEntity,
-    });
+    set({ nodes: updatedNodes, selectedEntity: newSelectedEntity });
 
     const targetNode = updatedNodes.find((n) => n.id === id);
     if (targetNode) {
       await updateNodeContent(id, targetNode.data);
-
-      // Broadcast update
       await realtimeSyncManager.broadcast({
         type: "node-update",
         id,
         data: targetNode.data,
+        version,
+        versionNonce,
       });
     }
   },
@@ -668,8 +711,10 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
   },
 
   addEdge: (edge: Edge) => {
-    set({
-      edges: [...get().edges, edge],
-    });
+    set({ edges: [...get().edges, edge] });
+  },
+
+  broadcastCursor: (userId, name, color, x, y) => {
+    realtimeSyncManager.broadcast({ type: "cursor-move", userId, name, color, x, y });
   },
 }));

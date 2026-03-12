@@ -2,11 +2,26 @@ import { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 import { Node, Edge } from "@xyflow/react";
 
+export type CursorUser = {
+  userId: string;
+  name: string;
+  color: string;
+  x: number;
+  y: number;
+  lastSeen: number;
+};
+
 export type SyncEvent =
-  | { type: "node-move"; id: string; position: { x: number; y: number } }
+  | {
+      type: "node-move";
+      id: string;
+      position: { x: number; y: number };
+      version: number;
+      versionNonce: number;
+    }
   | { type: "node-create"; node: Node }
-  | { type: "node-update"; id: string; data: Record<string, unknown> }
-  | { type: "node-delete"; id: string }
+  | { type: "node-update"; id: string; data: Record<string, unknown>; version: number; versionNonce: number; }
+  | { type: "node-delete"; id: string }   // tombstone — sets isDeleted: true on remote
   | { type: "edge-create"; edge: Edge }
   | {
       type: "edge-update";
@@ -14,7 +29,8 @@ export type SyncEvent =
       relationshipType: string;
     }
   | { type: "edge-delete"; edgeId: string }
-  | { type: "graph-full-update"; nodes: Node[]; edges: Edge[] };
+  | { type: "graph-full-update"; nodes: Node[]; edges: Edge[] }
+  | { type: "cursor-move"; userId: string; name: string; color: string; x: number; y: number };
 
 export class RealtimeSyncManager {
   private channel: RealtimeChannel | null = null;
@@ -74,6 +90,11 @@ export class RealtimeSyncManager {
 
     this.channel.on("broadcast", { event: "edge-delete" }, ({ payload }) => {
       onEvent({ type: "edge-delete", ...payload });
+    });
+
+    // Cursor moves
+    this.channel.on("broadcast", { event: "cursor-move" }, ({ payload }) => {
+      onEvent({ type: "cursor-move", ...payload });
     });
 
     // Track presence (who's currently viewing the case)

@@ -111,10 +111,10 @@ export default function CollaborationPage() {
     }, [currentCaseId]);
     return (
         <>
-        <main className="flex-1 overflow-hidden p-6 gap-6 grid grid-cols-3 grid-rows-2 relative z-10">
+        <main className="flex-1 overflow-hidden p-6 gap-x-6 gap-y-0 grid grid-cols-3 relative z-10">
                     
-                    {/* Live Case Audit (Spans 2 rows on left) */}
-                    <div className="col-span-1 row-span-2 bg-[#0d1424]/60 border border-[#1e3a5f]/30 rounded-3xl flex flex-col overflow-hidden backdrop-blur-sm">
+                    {/* Live Case Audit */}
+                    <div className="col-span-1 bg-[#0d1424]/60 border border-[#1e3a5f]/30 rounded-3xl flex flex-col overflow-hidden backdrop-blur-sm">
                         <div className="px-6 py-5 border-b border-[#1e3a5f]/40 bg-white/[0.02] flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <History size={16} className="text-blue-400" />
@@ -162,7 +162,8 @@ export default function CollaborationPage() {
                         <div className="px-6 py-5 border-b border-[#1e3a5f]/40 bg-white/[0.02] flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <Users size={16} className="text-emerald-400" />
-                                <h3 className="text-xs font-black text-white uppercase tracking-widest">Active Analysts</h3>
+                                {/* shortened label to avoid overly long header */}
+                                <h3 className="text-xs font-black text-white uppercase tracking-widest">Active</h3>
                             </div>
                             <div className="flex items-center gap-2">
                                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -170,7 +171,8 @@ export default function CollaborationPage() {
                             </div>
                         </div>
 
-                        <div className="flex-1 p-6 grid grid-cols-3 gap-4 overflow-y-auto custom-scrollbar">
+                        {/* cap the height so the collaborators panel doesn’t stretch endlessly when lots of people are listed */}
+                        <div className="flex-1 p-6 grid grid-cols-3 gap-4 max-h-[24rem] overflow-y-auto custom-scrollbar">
                             {realAnalysts.length === 0 && (
                                 <div className="col-span-3 flex flex-col items-center justify-center p-8 bg-white/5 rounded-2xl border border-white/5 border-dashed">
                                     <Users size={32} className="text-slate-600 mb-3" />
@@ -201,7 +203,7 @@ export default function CollaborationPage() {
                         </div>
                     </div>
 
-                    {/* Project Task Board (Bottom Right) */}
+                    {/* Project Task Board (Bottom Right) - now sits flush beneath the workspace */}
                     <div className="col-span-2 row-span-1 bg-[#0d1424]/60 border border-[#1e3a5f]/30 rounded-3xl flex flex-col overflow-hidden backdrop-blur-sm">
                         <div className="px-6 py-5 border-b border-[#1e3a5f]/40 bg-white/[0.02] flex items-center justify-between">
                             <div className="flex items-center gap-3">

@@ -46,8 +46,8 @@ const ICE_SERVERS: RTCIceServer[] = [
   { urls: "stun:stun.l.google.com:19302" },
   { urls: "stun:stun1.l.google.com:19302" },
   { urls: "stun:stun2.l.google.com:19302" },
+  { urls: "stun:stun3.l.google.com:19302" },
   { urls: "stun:stun.relay.metered.ca:80" },
-  // Metered TURN servers (Primary)
   {
     urls: "turn:standard.relay.metered.ca:80",
     username: "e2a44b0e2a6e8dd4e30a5bbd",
@@ -62,14 +62,17 @@ const ICE_SERVERS: RTCIceServer[] = [
     urls: "turn:standard.relay.metered.ca:443?transport=tcp",
     username: "e2a44b0e2a6e8dd4e30a5bbd",
     credential: "yFvlO9N6z1w5BXJH",
-  },
-  // Numb TURN servers (Backup)
-  {
-    urls: "turn:numb.viagenie.ca",
-    username: "itouch@itouch.io",
-    credential: "itouchpassword",
   }
 ];
+
+/**
+ * Patches SDP to force high-quality Opus (64kbps - 128kbps)
+ */
+function forceHighQualityAudio(sdp: string): string {
+  // Force 128kbps, Stereo, and in-band FEC (forward error correction)
+  // 111 is the standard opus payload type
+  return sdp.replace(/a=fmtp:111 (.*)/g, "a=fmtp:111 $1;stereo=1;sprop-stereo=1;maxaveragebitrate=128000;cbr=1;useinbandfec=1");
+}
 
 export default function VoiceComms({ caseId, currentUser, onActiveChange }: VoiceCommsProps) {
   const [isActive, setIsActive] = useState(false);
@@ -161,50 +164,67 @@ export default function VoiceComms({ caseId, currentUser, onActiveChange }: Voic
       const ctx = getAudioContext();
       const source = ctx.createMediaStreamSource(stream);
 
-      // 1. High-pass filter — cut rumble / noise below 80Hz
+      // 1. High-pass filter — cut rumble / noise below 100Hz
       const highPass = ctx.createBiquadFilter();
       highPass.type = "highpass";
-      highPass.frequency.setValueAtTime(80, ctx.currentTime);
+      highPass.frequency.setValueAtTime(100, ctx.currentTime);
       highPass.Q.setValueAtTime(0.7, ctx.currentTime);
 
-      // 2. Presence EQ — +4dB at 3kHz (human voice clarity band)
+      // 2. Presence EQ — +5dB at 3.5kHz (clarity band for human speech)
       const presenceEQ = ctx.createBiquadFilter();
       presenceEQ.type = "peaking";
-      presenceEQ.frequency.setValueAtTime(3000, ctx.currentTime);
-      presenceEQ.gain.setValueAtTime(4, ctx.currentTime);
-      presenceEQ.Q.setValueAtTime(1, ctx.currentTime);
+      presenceEQ.frequency.setValueAtTime(3500, ctx.currentTime);
+      presenceEQ.gain.setValueAtTime(5, ctx.currentTime);
+      presenceEQ.Q.setValueAtTime(1.2, ctx.currentTime);
 
-      // 3. Gain — 2× amplification
+      // 3. Shimmer EQ — +3dB at 7kHz (high-end air/clarity like Pro mics)
+      const shimmerEQ = ctx.createBiquadFilter();
+      shimmerEQ.type = "peaking";
+      shimmerEQ.frequency.setValueAtTime(7000, ctx.currentTime);
+      shimmerEQ.gain.setValueAtTime(3, ctx.currentTime);
+      shimmerEQ.Q.setValueAtTime(0.8, ctx.currentTime);
+
+      // 4. Gain — 1.8× amplification (slightly lower to leave headroom for EQ)
       const gain = ctx.createGain();
-      gain.gain.setValueAtTime(2.0, ctx.currentTime);
+      gain.gain.setValueAtTime(1.8, ctx.currentTime);
       gainNodesRef.current[key] = gain;
 
-      // 4. Dynamics compressor — normalize levels, prevent distortion
+      // 5. Dynamics compressor — Zoom style normalization
       const compressor = ctx.createDynamicsCompressor();
-      compressor.threshold.setValueAtTime(-24, ctx.currentTime);
-      compressor.knee.setValueAtTime(12, ctx.currentTime);
-      compressor.ratio.setValueAtTime(4, ctx.currentTime);
-      compressor.attack.setValueAtTime(0.003, ctx.currentTime);
+      compressor.threshold.setValueAtTime(-22, ctx.currentTime);
+      compressor.knee.setValueAtTime(8, ctx.currentTime);
+      compressor.ratio.setValueAtTime(3.5, ctx.currentTime);
+      compressor.attack.setValueAtTime(0.005, ctx.currentTime);
       compressor.release.setValueAtTime(0.15, ctx.currentTime);
 
-      // 5. Analyser — for the speaking indicator
+      // 6. Limiter (prevent any clipping)
+      const limiter = ctx.createDynamicsCompressor();
+      limiter.threshold.setValueAtTime(-0.5, ctx.currentTime);
+      limiter.knee.setValueAtTime(0, ctx.currentTime);
+      limiter.ratio.setValueAtTime(20, ctx.currentTime);
+      limiter.attack.setValueAtTime(0.001, ctx.currentTime);
+      limiter.release.setValueAtTime(0.05, ctx.currentTime);
+
+      // 7. Analyser — for the speaking indicator
       const analyser = ctx.createAnalyser();
       analyser.fftSize = 128;
       analysersRef.current[key] = analyser;
 
-      // 6. MediaStreamDestination — the processed audio comes out as a MediaStream
-      //    that an <audio autoPlay> element can reliably play
+      // 8. MediaStreamDestination
       const destination = ctx.createMediaStreamDestination();
       audioDestNodesRef.current[key] = destination;
 
-      // Chain: source → highPass → presenceEQ → gain → compressor → destination (MediaStream)
-      //                                                    └→ analyser (metering only)
+      // Chain: source → highPass → presenceEQ → shimmerEQ → gain → compressor → limiter → destination
       source.connect(highPass);
       highPass.connect(presenceEQ);
-      presenceEQ.connect(gain);
+      presenceEQ.connect(shimmerEQ);
+      shimmerEQ.connect(gain);
       gain.connect(compressor);
-      gain.connect(analyser);
-      compressor.connect(destination);
+      compressor.connect(limiter);
+      limiter.connect(destination);
+      
+      // Metering only
+      gain.connect(analyser); 
 
       // Expose the processed MediaStream so the <audio> element can play it
       setProcessedStreams((prev) => ({ ...prev, [key]: destination.stream }));
@@ -377,7 +397,13 @@ export default function VoiceComms({ caseId, currentUser, onActiveChange }: Voic
             makingOfferRef.current[peerKey] = true;
             pc.restartIce();
             pc.createOffer({ iceRestart: true })
-              .then((offer) => pc.setLocalDescription(offer))
+              .then((offer) => {
+                const highQualOffer = new RTCSessionDescription({
+                    type: offer.type,
+                    sdp: forceHighQualityAudio(offer.sdp!)
+                });
+                return pc.setLocalDescription(highQualOffer);
+              })
               .then(() => {
                 channelRef.current?.send({
                   type: "broadcast",
@@ -414,7 +440,11 @@ export default function VoiceComms({ caseId, currentUser, onActiveChange }: Voic
           makingOfferRef.current[peerKey] = true;
           const offer = await pc.createOffer();
           if (pc.signalingState !== "stable") return;
-          await pc.setLocalDescription(offer);
+          const highQualOffer = new RTCSessionDescription({
+              type: offer.type,
+              sdp: forceHighQualityAudio(offer.sdp!)
+          });
+          await pc.setLocalDescription(highQualOffer);
           channelRef.current?.send({
             type: "broadcast",
             event: "voice-offer",
@@ -470,7 +500,11 @@ export default function VoiceComms({ caseId, currentUser, onActiveChange }: Voic
       try {
         makingOfferRef.current[peerKey] = true;
         const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
+        const highQualOffer = new RTCSessionDescription({
+            type: offer.type,
+            sdp: forceHighQualityAudio(offer.sdp!)
+        });
+        await pc.setLocalDescription(highQualOffer);
         console.log(`📤 Sending offer to ${userName}`);
         channelRef.current?.send({
           type: "broadcast",
@@ -566,7 +600,11 @@ export default function VoiceComms({ caseId, currentUser, onActiveChange }: Voic
         await pc.setRemoteDescription(new RTCSessionDescription(payload.offer));
         await flushPendingCandidates(peerKey);
         const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
+        const highQualAnswer = new RTCSessionDescription({
+            type: answer.type,
+            sdp: forceHighQualityAudio(answer.sdp!)
+        });
+        await pc.setLocalDescription(highQualAnswer);
         console.log(`📤 Sending answer to ${payload.fromName}`);
         channel.send({
           type: "broadcast",
@@ -867,22 +905,40 @@ export default function VoiceComms({ caseId, currentUser, onActiveChange }: Voic
               {!currentUser.id ? "Identity Missing" : "Establish Link"}
             </button>
           ) : (
-            <div className="flex items-center gap-2 bg-black/20 p-1.5 rounded-xl border border-white/5">
+            <div className="flex items-center gap-2 bg-black/40 p-1.5 rounded-xl border border-white/10 shadow-inner">
               <button
                 onClick={toggleMute}
                 className={cn(
                   "w-10 h-10 rounded-lg flex items-center justify-center transition-all",
                   isMuted
-                    ? "bg-red-500 text-white"
-                    : "hover:bg-white/5 text-slate-400 hover:text-white"
+                    ? "bg-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.4)]"
+                    : "hover:bg-white/10 text-slate-400 hover:text-white"
                 )}
+                title={isMuted ? "Unmute Mic" : "Mute Mic"}
               >
                 {isMuted ? <MicOff size={18} /> : <Mic size={18} />}
               </button>
+              
+              <button
+                 onClick={() => {
+                    const ctx = getAudioContext();
+                    ctx.resume().then(() => {
+                        console.log("🔊 Audio manual resume successful");
+                        setProcessedStreams(prev => ({ ...prev }));
+                    });
+                 }}
+                 className="w-10 h-10 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-all"
+                 title="Fix Audio Output"
+              >
+                 <RefreshCw size={18} className={isActive ? "animate-spin-slow" : ""} />
+              </button>
+
               <div className="w-[1px] h-6 bg-white/10 mx-1" />
+
               <button
                 onClick={leaveChannel}
                 className="w-10 h-10 rounded-lg bg-red-600/10 text-red-500 hover:bg-red-600 hover:text-white flex items-center justify-center transition-all border border-red-600/20"
+                title="Disconnect"
               >
                 <PhoneOff size={18} />
               </button>

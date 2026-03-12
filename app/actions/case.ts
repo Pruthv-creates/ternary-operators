@@ -16,22 +16,33 @@ export async function getCaseGraph(caseId: string) {
 
     // Transform DB nodes to React Flow format
     const rfNodes = nodes.map((n) => {
-        let parsedData = {};
+        // Parse stored JSON content for rich entity data
+        let parsedContent: Record<string, unknown> = {};
         try {
-            parsedData = n.content ? JSON.parse(n.content) : {};
-        } catch (e) {
-            console.error("Failed to parse node content", e);
-        }
+            if (n.content) parsedContent = JSON.parse(n.content);
+        } catch { /* use defaults */ }
+
+        const isEntity = n.type.toLowerCase().includes('entity');
+        const rfType = isEntity ? 'entity' : (n.type === 'DOCUMENT' ? 'evidence' : 'hypothesis');
 
         return {
             id: n.id,
-            type: n.type.toLowerCase().includes('entity') ? 'entity' : (n.type === 'DOCUMENT' ? 'evidence' : 'hypothesis'),
+            type: rfType,
             position: { x: n.positionX, y: n.positionY },
-            data: { 
-                ...parsedData,
-                name: n.label, // Source of truth for identity
+            data: {
+                ...parsedContent,
+                name: (parsedContent.name as string) || n.label,
                 label: n.label,
-                type: n.type,
+                role: (parsedContent.role as string) || '',
+                type: (parsedContent.type as string) || n.type.toLowerCase().replace('entity_', ''),
+                status: (parsedContent.status as string) || 'Active',
+                riskScore: (parsedContent.riskScore as number) ?? 0,
+                credibilityScore: (parsedContent.credibilityScore as number) ?? 80,
+                industry: (parsedContent.industry as string) || '',
+                location: (parsedContent.location as string) || '',
+                avatar: (parsedContent.type === 'person') ? `https://i.pravatar.cc/150?u=${n.id}` : undefined,
+                text: (parsedContent.text as string) || n.label,
+                prefix: (parsedContent.prefix as string) || '',
             },
         };
     });
@@ -43,9 +54,13 @@ export async function getCaseGraph(caseId: string) {
         target: e.targetId,
         type: "relation",
         label: e.relationshipType,
-        data: { credibilityScore: 85 }, // Default high for DB established links
-        style: { stroke: "#8b5cf6", strokeWidth: 2 },
-        animated: e.relationshipType.includes('Money Flow')
+        data: { credibilityScore: 85 },
+        style: e.relationshipType.includes('Money Flow')
+            ? { stroke: '#10b981', strokeWidth: 2.5 }
+            : { stroke: '#8b5cf6', strokeWidth: 1.5 },
+        animated: e.relationshipType.includes('Money Flow'),
+        labelStyle: { fill: '#60a5fa', fontSize: 10, fontWeight: 500 },
+        markerEnd: { type: 'arrowclosed', color: '#8b5cf6' },
     }));
 
     return { nodes: rfNodes, edges: rfEdges };
@@ -62,4 +77,68 @@ export async function getUserCases(userId: string) {
     });
 
     return user?.cases || [];
+}
+
+export async function inviteCollaborator(caseId: string, email: string) {
+    const userToInvite = await prisma.user.findUnique({
+        where: { email }
+    });
+
+    if (!userToInvite) {
+        throw new Error("User not found. They must sign up first.");
+    }
+
+    await prisma.case.update({
+        where: { id: caseId },
+        data: {
+            users: {
+                connect: { id: userToInvite.id }
+            }
+        }
+    });
+
+    return { success: true };
+}
+
+export async function inviteCollaboratorById(caseId: string, userId: string) {
+    await prisma.case.update({
+        where: { id: caseId },
+        data: {
+            users: { connect: { id: userId } }
+        }
+    });
+    return { success: true };
+}
+
+export async function searchAgents(query: string, excludeUserId: string) {
+    if (!query || query.length < 2) return [];
+    return prisma.user.findMany({
+        where: {
+            AND: [
+                { id: { not: excludeUserId } },
+                {
+                    OR: [
+                        { name: { contains: query, mode: 'insensitive' } },
+                        { email: { contains: query, mode: 'insensitive' } },
+                    ]
+                }
+            ]
+        },
+        select: { id: true, name: true, email: true },
+        take: 8,
+    });
+}
+
+export async function createCase(title: string, userId: string) {
+    const newCase = await prisma.case.create({
+        data: {
+            title,
+            status: "ACTIVE",
+            users: {
+                connect: { id: userId }
+            }
+        }
+    });
+
+    return newCase;
 }

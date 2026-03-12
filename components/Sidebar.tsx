@@ -25,9 +25,10 @@ interface NavItem {
 }
 
 import { useInvestigationStore } from "@/store/investigationStore";
-import { getUserCases } from "@/app/actions/case";
+import { getUserCases, createCase } from "@/app/actions/case";
 import { supabase } from "@/lib/supabase";
 import { useState, useEffect } from "react";
+import { Plus, Loader2 } from "lucide-react";
 
 const navItems: NavItem[] = [
     { icon: <LayoutDashboard size={16} />, label: "Dashboard", href: "/" },
@@ -44,6 +45,7 @@ export default function Sidebar() {
     const { toggleAIPanel, loadCaseData, currentCaseId } = useInvestigationStore();
     const [userCases, setUserCases] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [creating, setCreating] = useState(false);
 
     useEffect(() => {
         const fetchCases = async () => {
@@ -61,6 +63,25 @@ export default function Sidebar() {
         };
         fetchCases();
     }, [loadCaseData, currentCaseId]);
+
+    const handleCreateCase = async () => {
+        const title = prompt("Enter Case Title:");
+        if (!title) return;
+
+        setCreating(true);
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const newCase = await createCase(title, user.id);
+                setUserCases([newCase, ...userCases]);
+                loadCaseData(newCase.id);
+            }
+        } catch (error) {
+            console.error("Failed to create case:", error);
+        } finally {
+            setCreating(false);
+        }
+    };
 
     return (
         <motion.aside
@@ -86,11 +107,17 @@ export default function Sidebar() {
             <div className="px-3 pt-4 pb-2">
                 <div className="flex items-center justify-between px-2 mb-2">
                     <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Cases</span>
-                    <ChevronRight size={12} className="text-slate-600" />
+                    <button 
+                        onClick={handleCreateCase}
+                        disabled={creating}
+                        className="p-1 hover:bg-white/5 rounded text-blue-400 transition-colors disabled:opacity-50"
+                    >
+                        {creating ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
+                    </button>
                 </div>
                 <div className="space-y-1">
                     {loading ? (
-                        <div className="px-3 py-2 text-xs text-slate-600">Loading cases...</div>
+                        <div className="px-3 py-2 text-xs text-slate-600 font-mono tracking-tighter">Initializing Database...</div>
                     ) : userCases.length === 0 ? (
                         <div className="px-3 py-2 text-xs text-slate-600 italic font-mono">No cases assigned</div>
                     ) : (
@@ -109,7 +136,7 @@ export default function Sidebar() {
                                 >
                                     <span
                                         className={cn(
-                                            "text-xs font-medium",
+                                            "text-xs font-medium truncate max-w-[120px]",
                                             isActive ? "text-blue-300" : "text-slate-400 group-hover:text-slate-300"
                                         )}
                                     >
@@ -117,10 +144,10 @@ export default function Sidebar() {
                                     </span>
                                     <span
                                         className={cn(
-                                            "text-[9px] px-1.5 py-0.5 rounded font-medium",
+                                            "text-[8px] px-1.5 py-0.5 rounded font-bold tracking-widest",
                                             isActive
-                                                ? "bg-blue-500/20 text-blue-400"
-                                                : "bg-slate-800 text-slate-500"
+                                                ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                                                : "bg-slate-800 text-slate-600 border border-transparent"
                                         )}
                                     >
                                         {c.status}

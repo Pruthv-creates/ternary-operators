@@ -1,20 +1,29 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Search, Bell, Settings, Wifi } from "lucide-react";
+import { Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import ProfilePanel from "./ProfilePanel";
+import CollaboratorInvite from "./CollaboratorInvite";
 
 export default function Topbar() {
     const [userEmail, setUserEmail] = useState<string>("Agent");
+    const [fullUser, setFullUser] = useState<any>(null);
     const [presenceUsers, setPresenceUsers] = useState<any[]>([]);
+    const [profileOpen, setProfileOpen] = useState(false);
 
     useEffect(() => {
         // 1. Get current user
         supabase.auth.getUser().then(({ data }) => {
-            if (data.user?.email) {
-                const name = data.user.user_metadata?.full_name || data.user.email.split("@")[0];
+            if (data.user) {
+                const name = data.user.user_metadata?.full_name || data.user.email?.split("@")[0] || "Agent";
                 setUserEmail(name);
+                setFullUser({
+                    name,
+                    email: data.user.email,
+                    avatar: data.user.user_metadata?.avatar_url
+                });
             }
         });
 
@@ -58,17 +67,13 @@ export default function Topbar() {
         };
     }, []);
 
-    const handleLogout = async () => {
-        await supabase.auth.signOut();
-        window.location.reload();
-    };
-
     return (
+        <>
         <motion.header
             initial={{ y: -40, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.3, delay: 0.1 }}
-            className="flex items-center gap-4 px-6 py-3 bg-[#0d1424]/80 backdrop-blur-sm border-b border-[#1e3a5f]/50 h-14"
+            className="flex items-center gap-4 px-6 py-3 bg-[#0d1424]/80 backdrop-blur-sm border-b border-[#1e3a5f]/50 h-14 relative z-50"
         >
             {/* Search */}
             <div className="flex-1 relative max-w-md">
@@ -105,31 +110,33 @@ export default function Topbar() {
                 <span className="text-[10px] text-slate-400 font-medium">
                     {presenceUsers.length > 1 ? `${presenceUsers.length} Investigators` : "Active"}
                 </span>
-                <Wifi size={10} className={presenceUsers.length > 1 ? "text-green-400" : "text-blue-400"} />
             </div>
 
-            {/* Notifications */}
-            <button className="relative p-2 rounded-lg hover:bg-white/5 transition-colors text-slate-400 hover:text-slate-200">
-                <Bell size={16} />
-                <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-red-500 rounded-full" />
-            </button>
+            <CollaboratorInvite />
 
-            {/* Settings */}
-            <button className="p-2 rounded-lg hover:bg-white/5 transition-colors text-slate-400 hover:text-slate-200">
-                <Settings size={16} />
-            </button>
+
 
             {/* User profile */}
-            <div className="flex items-center gap-2 pl-3 border-l border-[#1e3a5f]/50 cursor-pointer" onClick={handleLogout}>
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-xs font-bold text-white uppercase">
+            <div className="flex items-center gap-2 pl-3 border-l border-[#1e3a5f]/50 cursor-pointer group" onClick={() => setProfileOpen(!profileOpen)}>
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-xs font-bold text-white uppercase group-hover:ring-2 ring-blue-500/50 transition-all">
                     {userEmail[0]}
                 </div>
                 <div className="hidden sm:block">
                     <div className="text-[11px] font-semibold text-slate-200 uppercase truncate max-w-[80px]">{userEmail}</div>
-                    <div className="text-[9px] text-red-500 hover:text-red-400 font-bold transition-colors">LOG OUT</div>
+                    <div className="text-[9px] text-blue-500 hover:text-blue-400 font-bold transition-colors uppercase tracking-widest">Profile</div>
                 </div>
             </div>
+
         </motion.header>
+
+        {fullUser && (
+            <ProfilePanel 
+                isOpen={profileOpen} 
+                onClose={() => setProfileOpen(false)} 
+                user={fullUser} 
+            />
+        )}
+        </>
     );
 }
 

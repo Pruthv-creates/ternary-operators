@@ -247,44 +247,92 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
     });
   },
 
-  onConnect: async (connection: Connection) => {
-    const caseId = get().currentCaseId;
-    if (!caseId) return;
+  onConnect: (connection: Connection) => {
+    try {
+      const caseId = get().currentCaseId;
+      if (!caseId) {
+        console.error("[onConnect] No case ID found");
+        return;
+      }
 
-    // Persist to database FIRST to get proper ID
-    const result = await createEdgeAction(
-      caseId,
-      connection.source,
-      connection.target,
-      "related_to",
-    );
+      if (!connection.source || !connection.target) {
+        console.error(
+          "[onConnect] Invalid connection: missing source or target",
+          connection,
+        );
+        return;
+      }
 
-    if (result.success && result.edge) {
-      // Create edge with database ID and proper styling
-      const dbEdge = result.edge;
-      const edge: Edge = {
-        id: dbEdge.id,
-        source: dbEdge.sourceId,
-        target: dbEdge.targetId,
-        type: "relation",
-        label: dbEdge.relationshipType,
-        data: { credibilityScore: 85 },
-        style: { stroke: "#8b5cf6", strokeWidth: 1.5 },
-        animated: false,
-        labelStyle: { fill: "#60a5fa", fontSize: 10, fontWeight: 500 },
-        markerEnd: { type: "arrowclosed", color: "#8b5cf6" },
-      };
-
-      // Add to local state
-      set({
-        edges: addEdge(edge, get().edges),
+      console.log("[onConnect] Creating edge:", {
+        source: connection.source,
+        target: connection.target,
       });
 
-      // Broadcast to other investigators
-      await realtimeSyncManager.broadcast({
-        type: "edge-create",
-        edge,
-      });
+      // Fire and forget - don't await, just trigger async operations
+      (async () => {
+        try {
+          // Persist to database FIRST to get proper ID
+          const result = await createEdgeAction(
+            caseId,
+            connection.source || "",
+            connection.target || "",
+            "related_to",
+          );
+
+          console.log("[onConnect] Edge creation result:", result);
+
+          if (!result.success) {
+            if (result.duplicate) {
+              console.warn("[onConnect] Edge already exists");
+            } else {
+              console.error("[onConnect] Failed to create edge");
+            }
+            return;
+          }
+
+          if (!result.edge) {
+            console.error("[onConnect] No edge returned from server");
+            return;
+          }
+
+          // Create edge with database ID and proper styling
+          const dbEdge = result.edge;
+          const edge: Edge = {
+            id: dbEdge.id,
+            source: dbEdge.source || dbEdge.sourceId,
+            target: dbEdge.target || dbEdge.targetId,
+            type: "relation",
+            label: dbEdge.label || dbEdge.relationshipType || "related_to",
+            data: {
+              credibilityScore: 85,
+              relationshipType: dbEdge.relationshipType,
+            },
+            style: { stroke: "#8b5cf6", strokeWidth: 1.5 },
+            animated: false,
+            labelStyle: { fill: "#60a5fa", fontSize: 10, fontWeight: 500 },
+            markerEnd: { type: "arrowclosed", color: "#8b5cf6" },
+          };
+
+          console.log("[onConnect] Adding edge to local state:", edge);
+
+          // Add to local state
+          set({
+            edges: addEdge(edge, get().edges),
+          });
+
+          // Broadcast to other investigators
+          await realtimeSyncManager.broadcast({
+            type: "edge-create",
+            edge,
+          });
+
+          console.log("[onConnect] Edge created and broadcast successfully");
+        } catch (error) {
+          console.error("[onConnect] Exception:", error);
+        }
+      })();
+    } catch (error) {
+      console.error("[onConnect] Outer exception:", error);
     }
   },
 

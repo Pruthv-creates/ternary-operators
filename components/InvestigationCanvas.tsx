@@ -15,6 +15,7 @@ import EntityNode from "./EntityNode";
 import EvidenceNode from "./EvidenceNode";
 import HypothesisNode from "./HypothesisNode";
 import RelationEdge from "./RelationEdge";
+import EdgeEditModal from "./EdgeEditModal";
 import { entities } from "@/lib/data";
 import { Entity, EntityType } from "@/lib/data";
 import { useInvestigationStore } from "@/store/investigationStore";
@@ -52,9 +53,22 @@ function CanvasInner() {
     const [isSearching, setIsSearching] = useState(false);
     const [showLegend, setShowLegend] = useState(false);
     const [activeFilter, setActiveFilter] = useState("all");
+    const [editingEdgeId, setEditingEdgeId] = useState<string | null>(null);
+    const { deleteEdgeByIds } = useInvestigationStore();
 
     // Real-time sync is now handled by the investigation store
     // when loadCaseData is called
+
+    // Handle edge edit event
+    useEffect(() => {
+        const handleEdgeEdit = (event: Event) => {
+            const customEvent = event as CustomEvent;
+            setEditingEdgeId(customEvent.detail.edgeId);
+        };
+
+        window.addEventListener("edge-edit", handleEdgeEdit);
+        return () => window.removeEventListener("edge-edit", handleEdgeEdit);
+    }, []);
 
     const onNodeClick: NodeMouseHandler = useCallback(
         (_event, node) => {
@@ -316,6 +330,31 @@ function CanvasInner() {
             >
                 <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="rgba(255,255,255,0.04)" />
             </ReactFlow>
+
+            {/* Edge Edit Modal */}
+            {editingEdgeId && (
+                (() => {
+                    const edge = edges.find(e => e.id === editingEdgeId);
+                    const sourceNode = nodes.find(n => n.id === edge?.source);
+                    const targetNode = nodes.find(n => n.id === edge?.target);
+                    
+                    if (!edge || !sourceNode || !targetNode) return null;
+                    
+                    return (
+                        <EdgeEditModal
+                            edgeId={editingEdgeId}
+                            sourceLabel={(sourceNode.data?.name || sourceNode.data?.label) as string}
+                            targetLabel={(targetNode.data?.name || targetNode.data?.label) as string}
+                            currentLabel={edge.label as string}
+                            onClose={() => setEditingEdgeId(null)}
+                            onDeleteEdge={() => {
+                                deleteEdgeByIds(edge.source as string, edge.target as string);
+                                setEditingEdgeId(null);
+                            }}
+                        />
+                    );
+                })()
+            )}
         </div>
     );
 }

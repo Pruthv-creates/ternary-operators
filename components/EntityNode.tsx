@@ -1,6 +1,6 @@
-import { memo } from "react";
-import { Handle, Position } from "@xyflow/react";
-import { Building2, Landmark, MapPin, Globe, X } from "lucide-react";
+import { memo, useState } from "react";
+import { Handle, Position, useReactFlow } from "@xyflow/react";
+import { Building2, Landmark, MapPin, Globe, X, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useInvestigationStore } from "@/store/investigationStore";
 import { EntityType } from "@/lib/data";
@@ -55,12 +55,28 @@ const typeConfig: Record<
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function EntityNode({ id, data, selected }: any) {
-    const { deleteNode } = useInvestigationStore();
+    const { deleteNode, nodes, onConnect } = useInvestigationStore();
+    const { getNodes } = useReactFlow();
+    const [showConnectMenu, setShowConnectMenu] = useState(false);
+    const [connectingMode, setConnectingMode] = useState(false);
+    
     const cfg = typeConfig[data.type as EntityType] ?? typeConfig.person;
 
     // Override color logic based on the image:
     const isPerson = data.type === "person";
     const customRing = data.name.includes("SARAM") ? "ring-teal-500" : cfg.ring;
+
+    const handleConnectClick = (targetId: string) => {
+        onConnect({
+            source: id,
+            target: targetId,
+            sourceHandle: null,
+            targetHandle: null,
+        });
+        setShowConnectMenu(false);
+    };
+
+    const otherNodes = getNodes().filter((n) => n.id !== id);
 
     return (
         <div
@@ -75,6 +91,47 @@ function EntityNode({ id, data, selected }: any) {
             >
                 <X size={10} />
             </button>
+
+            {/* Connect Button */}
+            <div className="absolute -top-2 -left-2 z-20">
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setShowConnectMenu(!showConnectMenu);
+                    }}
+                    className="p-1.5 rounded-full bg-blue-500/80 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-600 shadow-lg"
+                    title="Connect to another entity"
+                >
+                    <Plus size={12} />
+                </button>
+
+                {/* Connection Menu */}
+                {showConnectMenu && (
+                    <div className="absolute top-8 left-0 mt-2 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto min-w-48">
+                        <div className="p-2">
+                            {otherNodes.length > 0 ? (
+                                otherNodes.map((node) => (
+                                    <button
+                                        key={node.id}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleConnectClick(node.id);
+                                        }}
+                                        className="w-full text-left px-3 py-2 text-xs rounded hover:bg-blue-700 text-slate-300 hover:text-white transition-colors"
+                                    >
+                                        {`→ ${node.data?.name || node.data?.label || "Node"}`}
+                                    </button>
+                                ))
+                            ) : (
+                                <div className="px-3 py-2 text-xs text-slate-500">
+                                    No other entities
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+            </div>
+
             <Handle type="target" position={Position.Top} className="opacity-0 group-hover:opacity-100" />
             <Handle type="source" position={Position.Bottom} className="opacity-0 group-hover:opacity-100" />
             <Handle type="target" position={Position.Left} className="opacity-0 group-hover:opacity-100" />

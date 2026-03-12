@@ -140,14 +140,23 @@ export default function Topbar() {
             <div className="flex items-center gap-2">
                 {/* Voice Comms Button — stays green while call is live, even when panel is closed */}
                 <div className="relative">
-                    <button
+                    <motion.button
+                        animate={voiceActive && !voiceOpen ? {
+                            borderColor: ["rgba(16, 185, 129, 0.2)", "rgba(16, 185, 129, 0.8)", "rgba(16, 185, 129, 0.2)"],
+                            boxShadow: [
+                                "0 0 0px rgba(16, 185, 129, 0)",
+                                "0 0 15px rgba(16, 185, 129, 0.4)",
+                                "0 0 0px rgba(16, 185, 129, 0)"
+                            ]
+                        } : {}}
+                        transition={{ repeat: Infinity, duration: 2 }}
                         onClick={() => setVoiceOpen(!voiceOpen)}
                         className={cn(
                             "p-2 rounded-lg border transition-all flex items-center gap-2 group relative",
                             voiceOpen
                                 ? "bg-emerald-600 border-emerald-400 text-white shadow-[0_0_20px_rgba(16,185,129,0.5)]"
                                 : voiceActive
-                                ? "bg-emerald-600/20 border-emerald-500/50 text-emerald-400"
+                                ? "bg-emerald-600/20 text-emerald-400"
                                 : "bg-[#1e293b] border-[#1e3a5f]/60 text-slate-400 hover:border-emerald-500/50 hover:text-emerald-400"
                         )}
                         title="Voice Comms"
@@ -166,7 +175,7 @@ export default function Topbar() {
                                 <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
                             </span>
                         )}
-                    </button>
+                    </motion.button>
                 </div>
 
                 {/* Team Chat Button */}

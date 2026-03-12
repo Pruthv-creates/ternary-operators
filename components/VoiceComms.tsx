@@ -100,6 +100,11 @@ export default function VoiceComms({ caseId, currentUser, onActiveChange }: Voic
   const animFrames = useRef<Record<string, number>>();
   if (!animFrames.current) animFrames.current = {};
 
+  // Lifecycle monitoring for parent components
+  useEffect(() => {
+    onActiveChange?.(isActive);
+  }, [isActive, onActiveChange]);
+
   // Processed (boosted + EQ'd) streams for each peer — used by <audio> elements
   const [processedStreams, setProcessedStreams] = useState<Record<string, MediaStream>>({});
 

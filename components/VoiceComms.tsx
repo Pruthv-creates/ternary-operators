@@ -958,6 +958,8 @@ export default function VoiceComms({ caseId, currentUser, onActiveChange }: Voic
                         if (el.srcObject !== src) {
                           el.srcObject = src;
                           el.volume = 1.0;
+                          // Explicit play() ensures audio starts/resumes if throttled while hidden
+                          el.play().catch(e => console.warn("Audio play failed:", e));
                         }
                       }
                     }}

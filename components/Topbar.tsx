@@ -270,7 +270,6 @@ export default function Topbar() {
                 initial={false}
                 transition={{ type: "spring", damping: 28, stiffness: 300 }}
                 className="fixed top-[56px] right-[260px] z-[80] w-[480px] max-w-[calc(100vw-2rem)]"
-                style={{ visibility: voiceOpen ? "visible" : "hidden" }}
             >
                 {/* Arrow notch */}
                 <div className="absolute -top-1.5 right-[68px] w-3 h-3 bg-[#0d1424] border-l border-t border-[#1e3a5f]/50 rotate-45" />

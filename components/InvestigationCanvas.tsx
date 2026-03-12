@@ -10,9 +10,9 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
-import EntityNode from "./EntityNode";
-import EvidenceNode from "./EvidenceNode";
-import HypothesisNode from "./HypothesisNode";
+import EntityNode from "./graph/nodes/EntityNode";
+import EvidenceNode from "./graph/nodes/EvidenceNode";
+import HypothesisNode from "./graph/nodes/HypothesisNode";
 import RelationEdge from "./RelationEdge";
 import EdgeEditModal from "./EdgeEditModal";
 import { entities } from "@/lib/data";

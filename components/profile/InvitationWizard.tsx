@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Check, Bell, Loader2, User, FileText, Shield, ArrowRight } from "lucide-react";
-import { getPendingInvitations, acceptInvitation, rejectInvitation } from "@/app/actions/case";
+import { useInvitations } from "@/hooks/useInvitations";
 
 interface InvitationWizardProps {
     isOpen: boolean;
@@ -12,54 +11,7 @@ interface InvitationWizardProps {
 }
 
 export default function InvitationWizard({ isOpen, onClose, userId }: InvitationWizardProps) {
-    const [invitations, setInvitations] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [actionId, setActionId] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (isOpen && userId) {
-            loadInvitations();
-        }
-    }, [isOpen, userId]);
-
-    const loadInvitations = async () => {
-        setLoading(true);
-        try {
-            const pending = await getPendingInvitations(userId);
-            setInvitations(pending);
-        } catch (e) {
-            console.error("Failed to load invitations", e);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleAccept = async (id: string) => {
-        setActionId(id);
-        try {
-            await acceptInvitation(id);
-            await loadInvitations();
-            // Optional: Show a success message or just reload if needed
-            // If it's a critical change, maybe window.location.reload() or update a store
-            window.location.reload(); 
-        } catch (e) {
-            console.error("Failed to accept", e);
-        } finally {
-            setActionId(null);
-        }
-    };
-
-    const handleReject = async (id: string) => {
-        setActionId(id);
-        try {
-            await rejectInvitation(id);
-            await loadInvitations();
-        } catch (e) {
-            console.error("Failed to reject", e);
-        } finally {
-            setActionId(null);
-        }
-    };
+    const { invitations, loading, actionId, handleAccept, handleReject } = useInvitations(userId, isOpen);
 
     return (
         <AnimatePresence>
@@ -101,7 +53,7 @@ export default function InvitationWizard({ isOpen, onClose, userId }: Invitation
                         </div>
 
                         {/* Content */}
-                        <div className="p-8 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                        <div className="p-8 max-h-[60vh] overflow-y-auto custom-scrollbar font-sans">
                             {loading ? (
                                 <div className="py-20 flex flex-col items-center justify-center gap-4">
                                     <Loader2 size={32} className="text-blue-500 animate-spin" />

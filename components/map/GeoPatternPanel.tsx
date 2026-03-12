@@ -2,14 +2,22 @@
 
 import { useMemo } from "react";
 import { useInvestigationStore } from "@/store/investigationStore";
-import { Zap, MapPin, Eye, Info } from "lucide-react";
+import { Zap, Info } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function GeoPatternPanel() {
-  const { nodes, locationEvents } = useInvestigationStore();
+  const { nodes } = useInvestigationStore();
 
   const patterns = useMemo(() => {
-    const findings: any[] = [];
+    interface GeoInsight {
+        pattern: string;
+        description: string;
+        entities: string[];
+        location?: string;
+        severity: "High" | "Medium";
+        type: string;
+    }
+    const findings: GeoInsight[] = [];
     
     // 1. Shared Location Pattern
     const cityCounts: Record<string, Set<string>> = {};
@@ -40,7 +48,7 @@ export function GeoPatternPanel() {
       findings.push({
         pattern: "Risk Hotspot",
         description: `${highRiskInZone.length} high-risk entities operating in close proximity.`,
-        entities: highRiskInZone.map(n => n.data.name),
+        entities: highRiskInZone.map(n => (n.data.name as string) || (n.data.label as string) || "Unknown"),
         severity: "High",
         type: "hotspot"
       });

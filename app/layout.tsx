@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ASTRAEUS – Intelligence Command Centre",
+  title: "Astra AI – Intelligence Command Centre",
   description: "Enterprise investigation intelligence platform for financial crime analysis and entity relationship mapping.",
   keywords: ["investigation", "intelligence", "financial crime", "entity analysis", "OSINT"],
   icons: [

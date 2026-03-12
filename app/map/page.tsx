@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useInvestigationStore } from "@/store/investigationStore";
-import { Shield, Map as MapIcon, Loader2, AlertTriangle } from "lucide-react";
+import { Map as MapIcon, Loader2, AlertTriangle } from "lucide-react";
 
 // Dynamically import map component to avoid SSR issues with Leaflet
 const GeoIntelligenceMap = dynamic(

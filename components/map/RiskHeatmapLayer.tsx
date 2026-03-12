@@ -23,8 +23,7 @@ export function RiskHeatmapLayer({ nodes }: HeatmapProps) {
       (node.data.riskScore || 0) / 100
     ]);
 
-    // @ts-ignore - heatLayer is added by leaflet.heat
-    const layer = L.heatLayer(heatData, {
+    const layer = (L as any).heatLayer(heatData, {
       radius: 25,
       blur: 15,
       maxZoom: 17,

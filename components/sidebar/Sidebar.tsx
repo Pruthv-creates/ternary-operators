@@ -28,7 +28,7 @@ export default function Sidebar() {
             <div className="flex items-center gap-3 px-5 py-4 border-b border-[#1e3a5f]/50">
                 <img 
                     src="/logo.png" 
-                    alt="Astraeus Logo" 
+                    alt="Astra AI Logo" 
                     className="h-10 w-auto object-contain brightness-0 invert"
                 />
             </div>

@@ -175,7 +175,7 @@ export default function EvidencePage() {
   };
 
   return (
-    <>
+    <div className="relative h-full flex flex-col overflow-hidden bg-[#0a0f1a]">
         {/* Hero Section Background Decor */}
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/5 blur-[120px] rounded-full pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-purple-600/5 blur-[100px] rounded-full pointer-events-none" />
@@ -538,6 +538,6 @@ export default function EvidencePage() {
           background: #263144;
         }
       `}</style>
-    </>
+    </div>
   );
 }

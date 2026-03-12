@@ -13,27 +13,18 @@ import {
     applyEdgeChanges,
     MarkerType,
 } from "@xyflow/react";
-import { Entity, evidenceItems } from "@/lib/data";
-
-const initialNodes: Node[] = [
-    {
-        id: "volkov",
-        type: "entity",
-        position: { x: 440, y: 150 },
-        data: { name: "Alexander Volkov", role: "CEO", type: "person", avatar: "https://i.pravatar.cc/150?u=volkov", status: "Active" },
-    }
-];
+import { Entity } from "@/lib/data";
+import { getCaseGraph } from "@/app/actions/case";
+import { updateNodePosition, createNewNode, updateNodeContent } from "@/actions/nodes";
+import { supabase } from "@/lib/supabase";
 
 const sharedLabelStyle = { fill: "#60a5fa", fontSize: 10, fontWeight: 500, fontFamily: "sans-serif" };
 const dottedEdgeStyle = { stroke: "#06b6d4", strokeWidth: 1.5, strokeDasharray: "3,3" };
 
-const initialEdges: Edge[] = [];
-
-import { getCaseGraph } from "@/app/actions/case";
-
 type InvestigationState = {
     nodes: Node[];
     edges: Edge[];
+    currentCaseId: string | null;
     selectedEntity: Entity | null;
     onNodesChange: OnNodesChange;
     onEdgesChange: OnEdgesChange;
@@ -41,45 +32,46 @@ type InvestigationState = {
     setSelectedEntity: (entity: Entity | null) => void;
     addNode: (node: Node) => void;
     deleteNode: (id: string) => void;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     updateNodeData: (id: string, data: any) => void;
     addEdge: (edge: Edge) => void;
     addStickyNote: (position: { x: number, y: number }, text?: string, prefix?: string) => void;
     updateStickyText: (id: string, text: string) => void;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     addAIResult: (result: { nodes: any[], edges: any[] }) => void;
     addEvidenceCard: (title: string, position: { x: number, y: number }) => void;
     loadCaseData: (caseId: string) => Promise<void>;
     aiPanelOpen: boolean;
     setAIPanelOpen: (open: boolean) => void;
     toggleAIPanel: () => void;
-    currentCaseId: string | null;
+    
+    // Real-time sync methods
+    syncNodes: (nodes: Node[]) => void;
+    syncEdges: (edges: Edge[]) => void;
 };
 
-import { updateNodePosition, createNewNode, updateNodeContent } from "@/actions/nodes";
-
 export const useInvestigationStore = create<InvestigationState>((set, get) => ({
-    nodes: initialNodes,
-    edges: initialEdges,
+    nodes: [],
+    edges: [],
+    currentCaseId: null,
     selectedEntity: null,
     aiPanelOpen: false,
-    currentCaseId: null,
 
     setAIPanelOpen: (open: boolean) => set({ aiPanelOpen: open }),
     toggleAIPanel: () => set((state) => ({ aiPanelOpen: !state.aiPanelOpen })),
 
     loadCaseData: async (caseId: string) => {
-        const currentCase = (get() as any).currentCaseId;
+        const currentCase = get().currentCaseId;
         if (currentCase === caseId) return;
         
         const { nodes: backendNodes, edges: backendEdges } = await getCaseGraph(caseId);
         set({ 
             nodes: backendNodes as any, 
             edges: backendEdges as any,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            currentCaseId: caseId as any 
+            currentCaseId: caseId 
         });
     },
+
+    syncNodes: (nodes: Node[]) => set({ nodes }),
+    syncEdges: (edges: Edge[]) => set({ edges }),
 
     onNodesChange: (changes: NodeChange[]) => {
         const currentNodes = get().nodes;
@@ -90,6 +82,16 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
         changes.forEach((change) => {
             if (change.type === 'position' && change.position) {
                 updateNodePosition(change.id, change.position.x, change.position.y);
+                
+                // BROADCAST position for real-time
+                const caseId = get().currentCaseId;
+                if (caseId) {
+                    supabase.channel(`case:${caseId}`).send({
+                        type: "broadcast",
+                        event: "node-move",
+                        payload: { id: change.id, position: change.position }
+                    });
+                }
             }
         });
     },
@@ -109,12 +111,10 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
     setSelectedEntity: (entity: Entity | null) => {
         set({
             selectedEntity: entity,
-            // Update node selected state
             nodes: get().nodes.map((n) => ({
                 ...n,
                 data: { ...n.data, selected: entity?.id === n.id },
             })),
-            // Update edges to glow if they connect to the selected entity
             edges: get().edges.map((e) => {
                 const isConnected = entity ? (e.source === entity.id || e.target === entity.id) : false;
                 const isMoneyFlow = typeof e.label === "string" && e.label.includes("Money Flow");
@@ -141,7 +141,6 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
         });
     },
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     updateNodeData: async (id: string, data: any) => {
         const updatedNodes = get().nodes.map((n) => n.id === id ? { ...n, data: { ...n.data, ...data } } : n);
         const selectedEntity = get().selectedEntity;
@@ -159,7 +158,6 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
             selectedEntity: newSelectedEntity
         });
 
-        // PERSIST CONTENT!
         const targetNode = updatedNodes.find(n => n.id === id);
         if (targetNode) {
             await updateNodeContent(id, targetNode.data);
@@ -167,6 +165,9 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
     },
 
     addStickyNote: async (position: { x: number, y: number }, text = "", prefix = "HYPOTHESIS:") => {
+        const caseId = get().currentCaseId;
+        if (!caseId) return;
+
         const id = `hyp-${Date.now()}`;
         const newNode = {
             id,
@@ -175,35 +176,36 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
             data: {
                 prefix,
                 text: text || "Click to edit...",
-                rotate: Math.random() * 4 - 2 // Random slight rotation
+                rotate: Math.random() * 4 - 2
             }
         };
         
         set({ nodes: [...get().nodes, newNode] });
-        
-        // PERSIST NEW STICKY!
-        await createNewNode("demo-nexus", newNode);
+        await createNewNode(caseId, newNode);
     },
 
-    addEvidenceCard: (title: string, position: { x: number, y: number }) => {
+    addEvidenceCard: async (title: string, position: { x: number, y: number }) => {
+        const caseId = get().currentCaseId;
+        if (!caseId) return;
+
         const id = `ev-${Date.now()}`;
-        set({
-            nodes: [...get().nodes, {
-                id,
-                type: "evidence",
-                position,
-                data: {
-                    item: {
-                        id,
-                        title,
-                        credibility: Math.floor(Math.random() * 40) + 60,
-                        timestamp: "Just now",
-                        type: "financial",
-                        nodeId: "",
-                    }
+        const newNode = {
+            id,
+            type: "evidence",
+            position,
+            data: {
+                item: {
+                    id,
+                    title,
+                    credibility: Math.floor(Math.random() * 40) + 60,
+                    timestamp: "Just now",
+                    type: "financial",
+                    nodeId: "",
                 }
-            }]
-        });
+            }
+        };
+        set({ nodes: [...get().nodes, newNode] });
+        await createNewNode(caseId, newNode);
     },
 
     updateStickyText: (id: string, text: string) => {
@@ -215,31 +217,31 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
     },
 
     addNode: async (node: Node) => {
+        const caseId = get().currentCaseId;
+        if (!caseId) return;
+
         set({
             nodes: [...get().nodes, node],
         });
 
-        // PERSIST!
-        // Map data.type to Prisma NodeType
         let prismaType = 'ENTITY_PERSON';
         if (node.data.type === 'company' || node.data.type === 'offshore') prismaType = 'ENTITY_ORG';
         else if (node.data.type === 'location') prismaType = 'ENTITY_LOCATION';
-        else if (node.data.type === 'bank') prismaType = 'ENTITY_PERSON'; // or add specific bank type if possible
+        else if (node.data.type === 'bank') prismaType = 'ENTITY_PERSON';
 
         const nodeWithPrismaType = {
             ...node,
             nodeType: prismaType
         };
 
-        await createNewNode("demo-nexus", nodeWithPrismaType);
+        await createNewNode(caseId, nodeWithPrismaType);
     },
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     addAIResult: (result: { nodes: any[], edges: any[] }) => {
         const currentNodes = get().nodes;
         const currentEdges = get().edges;
 
-        const nexusNode = currentNodes.find(n => n.id === "volkov") || { position: { x: 400, y: 300 } };
+        const nexusNode = currentNodes[0] || { position: { x: 400, y: 300 } };
         const centerX = nexusNode.position.x;
         const centerY = nexusNode.position.y;
         

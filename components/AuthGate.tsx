@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { LogIn, UserPlus, Fingerprint, MailCheck } from "lucide-react";
+import { syncUser } from "@/app/actions/auth";
 
 export default function AuthGate({ children }: { children: React.ReactNode }) {
   const [email, setEmail] = useState("");
@@ -19,15 +20,23 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+      if (session?.user) {
+        setUser(session.user);
+        syncUser(session.user);
+      }
       setAuthReady(true);
     });
 
     // Listen for all auth events (login, logout, token refresh)
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        setUser(session.user);
+        await syncUser(session.user);
+      } else {
+        setUser(null);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -43,7 +52,10 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
         password,
       });
       if (error) alert(error.message);
-      else setUser(data.user);
+      else {
+        setUser(data.user);
+        if (data.user) await syncUser(data.user);
+      }
     } else if (view === "signup") {
       // Sign up normally, which sends the email verification OTP
       const { error } = await supabase.auth.signUp({
@@ -72,6 +84,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
         alert(error.message);
       } else {
         setUser(data.user);
+        if (data.user) await syncUser(data.user);
       }
     }
 

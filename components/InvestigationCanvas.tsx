@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import {
     ReactFlow,
     Background,
@@ -17,6 +17,7 @@ import { Entity, EntityType } from "@/lib/data";
 import { useInvestigationStore } from "@/store/investigationStore";
 import { useState } from "react";
 import { Brain, Loader2, Plus } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const nodeTypes: any = {
@@ -34,10 +35,33 @@ export default function InvestigationCanvas() {
         onConnect,
         setSelectedEntity,
         addStickyNote,
+        currentCaseId,
+        syncNodes,
     } = useInvestigationStore();
 
     const [analyzing, setAnalyzing] = useState(false);
     const [aiMessage, setAiMessage] = useState<string | null>(null);
+
+    // REAL-TIME SYNC
+    useEffect(() => {
+        if (!currentCaseId) return;
+
+        const channel = supabase.channel(`case:${currentCaseId}`);
+        
+        channel
+            .on("broadcast", { event: "node-move" }, ({ payload }) => {
+                const { id, position } = payload;
+                const updatedNodes = useInvestigationStore.getState().nodes.map((n) => 
+                    n.id === id ? { ...n, position } : n
+                );
+                syncNodes(updatedNodes);
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [currentCaseId, syncNodes]);
 
     const onNodeClick: NodeMouseHandler = useCallback(
         (_event, node) => {
@@ -51,17 +75,11 @@ export default function InvestigationCanvas() {
                         name: node.data.name as string,
                         role: node.data.role as string,
                         type: node.data.type as EntityType,
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         avatar: (node.data as any).avatar,
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         status: (node.data as any).status,
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         credibilityScore: (node.data as any).credibilityScore,
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         industry: (node.data as any).industry,
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         location: (node.data as any).location,
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         riskScore: (node.data as any).riskScore,
                     });
                 }
@@ -162,7 +180,6 @@ export default function InvestigationCanvas() {
                 )}
             </div>
 
-            {/* Real Search Box and Avatars Top Right like Image 1 */}
             <div className="absolute top-4 right-4 z-10 flex items-center gap-3">
                 <button
                     onClick={() => addStickyNote({ x: 400, y: 300 })}
@@ -171,30 +188,6 @@ export default function InvestigationCanvas() {
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
                     <span className="text-[10px] font-bold uppercase tracking-wider">Add Sticky</span>
                 </button>
-
-                <div className="w-8 h-8 rounded bg-[#1e293b] border border-slate-700/50 flex items-center justify-center text-slate-400">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
-                </div>
-
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded bg-[#1e293b]/70 border border-emerald-500/30">
-                    <div className="flex items-center gap-1.5">
-                        <div className="w-3 h-3 rounded-full bg-emerald-500 text-white flex items-center justify-center -ml-1">
-                            <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                        </div>
-                        <span className="text-[10px] text-emerald-400 uppercase tracking-widest font-semibold">Collaborating</span>
-                    </div>
-                </div>
-
-                <div className="flex -space-x-1">
-                    <img className="w-8 h-8 rounded-full border-2 border-[#0a0f1c] object-cover" src="https://i.pravatar.cc/150?u=a1" alt="Avatar" />
-                    <img className="w-8 h-8 rounded-full border-2 border-[#0a0f1c] object-cover" src="https://i.pravatar.cc/150?u=a2" alt="Avatar" />
-                    <div className="w-8 h-8 rounded-full border-2 border-[#0a0f1c] bg-emerald-900 text-emerald-300 flex items-center justify-center text-[10px] font-bold">3OR</div>
-                </div>
-
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#1e293b]/50 border border-slate-700/50 cursor-pointer">
-                    <span className="text-[11px] text-slate-300 uppercase font-semibold">Sarah</span>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-400"><path d="m6 9 6 6 6-6" /></svg>
-                </div>
             </div>
 
             {/* React Flow Graph */}
@@ -214,7 +207,6 @@ export default function InvestigationCanvas() {
                 proOptions={{ hideAttribution: true }}
                 className="[&_.react-flow__edge-path]:transition-all [&_.react-flow__edge-path]:duration-300"
             >
-                {/* Horizontal guide lines background */}
                 <Background
                     variant={BackgroundVariant.Dots}
                     gap={20}

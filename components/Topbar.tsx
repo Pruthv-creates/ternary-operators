@@ -5,22 +5,57 @@ import { Search, Bell, Settings, Wifi } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
-const avatars = [
-    { initials: "MK", color: "bg-blue-500" },
-    { initials: "SR", color: "bg-purple-500" },
-    { initials: "JD", color: "bg-emerald-500" },
-];
-
 export default function Topbar() {
-    // User profile
     const [userEmail, setUserEmail] = useState<string>("Agent");
+    const [presenceUsers, setPresenceUsers] = useState<any[]>([]);
 
     useEffect(() => {
+        // 1. Get current user
         supabase.auth.getUser().then(({ data }) => {
             if (data.user?.email) {
-                setUserEmail(data.user.email.split("@")[0]);
+                const name = data.user.user_metadata?.full_name || data.user.email.split("@")[0];
+                setUserEmail(name);
             }
         });
+
+        // 2. Setup Presence
+        const channel = supabase.channel("collaboration", {
+            config: {
+                presence: {
+                    key: "investigators",
+                },
+            },
+        });
+
+        channel
+            .on("presence", { event: "sync" }, () => {
+                const state = channel.presenceState();
+                const users = Object.values(state).flat().map((p: any) => ({
+                    initials: (p.name || "A").substring(0, 2).toUpperCase(),
+                    name: p.name || "Agent",
+                    color: p.color || "bg-blue-500",
+                }));
+                setPresenceUsers(users);
+            })
+            .subscribe(async (status) => {
+                if (status === "SUBSCRIBED") {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (user) {
+                        const colors = ["bg-blue-500", "bg-purple-500", "bg-emerald-500", "bg-amber-500", "bg-rose-500"];
+                        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                        
+                        await channel.track({
+                            user_id: user.id,
+                            name: user.user_metadata?.full_name || user.email?.split("@")[0],
+                            color: randomColor,
+                        });
+                    }
+                }
+            });
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
 
     const handleLogout = async () => {
@@ -51,17 +86,26 @@ export default function Topbar() {
             {/* Collaboration indicator */}
             <div className="flex items-center gap-2 px-3 py-1.5 bg-[#1e293b] border border-[#1e3a5f]/60 rounded-lg">
                 <div className="relative flex -space-x-1.5">
-                    {avatars.map((a) => (
-                        <div
-                            key={a.initials}
-                            className={`w-5 h-5 rounded-full ${a.color} flex items-center justify-center text-[8px] font-bold text-white border border-[#0d1424]`}
-                        >
-                            {a.initials}
+                    {presenceUsers.length > 0 ? (
+                        presenceUsers.map((u, i) => (
+                            <div
+                                key={`${u.initials}-${i}`}
+                                title={u.name}
+                                className={`w-5 h-5 rounded-full ${u.color} flex items-center justify-center text-[8px] font-bold text-white border border-[#0d1424]`}
+                            >
+                                {u.initials}
+                            </div>
+                        ))
+                    ) : (
+                        <div className="w-5 h-5 rounded-full bg-slate-700 flex items-center justify-center text-[8px] font-bold text-white border border-[#0d1424]">
+                            ?
                         </div>
-                    ))}
+                    )}
                 </div>
-                <span className="text-[10px] text-slate-400 font-medium">Collaborating</span>
-                <Wifi size={10} className="text-green-400" />
+                <span className="text-[10px] text-slate-400 font-medium">
+                    {presenceUsers.length > 1 ? `${presenceUsers.length} Investigators` : "Active"}
+                </span>
+                <Wifi size={10} className={presenceUsers.length > 1 ? "text-green-400" : "text-blue-400"} />
             </div>
 
             {/* Notifications */}
@@ -81,7 +125,7 @@ export default function Topbar() {
                     {userEmail[0]}
                 </div>
                 <div className="hidden sm:block">
-                    <div className="text-[11px] font-semibold text-slate-200 uppercase">{userEmail}</div>
+                    <div className="text-[11px] font-semibold text-slate-200 uppercase truncate max-w-[80px]">{userEmail}</div>
                     <div className="text-[9px] text-red-500 hover:text-red-400 font-bold transition-colors">LOG OUT</div>
                 </div>
             </div>

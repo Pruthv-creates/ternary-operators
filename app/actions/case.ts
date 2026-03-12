@@ -39,3 +39,16 @@ export async function getCaseGraph(caseId: string) {
 
     return { nodes: rfNodes, edges: rfEdges };
 }
+
+export async function getUserCases(userId: string) {
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+            cases: {
+                orderBy: { createdAt: 'desc' }
+            }
+        }
+    });
+
+    return user?.cases || [];
+}

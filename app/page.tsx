@@ -20,12 +20,8 @@ type AIResponse = {
 import { useEffect } from "react";
 
 export default function Home() {
-    const { selectedEntity, setSelectedEntity, loadCaseData, aiPanelOpen, setAIPanelOpen } = useInvestigationStore();
+    const { selectedEntity, setSelectedEntity, aiPanelOpen, setAIPanelOpen } = useInvestigationStore();
     const { askAI } = useAI();
-
-    useEffect(() => {
-        loadCaseData("demo-nexus");
-    }, [loadCaseData]);
 
     return (
         <div className="flex h-screen w-screen overflow-hidden bg-[#0a0f1c] font-sans text-slate-300">

@@ -25,6 +25,9 @@ interface NavItem {
 }
 
 import { useInvestigationStore } from "@/store/investigationStore";
+import { getUserCases } from "@/app/actions/case";
+import { supabase } from "@/lib/supabase";
+import { useState, useEffect } from "react";
 
 const navItems: NavItem[] = [
     { icon: <LayoutDashboard size={16} />, label: "Dashboard", href: "/" },
@@ -36,14 +39,28 @@ const navItems: NavItem[] = [
     { icon: <MessageSquare size={16} />, label: "Collaboration", href: "/collaboration" },
 ];
 
-const cases = [
-    { name: "Project Nexus", active: true, status: "Active" },
-    { name: "CyberThreat '24", active: false, status: "Review" },
-];
-
 export default function Sidebar() {
     const pathname = usePathname();
-    const { toggleAIPanel } = useInvestigationStore();
+    const { toggleAIPanel, loadCaseData, currentCaseId } = useInvestigationStore();
+    const [userCases, setUserCases] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchCases = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const casesData = await getUserCases(user.id);
+                setUserCases(casesData);
+                
+                // Auto-load first case if none selected
+                if (casesData.length > 0 && !currentCaseId) {
+                    loadCaseData(casesData[0].id);
+                }
+            }
+            setLoading(false);
+        };
+        fetchCases();
+    }, [loadCaseData, currentCaseId]);
 
     return (
         <motion.aside
@@ -72,36 +89,46 @@ export default function Sidebar() {
                     <ChevronRight size={12} className="text-slate-600" />
                 </div>
                 <div className="space-y-1">
-                    {cases.map((c) => (
-                        <div
-                            key={c.name}
-                            className={cn(
-                                "flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all duration-150 group",
-                                c.active
-                                    ? "bg-blue-500/10 border border-blue-500/20"
-                                    : "hover:bg-white/5"
-                            )}
-                        >
-                            <span
-                                className={cn(
-                                    "text-xs font-medium",
-                                    c.active ? "text-blue-300" : "text-slate-400 group-hover:text-slate-300"
-                                )}
-                            >
-                                {c.name}
-                            </span>
-                            <span
-                                className={cn(
-                                    "text-[9px] px-1.5 py-0.5 rounded font-medium",
-                                    c.active
-                                        ? "bg-blue-500/20 text-blue-400"
-                                        : "bg-slate-800 text-slate-500"
-                                )}
-                            >
-                                {c.status}
-                            </span>
-                        </div>
-                    ))}
+                    {loading ? (
+                        <div className="px-3 py-2 text-xs text-slate-600">Loading cases...</div>
+                    ) : userCases.length === 0 ? (
+                        <div className="px-3 py-2 text-xs text-slate-600 italic font-mono">No cases assigned</div>
+                    ) : (
+                        userCases.map((c: any) => {
+                            const isActive = currentCaseId === c.id;
+                            return (
+                                <div
+                                    key={c.id}
+                                    onClick={() => loadCaseData(c.id)}
+                                    className={cn(
+                                        "flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all duration-150 group",
+                                        isActive
+                                            ? "bg-blue-500/10 border border-blue-500/20"
+                                            : "hover:bg-white/5"
+                                    )}
+                                >
+                                    <span
+                                        className={cn(
+                                            "text-xs font-medium",
+                                            isActive ? "text-blue-300" : "text-slate-400 group-hover:text-slate-300"
+                                        )}
+                                    >
+                                        {c.title}
+                                    </span>
+                                    <span
+                                        className={cn(
+                                            "text-[9px] px-1.5 py-0.5 rounded font-medium",
+                                            isActive
+                                                ? "bg-blue-500/20 text-blue-400"
+                                                : "bg-slate-800 text-slate-500"
+                                        )}
+                                    >
+                                        {c.status}
+                                    </span>
+                                </div>
+                            );
+                        })
+                    )}
                 </div>
             </div>
 
@@ -110,7 +137,7 @@ export default function Sidebar() {
 
             {/* Navigation */}
             <nav className="flex-1 px-3 space-y-1.5 overflow-y-auto mt-2">
-                {navItems.map((item) => {
+                {navItems.map((item: NavItem) => {
                     const isActive = item.href === "/" 
                         ? pathname === "/" 
                         : pathname === item.href || pathname.startsWith(item.href + "/");

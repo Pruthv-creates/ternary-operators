@@ -131,13 +131,54 @@ export async function createEdgeAction(
       },
     });
 
-    return { success: true, edge };
-  } catch (error: any) {
-    if (error?.code === "P2002") {
-      return { success: true, edge: null }; // Edge already exists
+    return {
+      success: true,
+      edge: {
+        ...edge,
+        // Return with full edge data for React Flow
+        source: edge.sourceId,
+        target: edge.targetId,
+        type: "relation",
+        label: edge.relationshipType,
+      },
+    };
+  } catch (error: unknown) {
+    const err = error as any;
+    if (err?.code === "P2002") {
+      return { success: false, edge: null, duplicate: true }; // Edge already exists
     }
     console.error("Failed to create edge:", error);
-    return { success: false };
+    return { success: false, edge: null };
+  }
+}
+
+export async function updateEdgeAction(
+  edgeId: string,
+  relationshipType: string,
+) {
+  try {
+    const edge = await prisma.edge.update({
+      where: { id: edgeId },
+      data: { relationshipType },
+    });
+
+    return {
+      success: true,
+      edge: {
+        ...edge,
+        source: edge.sourceId,
+        target: edge.targetId,
+        type: "relation",
+        label: edge.relationshipType,
+      },
+    };
+  } catch (error: unknown) {
+    const err = error as any;
+    if (err?.code === "P2025") {
+      return { success: false, edge: null }; // Edge not found
+    }
+    console.error("Failed to update edge:", error);
+    return { success: false, edge: null };
   }
 }
 
@@ -148,8 +189,9 @@ export async function deleteEdgeAction(edgeId: string, caseId: string) {
     });
 
     return { success: true };
-  } catch (error: any) {
-    if (error?.code === "P2025") {
+  } catch (error: unknown) {
+    const err = error as any;
+    if (err?.code === "P2025") {
       return { success: true }; // Already deleted
     }
     console.error("Failed to delete edge:", error);

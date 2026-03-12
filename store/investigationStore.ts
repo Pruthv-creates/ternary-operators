@@ -21,6 +21,7 @@ import {
   updateNodeContent,
   deleteNodeAction,
   createEdgeAction,
+  updateEdgeAction,
   deleteEdgeAction,
 } from "@/actions/nodes";
 import { supabase } from "@/lib/supabase";
@@ -68,6 +69,7 @@ type InvestigationState = {
   deleteNode: (id: string) => void;
   updateNodeData: (id: string, data: any) => void;
   addEdge: (edge: Edge) => void;
+  updateEdge: (edgeId: string, relationshipType: string) => void;
   deleteEdgeByIds: (sourceId: string, targetId: string) => void;
   addStickyNote: (
     position: { x: number; y: number },
@@ -186,6 +188,19 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
         break;
       }
 
+      case "edge-update": {
+        const updatedEdges = currentState.edges.map((e) =>
+          e.id === event.edgeId
+            ? {
+                ...e,
+                label: event.relationshipType,
+              }
+            : e,
+        );
+        set({ edges: updatedEdges });
+        break;
+      }
+
       case "edge-delete": {
         set({
           edges: currentState.edges.filter((e) => e.id !== event.edgeId),
@@ -236,21 +251,7 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
     const caseId = get().currentCaseId;
     if (!caseId) return;
 
-    const edge: Edge = {
-      id: `${connection.source}-${connection.target}-${Date.now()}`,
-      source: connection.source,
-      target: connection.target,
-      type: "relation",
-      data: { credibilityScore: 50 },
-      animated: true,
-    };
-
-    // Optimistic update
-    set({
-      edges: addEdge(edge, get().edges),
-    });
-
-    // Persist to database
+    // Persist to database FIRST to get proper ID
     const result = await createEdgeAction(
       caseId,
       connection.source,
@@ -258,8 +259,28 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
       "related_to",
     );
 
-    if (result.success) {
-      // Broadcast the new edge
+    if (result.success && result.edge) {
+      // Create edge with database ID and proper styling
+      const dbEdge = result.edge;
+      const edge: Edge = {
+        id: dbEdge.id,
+        source: dbEdge.sourceId,
+        target: dbEdge.targetId,
+        type: "relation",
+        label: dbEdge.relationshipType,
+        data: { credibilityScore: 85 },
+        style: { stroke: "#8b5cf6", strokeWidth: 1.5 },
+        animated: false,
+        labelStyle: { fill: "#60a5fa", fontSize: 10, fontWeight: 500 },
+        markerEnd: { type: "arrowclosed", color: "#8b5cf6" },
+      };
+
+      // Add to local state
+      set({
+        edges: addEdge(edge, get().edges),
+      });
+
+      // Broadcast to other investigators
       await realtimeSyncManager.broadcast({
         type: "edge-create",
         edge,
@@ -342,6 +363,38 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
         await realtimeSyncManager.broadcast({
           type: "edge-delete",
           edgeId: edge.id,
+        });
+      }
+    }
+  },
+
+  updateEdge: async (edgeId: string, relationshipType: string) => {
+    const caseId = get().currentCaseId;
+    const edge = get().edges.find((e) => e.id === edgeId);
+
+    if (!edge) return;
+
+    // Optimistic update
+    const updatedEdges = get().edges.map((e) =>
+      e.id === edgeId
+        ? {
+            ...e,
+            label: relationshipType,
+            data: { ...e.data, relationshipType },
+          }
+        : e,
+    );
+    set({ edges: updatedEdges });
+
+    // Update in database
+    if (caseId && edgeId) {
+      const result = await updateEdgeAction(edgeId, relationshipType);
+      if (result.success) {
+        // Broadcast update
+        await realtimeSyncManager.broadcast({
+          type: "edge-update",
+          edgeId,
+          relationshipType,
         });
       }
     }

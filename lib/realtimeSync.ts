@@ -8,6 +8,11 @@ export type SyncEvent =
   | { type: "node-update"; id: string; data: Record<string, unknown> }
   | { type: "node-delete"; id: string }
   | { type: "edge-create"; edge: Edge }
+  | {
+      type: "edge-update";
+      edgeId: string;
+      relationshipType: string;
+    }
   | { type: "edge-delete"; edgeId: string }
   | { type: "graph-full-update"; nodes: Node[]; edges: Edge[] };
 
@@ -61,6 +66,10 @@ export class RealtimeSyncManager {
 
     this.channel.on("broadcast", { event: "edge-create" }, ({ payload }) => {
       onEvent({ type: "edge-create", ...payload });
+    });
+
+    this.channel.on("broadcast", { event: "edge-update" }, ({ payload }) => {
+      onEvent({ type: "edge-update", ...payload });
     });
 
     this.channel.on("broadcast", { event: "edge-delete" }, ({ payload }) => {

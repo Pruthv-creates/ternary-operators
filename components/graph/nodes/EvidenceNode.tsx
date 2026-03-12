@@ -1,5 +1,5 @@
 import { memo } from "react";
-import EvidenceCard from "../../EvidenceCard";
+import EvidenceCard from "./EvidenceCard";
 import { BaseNode } from "./BaseNode";
 
 function EvidenceNode({ id, data }: any) {

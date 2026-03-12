@@ -1,5 +1,5 @@
 import { memo } from "react";
-import HypothesisNote from "../../HypothesisNote";
+import HypothesisNote from "./HypothesisNote";
 import { BaseNode } from "./BaseNode";
 
 function HypothesisNode({ id, data }: any) {

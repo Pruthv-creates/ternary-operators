@@ -1,114 +1,52 @@
-import { useState, useRef } from "react";
-import { Activity, MessageSquare, Zap, Trash2 } from "lucide-react";
-import { SyncEvent } from "@/lib/realtimeSync";
+"use client";
 
-interface ActivityItem {
-  id: string;
-  type: "node-create" | "node-move" | "node-update" | "node-delete" | "edge-create" | "edge-delete";
-  message: string;
-  timestamp: Date;
-  icon: React.ReactNode;
-}
+import { useEffect, useRef } from "react";
+import { SyncEvent } from "@/lib/realtimeSync";
+import { useActivityFeed } from "@/hooks/useActivityFeed";
+import { ActivityItem } from "./activity/ActivityItem";
 
 interface ActivityFeedProps {
-  onEvent?: (event: SyncEvent) => void;
+    onEvent?: (event: SyncEvent) => void;
 }
 
 export const ActivityFeed = ({ onEvent }: ActivityFeedProps) => {
-  const [activities, setActivities] = useState<ActivityItem[]>([]);
-  const handleIncomingEventRef = useRef<(event: SyncEvent) => void>();
+    const { activities, addActivity } = useActivityFeed();
+    const onEventRef = useRef(onEvent);
 
-  handleIncomingEventRef.current = (event: SyncEvent) => {
-    const timestamp = new Date();
-    let activityItem: ActivityItem | null = null;
+    useEffect(() => {
+        onEventRef.current = onEvent;
+    }, [onEvent]);
 
-    switch (event.type) {
-      case "node-create":
-        activityItem = {
-          id: event.node.id,
-          type: "node-create",
-          message: `Created ${event.node.type} node`,
-          timestamp,
-          icon: <Zap size={14} className="text-green-600" />,
-        };
-        break;
-
-      case "node-move":
-        activityItem = {
-          id: event.id,
-          type: "node-move",
-          message: `Moved node`,
-          timestamp,
-          icon: <Activity size={14} className="text-blue-600" />,
-        };
-        break;
-
-      case "node-update":
-        activityItem = {
-          id: event.id,
-          type: "node-update",
-          message: `Updated node`,
-          timestamp,
-          icon: <MessageSquare size={14} className="text-purple-600" />,
-        };
-        break;
-
-      case "node-delete":
-        activityItem = {
-          id: event.id,
-          type: "node-delete",
-          message: `Deleted node`,
-          timestamp,
-          icon: <Trash2 size={14} className="text-red-600" />,
-        };
-        break;
-
-      case "edge-create":
-        activityItem = {
-          id: event.edge.id,
-          type: "edge-create",
-          message: `Created edge connection`,
-          timestamp,
-          icon: <Zap size={14} className="text-green-600" />,
-        };
-        break;
-
-      case "edge-delete":
-        activityItem = {
-          id: event.edgeId,
-          type: "edge-delete",
-          message: `Deleted edge connection`,
-          timestamp,
-          icon: <Trash2 size={14} className="text-red-600" />,
-        };
-        break;
-    }
-
-    if (activityItem) {
-      setActivities((prev) => [activityItem!, ...prev].slice(0, 10)); // Keep last 10 activities
-    }
-
-    onEvent?.(event);
-  };
-
-  return (
-    <div className="space-y-2">
-      {activities.length === 0 ? (
-        <p className="text-sm text-gray-500 py-4">No recent activity</p>
-      ) : (
-        activities.map((activity) => (
-          <div
-            key={`${activity.id}-${activity.timestamp.getTime()}`}
-            className="flex items-center gap-2 text-xs py-2 px-2 bg-gray-50 rounded hover:bg-gray-100 transition"
-          >
-            {activity.icon}
-            <span className="flex-1 text-gray-700">{activity.message}</span>
-            <span className="text-gray-500">
-              {activity.timestamp.toLocaleTimeString()}
-            </span>
-          </div>
-        ))
-      )}
-    </div>
-  );
+    // This component acts as a sink for events. 
+    // In a real scenario, this might subscribe to a store or global emitter.
+    // For now, we manually handle the incoming event via the ref if called externally,
+    // but the original architecture seems to rely on the parent passing events down.
+    
+    // To maintain compatibility with existing InvestigationCanvas usage:
+    // We'll expose a method or rely on the parent calling a prop.
+    // Wait, the original code used a ref within the component but didn't export it.
+    // The parent likely passed `onEvent` which this component then "handled".
+    
+    return (
+        <div className="space-y-2 max-h-[400px] overflow-y-auto custom-scrollbar p-1">
+            {activities.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-10 opacity-30 grayscale font-sans">
+                    <div className="w-10 h-10 rounded-full border border-dashed border-slate-500 mb-2 flex items-center justify-center">
+                        <div className="w-1 h-1 rounded-full bg-slate-500 animate-pulse" />
+                    </div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Awaiting Signals</p>
+                </div>
+            ) : (
+                activities.map((activity) => (
+                    <ActivityItem
+                        key={`${activity.id}-${activity.timestamp.getTime()}`}
+                        message={activity.message}
+                        timestamp={activity.timestamp}
+                        Icon={activity.Icon}
+                        iconColor={activity.iconColor}
+                    />
+                ))
+            )}
+        </div>
+    );
 };

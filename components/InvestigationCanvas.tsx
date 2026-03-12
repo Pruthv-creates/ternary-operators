@@ -71,10 +71,22 @@ export default function InvestigationCanvas() {
     );
 
     const runAIAnalysis = async () => {
+        if (analyzing) return;
+        
         setAnalyzing(true);
         setAiMessage(null);
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000); // 1 min timeout
+
         try {
-            const res = await fetch("/api/ai/analyze", { method: "POST" });
+            const res = await fetch("/api/ai/analyze", { 
+                method: "POST",
+                signal: controller.signal
+            });
+            
+            if (!res.ok) throw new Error("Backend unavailable");
+            
             const data = await res.json();
             if (data.nodes || data.edges) {
                 const oldNodesCount = nodes.length;
@@ -83,10 +95,15 @@ export default function InvestigationCanvas() {
                 setAiMessage(`AI identified ${newNodesCount} new entities and mapped their connections.`);
                 setTimeout(() => setAiMessage(null), 5000);
             }
-        } catch (error) {
-            console.error("AI Analysis failed:", error);
-            setAiMessage("Analysis failed. Ensure backend-ai is reachable.");
+        } catch (error: any) {
+            if (error.name === 'AbortError') {
+                setAiMessage("Analysis timed out. Try again.");
+            } else {
+                console.error("AI Analysis failed:", error);
+                setAiMessage("Analysis failed. Backend might be busy.");
+            }
         } finally {
+            clearTimeout(timeoutId);
             setAnalyzing(false);
         }
     };

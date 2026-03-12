@@ -107,46 +107,32 @@ def analyze_graph():
     # Combine all documents into a single context for analysis
     # For a large number of documents, this should be chunked/summarized, 
     # but for this investigation, we'll process the combined text.
-    full_text = "\n\n".join([d.page_content for d in documents[:10]]) # Limit to first 10 docs for safety
+    # Sort documents by filename (often date-prefixed) or just take the latest 5
+    documents.sort(key=lambda x: str(x.metadata.get("source", "")), reverse=True)
+    
+    top_docs = []
+    for i in range(min(5, len(documents))):
+        top_docs.append(documents[i].page_content[:1500])
+    
+    full_text = "\n\n".join(top_docs) 
 
-    prompt = f"""
-You are a Lead Intelligence Analyst. Analyze the following evidence and extract a network of entities and their relationships.
-
-Evidence:
+    system_prompt = "You are a specialized Knowledge Graph Extractor. Output ONLY JSON."
+    user_prompt = f"""Extract entities and relations from this evidence:
 {full_text}
 
-Output ONLY a valid JSON object with the following structure:
+JSON Format:
 {{
-  "nodes": [
-    {{
-      "id": "unique_lowercase_id",
-      "name": "Full Name",
-      "type": "person|company|bank|location|offshore",
-      "role": "Their job or function",
-      "status": "Active|Abnormal|Flagged|Inactive",
-      "credibilityScore": 0-100,
-      "riskScore": 0-100
-    }}
-  ],
-  "edges": [
-    {{
-      "source": "source_node_id",
-      "target": "target_node_id",
-      "label": "Relationship description (e.g. 'Money Flow: $10M' or 'Owner')",
-      "credibilityScore": 0-100
-    }}
-  ]
+  "nodes": [{{"id": "id", "name": "Name", "type": "person|company|bank|location|offshore", "role": "job", "status": "Active|Abnormal|Flagged|Inactive", "credibilityScore": 0-100, "riskScore": 0-100}}],
+  "edges": [{{"source": "id", "target": "id", "label": "description", "credibilityScore": 0-100}}]
 }}
-
-Guidelines:
-- credibilityScore: 0-100 based on how well-documented or verified the entity is in the evidence.
-- riskScore: 0-100 based on suspicious activity, criminal ties, or illicit patterns revealed in the text.
-- Ensure all IDs mentioned in 'edges' exist in 'nodes'.
 """
 
     response = ollama.chat(
         model="llama3",
-        messages=[{"role": "user", "content": prompt}]
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ]
     )
 
     try:

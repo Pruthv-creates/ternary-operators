@@ -60,7 +60,7 @@ async def query(data: Question):
 
 
 @app.post("/analyze")
-async def analyze():
+def analyze():
     from rag_engine import analyze_graph
     return analyze_graph()
 

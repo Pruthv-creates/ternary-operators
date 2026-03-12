@@ -53,6 +53,7 @@ type InvestigationState = {
     aiPanelOpen: boolean;
     setAIPanelOpen: (open: boolean) => void;
     toggleAIPanel: () => void;
+    currentCaseId: string | null;
 };
 
 import { updateNodePosition, createNewNode, updateNodeContent } from "@/actions/nodes";
@@ -62,13 +63,22 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
     edges: initialEdges,
     selectedEntity: null,
     aiPanelOpen: false,
+    currentCaseId: null,
 
     setAIPanelOpen: (open: boolean) => set({ aiPanelOpen: open }),
     toggleAIPanel: () => set((state) => ({ aiPanelOpen: !state.aiPanelOpen })),
 
     loadCaseData: async (caseId: string) => {
-        const { nodes, edges } = await getCaseGraph(caseId);
-        set({ nodes: nodes as any, edges: edges as any });
+        const currentCase = (get() as any).currentCaseId;
+        if (currentCase === caseId) return;
+        
+        const { nodes: backendNodes, edges: backendEdges } = await getCaseGraph(caseId);
+        set({ 
+            nodes: backendNodes as any, 
+            edges: backendEdges as any,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            currentCaseId: caseId as any 
+        });
     },
 
     onNodesChange: (changes: NodeChange[]) => {

@@ -289,6 +289,14 @@ function CanvasInner() {
                     <span className="text-[10px] font-bold uppercase tracking-wider">Add Entity</span>
                 </button>
 
+                <button
+                    onClick={() => addStickyNote({ x: 400, y: 300 })}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#fde88a]/90 backdrop-blur-sm border border-[#d6b83f]/50 text-[#422006] hover:bg-[#f0d060] transition-all shadow-sm font-black text-[10px] uppercase tracking-wider"
+                >
+                    <Plus size={13} strokeWidth={3} />
+                    Sticky
+                </button>
+
                 <div className="h-5 w-px bg-slate-700/50" />
 
                 <div className="flex bg-[#0d1424]/90 backdrop-blur-sm p-0.5 rounded-lg border border-[#1e3a5f]/50 shadow-sm">
@@ -323,15 +331,6 @@ function CanvasInner() {
 
             {/* Canvas toolbar — Right */}
             <div className="absolute top-3 right-4 z-10 flex items-center gap-2">
-                {/* Sticky note */}
-                <button
-                    onClick={() => addStickyNote({ x: 400, y: 300 })}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#fde88a] text-[#422006] hover:bg-[#f0d060] transition-all shadow-md font-black text-[10px] uppercase tracking-wider"
-                >
-                    <Plus size={13} strokeWidth={3} />
-                    Sticky
-                </button>
-
                 {/* Search */}
                 <div className={cn(
                     "flex items-center transition-all duration-300 rounded-lg border",

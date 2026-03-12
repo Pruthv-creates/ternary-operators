@@ -40,7 +40,14 @@ const auditLog = [
     { user: "Sarah", action: "merged entity 'Alexander V.' with 'A. Volkov'", time: "12 min ago", type: "entity" },
 ];
 
+import { useInvestigationStore } from "@/store/investigationStore";
+import { useAI } from "@/hooks/useAI";
+import AIAssistant from "@/components/AIAssistant";
+import { aiActions } from "@/lib/data";
+
 export default function CasesPage() {
+    const { aiPanelOpen, setAIPanelOpen } = useInvestigationStore();
+    const { askAI } = useAI();
     const [selectedFile, setSelectedFile] = useState(ingestedFiles[0]);
 
     return (
@@ -310,6 +317,21 @@ export default function CasesPage() {
                         </div>
                     </div>
                 </main>
+
+                {/* Right AI Intellect Panel */}
+                <div className={cn(
+                    "transition-all duration-300 ease-in-out border-l border-[#1e3a5f]/40 bg-[#0d1424] overflow-hidden flex flex-col h-full",
+                    aiPanelOpen ? "w-[350px]" : "w-0 border-l-0"
+                )}>
+                    <div className="flex-1 min-w-[350px] h-full">
+                        <AIAssistant 
+                            actions={aiActions} 
+                            askAI={askAI} 
+                            isPanel={true} 
+                            onClose={() => setAIPanelOpen(false)} 
+                        />
+                    </div>
+                </div>
             </div>
 
             <style jsx global>{`

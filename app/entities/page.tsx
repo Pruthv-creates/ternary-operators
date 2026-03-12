@@ -28,7 +28,14 @@ const pendingEntities = [
     { id: 4, name: "Elena Petrova", type: "Person", risk: 48, status: "Validated", confidence: 98 },
 ];
 
+import { useInvestigationStore } from "@/store/investigationStore";
+import { useAI } from "@/hooks/useAI";
+import AIAssistant from "@/components/AIAssistant";
+import { aiActions } from "@/lib/data";
+
 export default function EntitiesPage() {
+    const { aiPanelOpen, setAIPanelOpen } = useInvestigationStore();
+    const { askAI } = useAI();
     const [selectedEntity, setSelectedEntity] = useState(pendingEntities[0]);
 
     return (
@@ -212,6 +219,21 @@ export default function EntitiesPage() {
                                     </p>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Right AI Intellect Panel */}
+                    <div className={cn(
+                        "transition-all duration-300 ease-in-out border-l border-[#1e3a5f]/40 bg-[#0d1424] overflow-hidden flex flex-col",
+                        aiPanelOpen ? "w-[350px]" : "w-0 border-l-0"
+                    )}>
+                        <div className="flex-1 min-w-[350px]">
+                            <AIAssistant 
+                                actions={aiActions} 
+                                askAI={askAI} 
+                                isPanel={true} 
+                                onClose={() => setAIPanelOpen(false)} 
+                            />
                         </div>
                     </div>
                 </main>

@@ -24,6 +24,8 @@ interface NavItem {
     badge?: number;
 }
 
+import { useInvestigationStore } from "@/store/investigationStore";
+
 const navItems: NavItem[] = [
     { icon: <LayoutDashboard size={16} />, label: "Dashboard", href: "/" },
     { icon: <FolderOpen size={16} />, label: "Cases", href: "/cases", badge: 3 },
@@ -41,6 +43,7 @@ const cases = [
 
 export default function Sidebar() {
     const pathname = usePathname();
+    const { toggleAIPanel } = useInvestigationStore();
 
     return (
         <motion.aside
@@ -53,11 +56,11 @@ export default function Sidebar() {
             <div className="flex items-center gap-3 px-5 py-5 border-b border-[#1e3a5f]/50">
                 <div className="relative flex items-center justify-center w-8 h-8">
                     <div className="absolute inset-0 bg-blue-500/20 rounded-lg blur-sm" />
-                    <Hexagon size={22} className="text-blue-400 relative z-10" strokeWidth={1.5} />
+                    <Hexagon size={22} className="text-blue-400 relative z-10" strokeWidth={1.5} stroke="currentColor" />
                     <Shield size={10} className="text-blue-300 absolute z-20" />
                 </div>
                 <div>
-                    <div className="text-sm font-bold tracking-widest text-white">ASTRAEUS</div>
+                    <div className="text-sm font-bold tracking-widest text-white uppercase italic">ASTRAEUS</div>
                     <div className="text-[9px] text-slate-500 tracking-wider uppercase">Intelligence Command Centre</div>
                 </div>
             </div>
@@ -111,32 +114,45 @@ export default function Sidebar() {
                     const isActive = item.href === "/" 
                         ? pathname === "/" 
                         : pathname === item.href || pathname.startsWith(item.href + "/");
-                    return (
-                        <Link key={item.label} href={item.href}>
-                            <motion.div
-                                whileHover={{ x: 2 }}
-                                className={cn(
-                                    "sidebar-nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer group relative",
-                                    isActive
-                                        ? "bg-blue-500/15 text-blue-300 shadow-sm shadow-blue-500/5 transition-all duration-300"
-                                        : "text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-colors"
-                                )}
-                            >
-                                {isActive && (
-                                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-blue-400 rounded-r shadow-[0_0_8px_rgba(96,165,250,0.8)]" />
-                                )}
-                                <span className={cn(isActive ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300 transition-colors")}>
-                                    {item.icon}
+
+                    const isAI = item.label === "AI Intelligence";
+
+                    const ItemContent = (
+                        <motion.div
+                            whileHover={{ x: 2 }}
+                            onClick={isAI ? (e) => {
+                                e.preventDefault();
+                                toggleAIPanel();
+                            } : undefined}
+                            className={cn(
+                                "sidebar-nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer group relative",
+                                isActive
+                                    ? "bg-blue-500/15 text-blue-300 shadow-sm shadow-blue-500/5 transition-all duration-300"
+                                    : "text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-colors"
+                            )}
+                        >
+                            {isActive && (
+                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-blue-400 rounded-r shadow-[0_0_8px_rgba(96,165,250,0.8)]" />
+                            )}
+                            <span className={cn(isActive ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300 transition-colors")}>
+                                {item.icon}
+                            </span>
+                            <span className="text-xs font-medium flex-1">{item.label}</span>
+                            {item.badge && (
+                                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-semibold">
+                                    {item.badge}
                                 </span>
-                                <span className="text-xs font-medium flex-1">{item.label}</span>
-                                {item.badge && (
-                                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-semibold">
-                                        {item.badge}
-                                    </span>
-                                )}
-                            </motion.div>
+                            )}
+                        </motion.div>
+                    );
+
+                    return isAI ? (
+                        <div key={item.label}>{ItemContent}</div>
+                    ) : (
+                        <Link key={item.label} href={item.href}>
+                            {ItemContent}
                         </Link>
-                    )
+                    );
                 })}
             </nav>
 

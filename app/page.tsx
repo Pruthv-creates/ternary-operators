@@ -8,6 +8,8 @@ import ContextPanel from "@/components/ContextPanel";
 import AIAssistant from "@/components/AIAssistant";
 import { timelineEvents, aiActions } from "@/lib/data";
 import { useInvestigationStore } from "@/store/investigationStore";
+import { useAI } from "@/hooks/useAI";
+import { cn } from "@/lib/utils";
 
 /* AI response type */
 type AIResponse = {
@@ -18,34 +20,12 @@ type AIResponse = {
 import { useEffect } from "react";
 
 export default function Home() {
-    const { selectedEntity, setSelectedEntity, loadCaseData } = useInvestigationStore();
+    const { selectedEntity, setSelectedEntity, loadCaseData, aiPanelOpen, setAIPanelOpen } = useInvestigationStore();
+    const { askAI } = useAI();
 
     useEffect(() => {
         loadCaseData("demo-nexus");
     }, [loadCaseData]);
-
-    // AI backend request
-    async function askAI(question: string): Promise<AIResponse> {
-        try {
-            const res = await fetch("/api/ai", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ question }),
-            });
-
-            const data: AIResponse = await res.json();
-            return data;
-        } catch (error) {
-            console.error("AI request failed:", error);
-
-            return {
-                answer: "AI backend connection failed.",
-                sources: [],
-            };
-        }
-    }
 
     return (
         <div className="flex h-screen w-screen overflow-hidden bg-[#0a0f1c] font-sans text-slate-300">
@@ -68,22 +48,28 @@ export default function Home() {
                         <Timeline events={timelineEvents} />
                     </div>
 
-                    {/* Right Context Panel */}
+                    {/* Right Context Panel (Entity Details) */}
                     <ContextPanel
                         entity={selectedEntity}
                         onClose={() => setSelectedEntity(null)}
                     />
-                </div>
-            </div>
 
-            {/* Floating AI Assistant */}
-            {!selectedEntity && (
-                <div className="fixed bottom-4 right-4 z-30 pointer-events-none">
-                    <div className="pointer-events-auto">
-                        <AIAssistant actions={aiActions} askAI={askAI} />
+                    {/* Right AI Intellect Panel */}
+                    <div className={cn(
+                        "transition-all duration-300 ease-in-out border-l border-[#1e3a5f]/40 bg-[#0d1424] overflow-hidden flex flex-col",
+                        aiPanelOpen ? "w-[350px]" : "w-0 border-l-0"
+                    )}>
+                        <div className="flex-1 min-w-[350px]">
+                            <AIAssistant 
+                                actions={aiActions} 
+                                askAI={askAI} 
+                                isPanel={true} 
+                                onClose={() => setAIPanelOpen(false)} 
+                            />
+                        </div>
                     </div>
                 </div>
-            )}
+            </div>
         </div>
     );
 }

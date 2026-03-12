@@ -50,6 +50,9 @@ type InvestigationState = {
     addAIResult: (result: { nodes: any[], edges: any[] }) => void;
     addEvidenceCard: (title: string, position: { x: number, y: number }) => void;
     loadCaseData: (caseId: string) => Promise<void>;
+    aiPanelOpen: boolean;
+    setAIPanelOpen: (open: boolean) => void;
+    toggleAIPanel: () => void;
 };
 
 import { updateNodePosition, createNewNode, updateNodeContent } from "@/actions/nodes";
@@ -58,6 +61,10 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
     nodes: initialNodes,
     edges: initialEdges,
     selectedEntity: null,
+    aiPanelOpen: false,
+
+    setAIPanelOpen: (open: boolean) => set({ aiPanelOpen: open }),
+    toggleAIPanel: () => set((state) => ({ aiPanelOpen: !state.aiPanelOpen })),
 
     loadCaseData: async (caseId: string) => {
         const { nodes, edges } = await getCaseGraph(caseId);

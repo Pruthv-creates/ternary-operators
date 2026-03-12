@@ -201,14 +201,22 @@ export default function Topbar() {
                         animate={{ x: 0 }}
                         exit={{ x: "100%" }}
                         transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                        className="fixed top-0 right-0 h-full w-[420px] z-[70] p-4 flex flex-col"
+                        className="fixed top-0 right-0 h-full w-full sm:w-[420px] z-[70] sm:p-4 flex flex-col"
                     >
-                        <div className="flex-1 relative">
+                        <div className="flex-1 relative flex flex-col h-full overflow-hidden">
                             <button 
                                 onClick={() => setChatOpen(false)}
-                                className="absolute -left-12 top-4 w-10 h-10 rounded-xl bg-[#0d1424] border border-[#1e3a5f]/50 flex items-center justify-center text-slate-400 hover:text-white transition-all shadow-2xl z-20"
+                                className="absolute -left-12 top-4 w-10 h-10 rounded-xl bg-[#0d1424] border border-[#1e3a5f]/50 hidden sm:flex items-center justify-center text-slate-400 hover:text-white transition-all shadow-2xl z-20"
                             >
                                 <X size={20} />
+                            </button>
+                            
+                            {/* Mobile Close Button */}
+                            <button 
+                                onClick={() => setChatOpen(false)}
+                                className="sm:hidden absolute right-4 top-4 w-8 h-8 rounded-lg bg-black/20 backdrop-blur-md flex items-center justify-center text-white z-30"
+                            >
+                                <X size={18} />
                             </button>
                             
                             {currentCaseId ? (

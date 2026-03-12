@@ -1,0 +1,56 @@
+ASTRAEUS INTELLIGENCE COMMAND CENTRE
+INVESTIGATION BRIEF: PROJECT NEXUS
+--------------------------------------------------
+DATE: 2026-03-12
+CASE STATUS: ACTIVE / HIGH-PRIORITY
+LEAD ANALYST: SARAH K.
+SECURITY CLEARANCE: TOP SECRET // ORCON
+--------------------------------------------------
+
+1. EXECUTIVE SUMMARY
+Project Nexus is a primary financial crime investigation targeting a sophisticated money laundering network operated by Alexander Volkov. Recent evidence ingestion has identified a high-significance data cluster linking London-based operations to shell companies registered in Nicosia, Cyprus.
+
+2. TARGET PROFILE: ALEXANDER VOLKOV
+- ID: VOL-087
+- ROLE: CEO, Synergy Corp
+- RISK SCORE: 87/100
+- KEY FINDING: Temporal analysis reveals Volkov's travel patterns correlate with large offshore transfers.
+
+3. RECENT PROMOTIONS & FINDINGS
+The following intelligence has been promoted from raw evidence to the active analytical model:
+
+[A] FINANCIAL PROMOTION (PRO-FIN-442)
+- Asset: Nicosia Bank Transfers.xlsx
+- Finding: $12.5M SWIFT transfer to "Synergy Holdings (Cyprus)" on 2023-12-15.
+- Confidence: 94%
+
+[B] TEMPORAL PROMOTION (PRO-TIME-882)
+- Asset: Travel_Logs_Sarah.csv
+- Finding: Volkov (AV) flew LHR -> LCA (Larnaca, Cyprus) 48 hours prior to the $12.5M transfer.
+- Implication: Direct involvement in the physical authorization of offshore layering.
+
+[C] ENTITY PROMOTION (PRO-ENT-012)
+- Entity: Synergy Corp (Validated)
+- Conflicted Data resolved: Commercial logs and Interpol bulletins now reconciled following AI-led data integrity check.
+
+4. ACTIVE HYPOTHESES
+- HYP-01: Volkov Shell Co Integration (VALIDATED)
+  Theory: Volkov uses Synergy Corp as a front for aggregating illicit funds before layering through Cypriot shell entities.
+- HYP-02: Nicosia Money Laundering Loop (EXPLORATION)
+  Theory: Reverse-flow of funds back into London real estate via undisclosed beneficial owners.
+
+5. AUDIT & ACTIVITY LOG (LAST 24H)
+- [Sarah K.] Promoted 'Nicosia Bank Transfers' to Timeline.
+- [James D.] Resolved Conflict: Alexander Volkov identity validation.
+- [Mark J.] Flagged 'Project Nexus' as High Sensitivity.
+- [Astra AI] Generated tactical recommendation for offshore entity mapping.
+
+6. PENDING ACTIONS
+- Verify Synergy Corp beneficial ownership (High Priority)
+- Reconcile Cyprus travel logs with domestic Swift logs (Medium Priority)
+- Review offshore entity registration dates for 2019-2021 (Low Priority)
+
+--------------------------------------------------
+END OF BRIEFING
+AUTHENTICATED BY ASTRAEUS NEURAL ENGINE (LLAMA-3-70B)
+--------------------------------------------------

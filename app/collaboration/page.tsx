@@ -114,7 +114,7 @@ export default function CollaborationPage() {
         <main className="flex-1 overflow-hidden p-6 gap-x-6 gap-y-0 grid grid-cols-3 relative z-10">
                     
                     {/* Live Case Audit */}
-                    <div className="col-span-1 bg-[#0d1424]/60 border border-[#1e3a5f]/30 rounded-3xl flex flex-col overflow-hidden backdrop-blur-sm">
+                    <div className="col-span-1 bg-[#0d1424]/60 border border-[#1e3a5f]/30 rounded-3xl flex flex-col overflow-hidden backdrop-blur-sm h-full max-h-[calc(100vh-100px)] min-h-0">
                         <div className="px-6 py-5 border-b border-[#1e3a5f]/40 bg-white/[0.02] flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <History size={16} className="text-blue-400" />
@@ -158,7 +158,7 @@ export default function CollaborationPage() {
                     </div>
 
                     {/* right column (active + milestone) */}
-                    <div className="w-2/3 flex flex-col gap-6">
+                    <div className="col-span-2 flex flex-col gap-6">
                         {/* Active panel */}
                         <div className="bg-[#0d1424]/60 border border-[#1e3a5f]/30 rounded-3xl flex flex-col overflow-hidden backdrop-blur-sm">
                         <div className="px-6 py-5 border-b border-[#1e3a5f]/40 bg-white/[0.02] flex items-center justify-between">

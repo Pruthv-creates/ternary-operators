@@ -1,11 +1,13 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Search } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
+import { Search, MessageSquare, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import ProfilePanel from "./ProfilePanel";
 import CollaboratorInvite from "./CollaboratorInvite";
+import TeamChat from "./TeamChat";
 import { useInvestigationStore } from "@/store/investigationStore";
 import { getCaseInvestigators } from "@/app/actions/case";
 
@@ -14,6 +16,7 @@ export default function Topbar() {
     const [fullUser, setFullUser] = useState<any>(null);
     const [presenceUsers, setPresenceUsers] = useState<any[]>([]);
     const [profileOpen, setProfileOpen] = useState(false);
+    const [chatOpen, setChatOpen] = useState(false);
     const [validInvestigators, setValidInvestigators] = useState<string[]>([]);
     const { currentCaseId } = useInvestigationStore();
 
@@ -108,28 +111,53 @@ export default function Topbar() {
 
             <div className="flex-1" />
 
-            {/* Collaboration indicator */}
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-[#1e293b] border border-[#1e3a5f]/60 rounded-lg">
-                <div className="relative flex -space-x-1.5">
-                    {presenceUsers.length > 0 ? (
-                        presenceUsers.map((u, i) => (
-                            <div
-                                key={`${u.initials}-${i}`}
-                                title={u.name}
-                                className={`w-5 h-5 rounded-full ${u.color} flex items-center justify-center text-[8px] font-bold text-white border border-[#0d1424]`}
-                            >
-                                {u.initials}
-                            </div>
-                        ))
-                    ) : (
-                        <div className="w-5 h-5 rounded-full bg-slate-700 flex items-center justify-center text-[8px] font-bold text-white border border-[#0d1424]">
-                            ?
-                        </div>
+            {/* Team Chat Trigger & Collaboration indicator */}
+            <div className="flex items-center gap-2">
+                <button 
+                    onClick={() => {
+                        console.log("Chat toggle clicked. Current state:", !chatOpen, "CaseId:", currentCaseId, "User:", fullUser?.id);
+                        setChatOpen(!chatOpen);
+                    }}
+                    className={cn(
+                        "p-2 rounded-lg border transition-all flex items-center gap-2 group relative",
+                        chatOpen 
+                            ? "bg-blue-600 border-blue-400 text-white shadow-[0_0_20px_rgba(37,99,235,0.5)]" 
+                            : "bg-[#1e293b] border-[#1e3a5f]/60 text-slate-400 hover:border-blue-500/50 hover:text-white"
                     )}
+                    title="Team Chat"
+                >
+                    <MessageSquare size={14} className={cn(chatOpen ? "animate-pulse" : "group-hover:rotate-12 transition-transform")} />
+                    <span className="text-[10px] font-black uppercase tracking-widest hidden lg:block">Chat</span>
+                    {chatOpen && (
+                        <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                        </span>
+                    )}
+                </button>
+
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-[#1e293b] border border-[#1e3a5f]/60 rounded-lg">
+                    <div className="relative flex -space-x-1.5">
+                        {presenceUsers.length > 0 ? (
+                            presenceUsers.map((u, i) => (
+                                <div
+                                    key={`${u.initials}-${i}`}
+                                    title={u.name}
+                                    className={`w-5 h-5 rounded-full ${u.color} flex items-center justify-center text-[8px] font-bold text-white border border-[#0d1424]`}
+                                >
+                                    {u.initials}
+                                </div>
+                            ))
+                        ) : (
+                            <div className="w-5 h-5 rounded-full bg-slate-700 flex items-center justify-center text-[8px] font-bold text-white border border-[#0d1424]">
+                                ?
+                            </div>
+                        )}
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">
+                        {presenceUsers.length > 1 ? `${presenceUsers.length} Investigators` : "Active"}
+                    </span>
                 </div>
-                <span className="text-[10px] text-slate-400 font-medium">
-                    {presenceUsers.length > 1 ? `${presenceUsers.length} Investigators` : "Active"}
-                </span>
             </div>
 
             <CollaboratorInvite />
@@ -156,6 +184,54 @@ export default function Topbar() {
                 user={fullUser} 
             />
         )}
+
+        {/* Chat Side Panel */}
+        <AnimatePresence>
+            {chatOpen && fullUser && (
+                <>
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setChatOpen(false)}
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]"
+                    />
+                    <motion.div 
+                        initial={{ x: "100%" }}
+                        animate={{ x: 0 }}
+                        exit={{ x: "100%" }}
+                        transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                        className="fixed top-0 right-0 h-full w-[420px] z-[70] p-4 flex flex-col"
+                    >
+                        <div className="flex-1 relative">
+                            <button 
+                                onClick={() => setChatOpen(false)}
+                                className="absolute -left-12 top-4 w-10 h-10 rounded-xl bg-[#0d1424] border border-[#1e3a5f]/50 flex items-center justify-center text-slate-400 hover:text-white transition-all shadow-2xl z-20"
+                            >
+                                <X size={20} />
+                            </button>
+                            
+                            {currentCaseId ? (
+                                <TeamChat 
+                                    caseId={currentCaseId} 
+                                    currentUser={{ id: fullUser.id, name: fullUser.name }} 
+                                />
+                            ) : (
+                                <div className="flex flex-col h-full bg-[#0d1424]/90 border border-[#1e3a5f]/30 rounded-3xl items-center justify-center p-8 text-center backdrop-blur-md">
+                                    <div className="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mb-6">
+                                        <MessageSquare size={32} className="text-amber-500" />
+                                    </div>
+                                    <h3 className="text-lg font-black text-white uppercase tracking-widest mb-2">No Case Active</h3>
+                                    <p className="text-xs text-slate-400 leading-relaxed font-medium">
+                                        Select a Unified Case from the dashboard or sidebar to initiate team communications.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </motion.div>
+                </>
+            )}
+        </AnimatePresence>
         </>
     );
 }

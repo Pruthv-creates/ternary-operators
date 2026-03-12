@@ -51,6 +51,17 @@ model Case {
   updatedAt   DateTime     @updatedAt
   invitations Invitation[]
   auditLogs   AuditLog[]
+  chatMessages ChatMessage[]
+}
+
+model ChatMessage {
+  id          String   @id @default(uuid())
+  content     String
+  sender_id   String
+  sender_name String
+  case_id     String
+  case        Case     @relation(fields: [case_id], references: [id])
+  created_at  DateTime @default(now())
 }
 
 model Document {

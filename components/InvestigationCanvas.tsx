@@ -180,26 +180,50 @@ function CanvasInner() {
         setAiMessage(null);
         
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 60000);
+        const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 min timeout for llama3
 
         try {
             const res = await fetch("/api/ai/analyze", { 
                 method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ caseId: currentCaseId }),
                 signal: controller.signal
             });
             
-            if (!res.ok) throw new Error("Backend unavailable");
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({ error: "Backend unavailable" }));
+                throw new Error(err.error || `HTTP ${res.status}`);
+            }
             
             const data = await res.json();
-            if (data.nodes || data.edges) {
+
+            // Check for hard error
+            if (data.error && !data.nodes?.length) {
+                setAiMessage(`⚠️ AI: ${data.error}`);
+                setTimeout(() => setAiMessage(null), 6000);
+                return;
+            }
+
+            if (data.nodes?.length || data.edges?.length) {
                 const oldNodesCount = nodes.length;
                 useInvestigationStore.getState().addAIResult(data);
-                const newNodesCount = useInvestigationStore.getState().nodes.length - oldNodesCount;
-                setAiMessage(`AI identified ${newNodesCount} new entities.`);
-                setTimeout(() => setAiMessage(null), 5000);
+                const added = useInvestigationStore.getState().nodes.length - oldNodesCount;
+                setAiMessage(
+                    added > 0
+                        ? `✓ AI added ${added} new entit${added === 1 ? "y" : "ies"} to the canvas.`
+                        : `✓ AI analysis complete — no new entities found.`
+                );
+            } else {
+                setAiMessage("AI returned no graph data. Try adding more evidence first.");
             }
+            setTimeout(() => setAiMessage(null), 6000);
         } catch (error: any) {
-            setAiMessage(error.name === 'AbortError' ? "Timed out" : "AI Analysis failed");
+            if (error.name === "AbortError") {
+                setAiMessage("⏱ Analysis timed out. The AI model may be busy — try again.");
+            } else {
+                setAiMessage(`⚠️ ${error.message || "AI Analysis failed"}`);
+            }
+            setTimeout(() => setAiMessage(null), 6000);
         } finally {
             clearTimeout(timeoutId);
             setAnalyzing(false);
@@ -286,8 +310,15 @@ function CanvasInner() {
                     </div>
                 </div>
                 {aiMessage && (
-                    <div className="px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-wider animate-in fade-in slide-in-from-left-2 transition-all">
-                        ✨ {aiMessage}
+                    <div className={cn(
+                        "px-3 py-1.5 rounded-lg border text-[10px] font-bold uppercase tracking-wider animate-in fade-in slide-in-from-left-2 transition-all",
+                        aiMessage.startsWith("⚠️") || aiMessage.startsWith("⏱")
+                            ? "bg-red-500/10 border-red-500/20 text-red-400"
+                            : aiMessage.startsWith("✓")
+                                ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                                : "bg-amber-500/10 border-amber-500/20 text-amber-400"
+                    )}>
+                        {aiMessage}
                     </div>
                 )}
             </div>

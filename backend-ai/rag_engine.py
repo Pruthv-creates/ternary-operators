@@ -90,61 +90,112 @@ Question:
 def analyze_graph():
     """
     Analyzes all ingested documents to extract entities and relationships.
-    Returns a JSON-formatted string containing nodes and edges.
+    Returns nodes and edges for the knowledge graph.
     """
+    import json
+    import re
+
     documents = []
     if not os.path.exists(EVIDENCE_DIR):
         return {"nodes": [], "edges": []}
 
-    for file in os.listdir(EVIDENCE_DIR):
+    for file in sorted(os.listdir(EVIDENCE_DIR)):
         if file.endswith(".txt"):
-            loader = TextLoader(os.path.join(EVIDENCE_DIR, file))
-            documents.extend(loader.load())
+            try:
+                loader = TextLoader(os.path.join(EVIDENCE_DIR, file))
+                documents.extend(loader.load())
+            except Exception:
+                pass
 
     if not documents:
         return {"nodes": [], "edges": []}
 
-    # Combine all documents into a single context for analysis
-    # For a large number of documents, this should be chunked/summarized, 
-    # but for this investigation, we'll process the combined text.
-    # Sort documents by filename (often date-prefixed) or just take the latest 5
+    # Take only the most relevant chunks to keep context short
     documents.sort(key=lambda x: str(x.metadata.get("source", "")), reverse=True)
-    
-    top_docs = []
-    for i in range(min(5, len(documents))):
-        top_docs.append(documents[i].page_content[:1500])
-    
-    full_text = "\n\n".join(top_docs) 
+    full_text = "\n\n".join([d.page_content[:1000] for d in documents[:4]])
 
-    system_prompt = "You are a specialized Knowledge Graph Extractor. Output ONLY JSON."
-    user_prompt = f"""Extract entities and relations from this evidence:
+    # Very explicit, compact prompt that works reliably with llama3
+    user_prompt = f"""TASK: Extract named entities and their relationships from the text below.
+Respond with ONLY a JSON object. No explanation, no markdown, no commentary.
+
+TEXT:
 {full_text}
 
-JSON Format:
-{{
-  "nodes": [{{"id": "id", "name": "Name", "type": "person|company|bank|location|offshore", "role": "job", "status": "Active|Abnormal|Flagged|Inactive", "credibilityScore": 0-100, "riskScore": 0-100}}],
-  "edges": [{{"source": "id", "target": "id", "label": "description", "credibilityScore": 0-100}}]
-}}
-"""
+OUTPUT FORMAT (fill in real values):
+{{"nodes":[{{"id":"n1","name":"Full Name","type":"person","role":"Job Title","status":"Active","credibilityScore":80,"riskScore":40}},{{"id":"n2","name":"Company Name","type":"company","role":"Corporation","status":"Active","credibilityScore":70,"riskScore":60}}],"edges":[{{"source":"n1","target":"n2","label":"controls","credibilityScore":75}}]}}
 
-    response = ollama.chat(
-        model="llama3",
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ]
-    )
+Types allowed: person, company, bank, location, offshore
+Status allowed: Active, Abnormal, Flagged, Inactive
+Scores: integers 0-100
+
+JSON:"""
 
     try:
-        # Extract JSON from potential markdown code blocks
-        content = response["message"]["content"]
-        if "```json" in content:
-            content = content.split("```json")[1].split("```")[0].strip()
-        elif "```" in content:
-            content = content.split("```")[1].split("```")[0].strip()
-        
-        import json
-        return json.loads(content)
+        response = ollama.chat(
+            model="llama3",
+            messages=[{"role": "user", "content": user_prompt}],
+            options={"temperature": 0.1, "num_predict": 1500}
+        )
+        raw = response["message"]["content"].strip()
+
+        # --- Multi-strategy JSON extraction ---
+
+        # Strategy 1: find the outermost { ... } block
+        brace_match = re.search(r'\{[\s\S]*\}', raw)
+        if brace_match:
+            candidate = brace_match.group(0)
+            try:
+                result = json.loads(candidate)
+                if "nodes" in result and isinstance(result["nodes"], list):
+                    print(f"[analyze_graph] Parsed {len(result['nodes'])} nodes, {len(result.get('edges', []))} edges")
+                    return result
+            except json.JSONDecodeError:
+                pass
+
+        # Strategy 2: find JSON inside ```json ... ``` or ``` ... ```
+        for pattern in [r'```json\s*([\s\S]*?)```', r'```\s*([\s\S]*?)```']:
+            match = re.search(pattern, raw)
+            if match:
+                try:
+                    result = json.loads(match.group(1).strip())
+                    if "nodes" in result:
+                        return result
+                except json.JSONDecodeError:
+                    pass
+
+        # Strategy 3: Find arrays directly and reconstruct
+        nodes_match = re.search(r'"nodes"\s*:\s*(\[[\s\S]*?\])', raw)
+        edges_match = re.search(r'"edges"\s*:\s*(\[[\s\S]*?\])', raw)
+        if nodes_match:
+            try:
+                nodes = json.loads(nodes_match.group(1))
+                edges = json.loads(edges_match.group(1)) if edges_match else []
+                print(f"[analyze_graph] Reconstructed {len(nodes)} nodes via strategy 3")
+                return {"nodes": nodes, "edges": edges}
+            except json.JSONDecodeError:
+                pass
+
+        # Strategy 4: Ask LLM to fix its own output
+        print(f"[analyze_graph] All strategies failed, requesting JSON fix from LLM...")
+        fix_prompt = f"""The following text should be a JSON object with 'nodes' and 'edges' arrays.
+Extract and output ONLY the valid JSON, nothing else:
+
+{raw[:2000]}
+
+JSON:"""
+        fix_response = ollama.chat(
+            model="llama3",
+            messages=[{"role": "user", "content": fix_prompt}],
+            options={"temperature": 0.0, "num_predict": 800}
+        )
+        fix_raw = fix_response["message"]["content"].strip()
+        fix_match = re.search(r'\{[\s\S]*\}', fix_raw)
+        if fix_match:
+            result = json.loads(fix_match.group(0))
+            if "nodes" in result:
+                return result
+
     except Exception as e:
-        print(f"Failed to parse AI graph response: {e}")
-        return {"nodes": [], "edges": [], "error": str(e)}
+        print(f"[analyze_graph] Error: {e}")
+
+    return {"nodes": [], "edges": [], "error": "Could not extract graph data from documents."}

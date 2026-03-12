@@ -320,6 +320,7 @@ function CanvasInner() {
                 )}
             </div>
 
+
             {/* Canvas toolbar — Right */}
             <div className="absolute top-3 right-4 z-10 flex items-center gap-2">
                 {/* Sticky note */}

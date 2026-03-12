@@ -1,0 +1,21 @@
+SECURE COMMS: PROJECT NEXUS OVERVIEW
+ID: NX-99
+SENDER: RASHID AHMAD
+RECEIVER: 'THE ARCHITECT'
+DATE: 2024-03-05
+--------------------------------------------------
+The 'Shadow' infrastructure is ready. 
+
+1. BANCO DE SOMBRAS (Panama City) has allocated the dormant accounts for the $11M transfer.
+2. The offshore routing will go: Alpha Bank (Nicosia) -> Orion Holdings -> Banco de Sombras.
+3. Volkov's signature is currently valid, but Petrova is asking questions about the 'Nexus Project Settlement' label. We need to ensure she doesn't flag this to the Interpol unit in London.
+
+VOLKOV STATUS:
+He's erratic. The yacht meeting spooked him. He thinks he's being followed by Sarah Patel's associates. We need to accelerate the exit.
+
+PETROVA STATUS:
+Secondary signatory at Orion. She has the power to stop the transfer manually if she suspects laundering. Mercer is preparing a 'bonus' structure to keep her compliant.
+
+URGENT:
+If the Alpha Bank VIP threshold is breached (over $15M cumulative), the automated risk engine at the Central Bank will trigger a freeze. We must stay under that limit.
+--------------------------------------------------

@@ -1,0 +1,37 @@
+ASTRAEUS INTELLIGENCE COMMAND CENTRE
+INVESTIGATION BRIEF: PROJECT NEXUS (INTEGRATED)
+--------------------------------------------------
+DATE: 2026-03-12
+CASE STATUS: ACTIVE / CRITICAL
+LEAD ANALYST: SARAH K.
+--------------------------------------------------
+
+1. CORE TARGET: ALEXANDER VOLKOV (VOL-087)
+Alexander Volkov is the primary suspect in a major money laundering operation. He serves as the CEO of Synergy Corp, which we suspect is a front for illegal financial operations. Recent data suggests he has high-risk scores across multiple jurisdictions.
+
+2. SYNERGY CORP & AFFILIATIONS
+Synergy Corp appears to be linked to several offshore entities. One notable connection is to "BlueWave Corporation", where Daniel Mercer serves as a Director. Mercer has been flagged for suspicious financial advisory roles.
+
+3. FINANCIAL IRREGULARITIES
+- $12.5M SWIFT transfer was detected between Synergy Corp and Alpha Bank.
+- A secondary flow of $2.4M was identified involving Orion Holdings Ltd.
+- Transactions typically occur 48 hours after Volkov's international travel.
+
+4. KEY ENTITIES IDENTIFIED
+- Alexander Volkov (CEO, Suspect)
+- Daniel Mercer (Director, BlueWave Corp, Accomplice)
+- Synergy Corp (Primary Front)
+- Alpha Bank (Used for layering)
+- BlueWave Corporation (Offshore advisory)
+- Orion Holdings Ltd (Nicosia-based shell company)
+- Sarah Patel (Auditor, potential whistleblower or target)
+
+5. RECENT TRAVEL LOGS
+Volkov flew from London (LHR) to Nicosia (LCA) on December 13th, 2023. The $12.5M transfer occurred on December 15th, 2023.
+
+6. AUDIT TRAILS
+Sarah Patel reported discrepancies in the Q4 financial records of Synergy Corp. Shortly after, her access was restricted.
+
+--------------------------------------------------
+END OF SUMMARY
+--------------------------------------------------

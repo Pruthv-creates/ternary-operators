@@ -356,3 +356,33 @@ export async function getCaseDocuments(caseId: string) {
     return [];
   }
 }
+
+export async function getCaseNews(caseId: string) {
+  try {
+    const news = await prisma.news.findMany({
+      where: { caseId },
+      orderBy: { publishedAt: "desc" },
+    });
+    return news;
+  } catch (error) {
+    console.error("Failed to fetch case news:", error);
+    return [];
+  }
+}
+
+export async function createNewsItem(data: {
+  caseId: string;
+  title: string;
+  summary: string;
+  source: string;
+  url?: string;
+  sentiment?: string;
+  publishedAt?: Date;
+}) {
+  return prisma.news.create({
+    data: {
+      ...data,
+      publishedAt: data.publishedAt || new Date(),
+    },
+  });
+}

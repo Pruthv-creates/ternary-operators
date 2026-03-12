@@ -12,6 +12,7 @@ import {
     Shield,
     ChevronRight,
     Hexagon,
+    Newspaper,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -36,6 +37,7 @@ const navItems: NavItem[] = [
     { icon: <Archive size={16} />, label: "Evidence Library", href: "/evidence" },
     { icon: <Users size={16} />, label: "Entities", href: "/entities" },
     { icon: <Clock size={16} />, label: "Timeline", href: "/timeline" },
+    { icon: <Newspaper size={16} />, label: "News Feed", href: "/news" },
     { icon: <Brain size={16} />, label: "AI Intelligence", href: "/intelligence", badge: 5 },
     { icon: <MessageSquare size={16} />, label: "Collaboration", href: "/collaboration" },
 ];

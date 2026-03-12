@@ -129,23 +129,23 @@ export default function Topbar() {
     return (
         <>
         <header
-            className="flex items-center gap-4 px-6 py-3 bg-[#0d1424]/80 backdrop-blur-sm border-b border-[#1e3a5f]/50 h-14 relative z-50"
+            className="flex items-center gap-3 px-4 py-3 bg-[#0d1424] border-b border-[#1e3a5f]/50 h-14 relative z-50"
         >
             {/* Search */}
-            <div className="flex-1 relative max-w-md">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+            <div className="relative w-56 shrink-0">
+                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                 <input
                     type="text"
-                    placeholder="Search cases, entities, evidence..."
-                    className="w-full pl-9 pr-4 py-2 text-xs bg-[#1e293b] border border-[#1e3a5f]/60 rounded-lg text-slate-300 placeholder-slate-600 focus:outline-none focus:border-blue-500/50 focus:bg-[#263144] transition-all"
+                    placeholder="Search..."
+                    className="w-full pl-8 pr-8 py-1.5 text-xs bg-[#1e293b] border border-[#1e3a5f]/60 rounded-lg text-slate-300 placeholder-slate-600 focus:outline-none focus:border-blue-500/50 focus:bg-[#263144] transition-all"
                 />
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] text-slate-600 font-mono">⌘K</div>
             </div>
 
-            <div className="flex-1" />
+            <div className="flex-1 min-w-0" />
 
-            {/* Team Chat Trigger & Collaboration indicator */}
-            <div className="flex items-center gap-2">
+            {/* Right side controls */}
+            <div className="flex items-center gap-2 shrink-0">
                 {/* Voice Comms Button — stays green while call is live, even when panel is closed */}
                 <div className="relative">
                     <motion.button
@@ -160,7 +160,7 @@ export default function Topbar() {
                         transition={{ repeat: Infinity, duration: 2 }}
                         onClick={() => setVoiceOpen(!voiceOpen)}
                         className={cn(
-                            "p-2 rounded-lg border transition-all flex items-center gap-2 group relative",
+                            "p-2 rounded-lg border transition-all flex items-center gap-2 group relative shrink-0",
                             voiceOpen
                                 ? "bg-emerald-600 border-emerald-400 text-white shadow-[0_0_20px_rgba(16,185,129,0.5)]"
                                 : voiceActive
@@ -192,7 +192,7 @@ export default function Topbar() {
                         setChatOpen(!chatOpen);
                     }}
                     className={cn(
-                        "p-2 rounded-lg border transition-all flex items-center gap-2 group relative",
+                        "p-2 rounded-lg border transition-all flex items-center gap-2 group relative shrink-0",
                         chatOpen 
                             ? "bg-blue-600 border-blue-400 text-white shadow-[0_0_20px_rgba(37,99,235,0.5)]" 
                             : "bg-[#1e293b] border-[#1e3a5f]/60 text-slate-400 hover:border-blue-500/50 hover:text-white"
@@ -209,7 +209,7 @@ export default function Topbar() {
                     )}
                 </button>
 
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-[#1e293b] border border-[#1e3a5f]/60 rounded-lg">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-[#1e293b] border border-[#1e3a5f]/60 rounded-lg shrink-0">
                     <div className="relative flex -space-x-1.5">
                         {presenceUsers.length > 0 ? (
                             presenceUsers.map((u, i) => (
@@ -240,7 +240,7 @@ export default function Topbar() {
                 <button
                     onClick={handleDeleteCase}
                     disabled={isDeleting}
-                    className="p-2 rounded-lg border bg-red-950/30 border-red-500/30 text-red-300 hover:bg-red-950/50 hover:border-red-500/50 disabled:opacity-50 transition-all flex items-center gap-2 group"
+                    className="p-2 rounded-lg border bg-red-950/30 border-red-500/30 text-red-300 hover:bg-red-950/50 hover:border-red-500/50 disabled:opacity-50 transition-all flex items-center gap-2 group shrink-0"
                     title="Delete this case"
                 >
                     <Trash2 size={14} className="group-hover:rotate-12 transition-transform" />
@@ -249,13 +249,16 @@ export default function Topbar() {
             )}
 
             {/* User profile */}
-            <div className="flex items-center gap-2 pl-3 border-l border-[#1e3a5f]/50 cursor-pointer group" onClick={() => setProfileOpen(!profileOpen)}>
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-xs font-bold text-white uppercase group-hover:ring-2 ring-blue-500/50 transition-all">
+            <div
+                className="flex items-center gap-2.5 pl-3 border-l border-[#1e3a5f]/50 cursor-pointer group shrink-0"
+                onClick={() => setProfileOpen(!profileOpen)}
+            >
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-xs font-bold text-white uppercase group-hover:ring-2 ring-blue-500/50 transition-all shrink-0">
                     {userEmail[0]}
                 </div>
-                <div className="hidden sm:block">
-                    <div className="text-[11px] font-semibold text-slate-200 uppercase truncate max-w-[80px]">{userEmail}</div>
-                    <div className="text-[9px] text-blue-500 hover:text-blue-400 font-bold transition-colors uppercase tracking-widest">Profile</div>
+                <div className="hidden sm:flex flex-col leading-none gap-0.5">
+                    <span className="text-[11px] font-bold text-slate-200 uppercase tracking-wide max-w-[96px] truncate">{userEmail}</span>
+                    <span className="text-[9px] text-blue-400 font-bold uppercase tracking-widest">Profile</span>
                 </div>
             </div>
 

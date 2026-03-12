@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { getUserCases, createCase } from "@/app/actions/case";
+import { getUserCases, createCase, renameCase } from "@/app/actions/case";
 import { useInvestigationStore } from "@/store/investigationStore";
 import { useRouter } from "next/navigation";
 
@@ -62,6 +62,23 @@ export function useSidebarCases() {
         }
     };
 
+    const handleRenameCase = async (caseId: string, newTitle: string) => {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const result = await renameCase(caseId, newTitle, user.id);
+                if (result.success) {
+                    setUserCases(userCases.map(c => c.id === caseId ? { ...c, title: newTitle } : c));
+                    router.refresh();
+                } else {
+                    alert("Failed to rename case: " + result.error);
+                }
+            }
+        } catch (error) {
+            console.error("Failed to rename case:", error);
+        }
+    };
+
     return {
         userCases,
         loading,
@@ -71,6 +88,7 @@ export function useSidebarCases() {
         setIsCreateModalOpen,
         handleSelectCase,
         handleCreateCase,
-        handleCreateCaseWithTitle
+        handleCreateCaseWithTitle,
+        handleRenameCase
     };
 }

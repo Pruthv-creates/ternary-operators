@@ -15,7 +15,8 @@ export default function Sidebar() {
         setIsCreateModalOpen,
         handleSelectCase,
         handleCreateCase,
-        handleCreateCaseWithTitle
+        handleCreateCaseWithTitle,
+        handleRenameCase
     } = useSidebarCases();
 
     return (
@@ -42,6 +43,7 @@ export default function Sidebar() {
                 handleSelectCase={handleSelectCase}
                 handleCreateCase={handleCreateCase}
                 handleCreateCaseWithTitle={handleCreateCaseWithTitle}
+                handleRenameCase={handleRenameCase}
             />
 
             {/* Divider */}

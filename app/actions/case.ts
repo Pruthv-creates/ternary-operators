@@ -344,6 +344,35 @@ export async function deleteCase(caseId: string, userId: string) {
   }
 }
 
+export async function renameCase(caseId: string, newTitle: string, userId: string) {
+  try {
+    // Verify user is part of the case
+    const caseRecord = await prisma.case.findUnique({
+      where: { id: caseId },
+      include: { users: true },
+    });
+
+    if (!caseRecord) {
+      return { success: false, error: "Case not found" };
+    }
+
+    const isCollaborator = caseRecord.users.some((u) => u.id === userId);
+    if (!isCollaborator) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const updatedCase = await prisma.case.update({
+      where: { id: caseId },
+      data: { title: newTitle },
+    });
+
+    return { success: true, case: updatedCase };
+  } catch (error) {
+    console.error("Failed to rename case:", error);
+    return { success: false, error: String(error) };
+  }
+}
+
 export async function getCaseDocuments(caseId: string) {
   try {
     const docs = await prisma.document.findMany({

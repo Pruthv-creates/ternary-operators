@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { deleteCase } from "@/app/actions/case";
+import { deleteCase, renameCase } from "@/app/actions/case";
 import { useInvestigationStore } from "@/store/investigationStore";
 
 export function useCaseActions() {
     const router = useRouter();
     const [isDeleting, setIsDeleting] = useState(false);
+    const [isRenaming, setIsRenaming] = useState(false);
     const { currentCaseId } = useInvestigationStore();
 
     const handleDeleteCase = async (fullUser: any) => {
@@ -38,8 +39,28 @@ export function useCaseActions() {
         }
     };
 
+    const handleRenameCase = async (caseId: string, newTitle: string, fullUser: any) => {
+        if (!caseId || !newTitle.trim() || !fullUser) return;
+        
+        setIsRenaming(true);
+        try {
+            const result = await renameCase(caseId, newTitle.trim(), fullUser.id);
+            if (result.success) {
+                router.refresh();
+            } else {
+                alert("Failed to rename case: " + result.error);
+            }
+        } catch (error) {
+            alert("Error renaming case: " + String(error));
+        } finally {
+            setIsRenaming(false);
+        }
+    };
+
     return {
         isDeleting,
-        handleDeleteCase
+        isRenaming,
+        handleDeleteCase,
+        handleRenameCase
     };
 }

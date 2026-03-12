@@ -10,8 +10,7 @@ import {
   useEdgesState, 
   addEdge,
   Node,
-  Edge,
-  Connection
+  Edge
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -34,7 +33,8 @@ export default function InvestigationGraph() {
   const [nodes, , onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
-  const onConnect = useCallback((params: Connection | Edge) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const onConnect = useCallback((params: any) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
 
   return (
     <div style={{ width: '100%', height: '100%' }}>

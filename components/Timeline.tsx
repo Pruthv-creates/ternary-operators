@@ -10,7 +10,7 @@ interface TimelineProps {
 
 const months = ["Jan 2023", "Mar", "Jul", "Sep", "Nov", "Dec 2023", "Jan 2024", "Mar", "Jul", "Sep", "Nov", "Dec 2024"];
 
-export default function Timeline(_props: TimelineProps) {
+export default function Timeline({ }: TimelineProps) {
     const { addStickyNote, addEvidenceCard } = useInvestigationStore();
     return (
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-4/5 max-w-5xl h-32 flex flex-col justify-end z-10 pointers-event-none">

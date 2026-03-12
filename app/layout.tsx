@@ -7,6 +7,8 @@ export const metadata: Metadata = {
   keywords: ["investigation", "intelligence", "financial crime", "entity analysis", "OSINT"],
 };
 
+import AuthGate from "@/components/AuthGate";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -23,7 +25,9 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased bg-[#0f172a] text-slate-100 overflow-hidden">
-        {children}
+        <AuthGate>
+          {children}
+        </AuthGate>
       </body>
     </html>
   );

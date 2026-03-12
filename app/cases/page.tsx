@@ -9,7 +9,7 @@ import {
     Clock, 
     Users, 
     AlertTriangle,
-    CheckCircle2,
+    CheckCircle2, 
     Activity,
     BarChart3,
     Share2,

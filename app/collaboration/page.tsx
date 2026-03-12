@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { 
     Users, 
     MessageSquare, 
-    History,
+    History, 
     CheckCircle2, 
     Shield,
     Terminal,

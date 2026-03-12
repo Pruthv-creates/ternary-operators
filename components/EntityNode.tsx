@@ -5,6 +5,18 @@ import { cn } from "@/lib/utils";
 import { useInvestigationStore } from "@/store/investigationStore";
 import { EntityType } from "@/lib/data";
 
+interface EntityNodeProps {
+    data: {
+        name: string;
+        role: string;
+        type: EntityType;
+        selected?: boolean;
+        entityId?: string;
+        avatar?: string;
+    };
+    selected?: boolean;
+}
+
 const typeConfig: Record<
     EntityType,
     { icon: React.ReactNode; color: string; ring: string; bg: string }
@@ -113,5 +125,8 @@ function EntityNode({ id, data, selected }: any) {
         </div>
     );
 }
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type _EntityNodeProps = EntityNodeProps;
 
 export default memo(EntityNode);

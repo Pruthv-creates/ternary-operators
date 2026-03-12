@@ -1,7 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Search, Bell, ChevronDown, Settings, Wifi } from "lucide-react";
+import { Search, Bell, Settings, Wifi } from "lucide-react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 const avatars = [
     { initials: "MK", color: "bg-blue-500" },
@@ -10,6 +12,22 @@ const avatars = [
 ];
 
 export default function Topbar() {
+    // User profile
+    const [userEmail, setUserEmail] = useState<string>("Agent");
+
+    useEffect(() => {
+        supabase.auth.getUser().then(({ data }) => {
+            if (data.user?.email) {
+                setUserEmail(data.user.email.split("@")[0]);
+            }
+        });
+    }, []);
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+        window.location.reload();
+    };
+
     return (
         <motion.header
             initial={{ y: -40, opacity: 0 }}
@@ -58,16 +76,16 @@ export default function Topbar() {
             </button>
 
             {/* User profile */}
-            <div className="flex items-center gap-2 pl-3 border-l border-[#1e3a5f]/50">
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-xs font-bold text-white">
-                    S
+            <div className="flex items-center gap-2 pl-3 border-l border-[#1e3a5f]/50 cursor-pointer" onClick={handleLogout}>
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-xs font-bold text-white uppercase">
+                    {userEmail[0]}
                 </div>
                 <div className="hidden sm:block">
-                    <div className="text-xs font-semibold text-slate-200">SARAH</div>
-                    <div className="text-[9px] text-slate-500">Lead Analyst</div>
+                    <div className="text-[11px] font-semibold text-slate-200 uppercase">{userEmail}</div>
+                    <div className="text-[9px] text-red-500 hover:text-red-400 font-bold transition-colors">LOG OUT</div>
                 </div>
-                <ChevronDown size={12} className="text-slate-500" />
             </div>
         </motion.header>
     );
 }
+

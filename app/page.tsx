@@ -15,8 +15,14 @@ type AIResponse = {
   sources: string[];
 };
 
+import { useEffect } from "react";
+
 export default function Home() {
-    const { selectedEntity, setSelectedEntity } = useInvestigationStore();
+    const { selectedEntity, setSelectedEntity, loadCaseData } = useInvestigationStore();
+
+    useEffect(() => {
+        loadCaseData("demo-nexus");
+    }, [loadCaseData]);
 
     // AI backend request
     async function askAI(question: string): Promise<AIResponse> {

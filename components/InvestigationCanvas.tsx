@@ -51,7 +51,9 @@ export default function InvestigationCanvas() {
                         name: node.data.name as string,
                         role: node.data.role as string,
                         type: node.data.type as EntityType,
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         avatar: (node.data as any).avatar,
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         status: (node.data as any).status,
                     });
                 }

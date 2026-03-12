@@ -19,10 +19,15 @@ export function TimelinePlayback() {
     return { min: Math.min(...times), max: Math.max(...times) };
   }, [locationEvents]);
 
+  // Initialize playbackTime to min if it's 0 or below min
+  useEffect(() => {
+    if (locationEvents.length > 0 && playbackTime < min) {
+      setPlaybackTime(min);
+    }
+  }, [locationEvents, min, playbackTime, setPlaybackTime]);
+
   useEffect(() => {
     if (isPlaybackPlaying && locationEvents.length > 0) {
-      if (playbackTime < min) setPlaybackTime(min);
-      
       const interval = setInterval(() => {
         setPlaybackTime((prev: number) => {
           const next = prev + (max - min) / 100; // Increment 1% every step
@@ -45,7 +50,12 @@ export function TimelinePlayback() {
         <div className="flex items-center justify-between gap-6">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => setIsPlaybackPlaying(!isPlaybackPlaying)}
+              onClick={() => {
+                if (!isPlaybackPlaying && playbackTime >= max) {
+                  setPlaybackTime(min);
+                }
+                setIsPlaybackPlaying(!isPlaybackPlaying);
+              }}
               className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-transform active:scale-95"
             >
               {isPlaybackPlaying ? <Pause size={20} /> : <Play size={20} className="ml-1" />}

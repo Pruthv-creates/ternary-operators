@@ -12,13 +12,24 @@ export async function POST(req: Request) {
   const formData = await req.formData();
   const file = formData.get("file") as File;
 
-  // 1. Send to AI Backend for indexing
-  const aiRes = await fetch("http://localhost:8000/upload?case_id=" + caseId, {
-    method: "POST",
-    body: formData,
-  });
-
-  const aiData = await aiRes.json();
+  let aiData;
+  try {
+    const aiRes = await fetch("http://localhost:8000/upload?case_id=" + caseId, {
+      method: "POST",
+      body: formData,
+    });
+    
+    if (!aiRes.ok) {
+        const errText = await aiRes.text();
+        console.error("AI Backend upload failed:", aiRes.status, errText);
+        return NextResponse.json({ error: "AI Backend upload failed" }, { status: 500 });
+    }
+    
+    aiData = await aiRes.json();
+  } catch (error: any) {
+    console.error("Fetch to AI backend threw error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
   // 2. Save record to Postgres via Prisma for persistence and UI
   if (file && caseId) {

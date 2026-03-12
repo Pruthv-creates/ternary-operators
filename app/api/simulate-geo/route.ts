@@ -39,7 +39,7 @@ export async function GET() {
           latitude: pt.lat,
           longitude: pt.lng,
           timestamp: timestamp,
-          source: "SIMULATED_SIGINT"
+          source: `SIGINT Tracking: Intercepted near ${pt.loc}. Suspect activity likely tied to financial maneuvering.`
         }
       });
     }

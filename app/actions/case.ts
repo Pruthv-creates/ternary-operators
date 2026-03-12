@@ -88,6 +88,7 @@ export async function getLocationEvents(caseId: string) {
     const events = await p.locationEvent.findMany({
       where: { node: { caseId } },
       orderBy: { timestamp: "asc" },
+      include: { node: true }
     });
     console.log(`Found ${events.length} location events`);
     return events;

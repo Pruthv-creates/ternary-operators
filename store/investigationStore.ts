@@ -214,16 +214,13 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
   toggleAIPanel: () => set((state) => ({ aiPanelOpen: !state.aiPanelOpen })),
 
   loadCaseData: async (caseId: string, title?: string) => {
-    const currentCase = get().currentCaseId;
-    if (currentCase === caseId) return;
-
-    // Immediately clear for fast UX
+    // Always clear and reload so fresh DB nodes are reflected (e.g. after AI analysis)
     set({ nodes: [], edges: [], currentCaseId: caseId, currentCaseTitle: title || null });
 
-    const { nodes: backendNodes, edges: backendEdges } =
-      await getCaseGraph(caseId);
-    
-    const events = await getLocationEvents(caseId);
+    const [{ nodes: backendNodes, edges: backendEdges }, events] = await Promise.all([
+      getCaseGraph(caseId),
+      getLocationEvents(caseId),
+    ]);
 
     set({
       nodes: backendNodes as any,
@@ -773,6 +770,8 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
     const centerX = nexusNode.position.x;
     const centerY = nexusNode.position.y;
 
+    const idMap = new Map<string, string>();
+    
     const filteredNodes = result.nodes.filter(
       (n) => !currentNodes.find((cn) => cn.id === n.id),
     );
@@ -790,9 +789,12 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
     const newNodes: Node[] = filteredNodes.map((n, i) => {
       const angle = (i / Math.max(filteredNodes.length, 1)) * Math.PI * 2;
       const radius = 350 + Math.random() * 50;
+      
+      const newId = `ai-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      idMap.set(n.id, newId);
 
       return {
-        id: n.id,
+        id: newId,
         type: "entity",
         position: {
           x: centerX + Math.cos(angle) * radius,
@@ -807,7 +809,7 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
           riskScore: n.riskScore,
           avatar:
             n.type === "person"
-              ? `https://i.pravatar.cc/150?u=${n.id}`
+              ? `https://i.pravatar.cc/150?u=${newId}`
               : undefined,
           isNew: true,
         },
@@ -815,16 +817,26 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
     });
 
     const newEdges: Edge[] = result.edges
+      .map((e) => {
+        // Find if this edge maps to our newly made nodes
+        const mappedSource = idMap.get(e.source) || e.source;
+        const mappedTarget = idMap.get(e.target) || e.target;
+        return {
+          ...e,
+          mappedSource,
+          mappedTarget
+        };
+      })
       .filter(
         (e) =>
           !currentEdges.find(
-            (ce) => ce.source === e.source && ce.target === e.target,
+            (ce) => ce.source === e.mappedSource && ce.target === e.mappedTarget,
           ),
       )
       .map((e) => ({
-        id: `e-${e.source}-${e.target}-${Date.now()}`,
-        source: e.source,
-        target: e.target,
+        id: `e-${e.mappedSource}-${e.mappedTarget}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+        source: e.mappedSource,
+        target: e.mappedTarget,
         type: "relation",
         label: e.label,
         data: { credibilityScore: e.credibilityScore },

@@ -56,7 +56,7 @@ def ingest_documents(case_id: str):
                 docs = loader.load()
                 for d in docs:
                     urls = re.findall(r'https?://[^\s<>"]+|www\.[^\s<>"]+', d.page_content)
-                    d.metadata.update({"case_id": case_id, "source": file, "urls": urls})
+                    d.metadata.update({"case_id": case_id, "source": file, "urls": ", ".join(urls)})
                 documents.extend(docs)
             except Exception as e:
                 print(f"Error loading {file}: {e}")
@@ -98,7 +98,7 @@ def ingest_documents(case_id: str):
                 urls = re.findall(r'https?://[^\s<>"]+|www\.[^\s<>"]+', pdf_text)
                 documents.append(LCDocument(
                     page_content=pdf_text,
-                    metadata={"case_id": case_id, "source": file, "urls": urls}
+                    metadata={"case_id": case_id, "source": file, "urls": ", ".join(urls)}
                 ))
             except Exception as e:
                 print(f"PDF Error {file}: {e}")
@@ -114,7 +114,7 @@ def ingest_documents(case_id: str):
                     urls = re.findall(r'https?://[^\s<>"]+|www\.[^\s<>"]+', sheet_text)
                     documents.append(LCDocument(
                         page_content=sheet_text,
-                        metadata={"case_id": case_id, "source": f"{file}/{sheet_name}", "urls": urls}
+                        metadata={"case_id": case_id, "source": f"{file}/{sheet_name}", "urls": ", ".join(urls)}
                     ))
             except Exception as e:
                 print(f"Excel Error {file}: {e}")
@@ -128,7 +128,7 @@ def ingest_documents(case_id: str):
                     urls = re.findall(r'https?://[^\s<>"]+|www\.[^\s<>"]+', description)
                     doc = LCDocument(
                         page_content=description,
-                        metadata={"case_id": case_id, "source": file, "type": "image_analysis", "urls": urls}
+                        metadata={"case_id": case_id, "source": file, "type": "image_analysis", "urls": ", ".join(urls)}
                     )
                     documents.append(doc)
             except Exception as e:
@@ -214,6 +214,10 @@ def analyze_graph(case_id: str):
     top_docs = documents[:3]
     full_text = "\n\n".join([d.page_content[:1500] for d in top_docs])
 
+    # Build a safe case slug for node IDs to avoid cross-case collisions
+    import hashlib
+    case_slug = hashlib.md5(case_id.encode()).hexdigest()[:8]
+
     user_prompt = f"""[STRICT DATA EXTRACTION TASK]
 You are a precision data extractor for an investigative platform. Analyze the text for Case ID: {case_id}.
 Return ONLY a valid JSON object. No words outside of the JSON.
@@ -225,7 +229,7 @@ JSON SCHEMA:
 {{
   "nodes": [
     {{
-      "id": "string (use n1, n2, etc)",
+      "id": "string (MUST use format: {case_slug}-n1, {case_slug}-n2, etc. - always prefix with '{case_slug}-')",
       "name": "Full Name or Company Name",
       "type": "person|company|bank|location|offshore",
       "role": "Specific role, e.g., CEO, Money Launderer, Hub",
@@ -236,8 +240,8 @@ JSON SCHEMA:
   ],
   "edges": [
     {{
-      "source": "id of source node",
-      "target": "id of target node",
+      "source": "id of source node (must match a node id above)",
+      "target": "id of target node (must match a node id above)",
       "label": "relationship type (e.g., controls, owns, transacts_with)",
       "credibilityScore": 0-100
     }}
@@ -249,6 +253,7 @@ STRICT RULES:
 2. ONLY one JSON object.
 3. Every person or company must have exactly one node.
 4. Extract only facts present in the text.
+5. Node IDs MUST start with '{case_slug}-' (e.g., {case_slug}-n1, {case_slug}-n2).
 
 JSON:"""
 

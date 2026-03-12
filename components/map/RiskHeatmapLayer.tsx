@@ -20,7 +20,7 @@ export function RiskHeatmapLayer({ nodes }: HeatmapProps) {
     // Filter location events up to the current playback time
     const visibleEvents = locationEvents.filter((e) => {
       const time = new Date(e.timestamp).getTime();
-      return !isPlaybackPlaying || time <= playbackTime;
+      return time <= playbackTime;
     });
 
     // Heat data from base nodes

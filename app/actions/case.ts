@@ -78,12 +78,23 @@ export async function getCaseGraph(caseId: string) {
 }
 
 export async function getLocationEvents(caseId: string) {
-  const p = prisma as any;
-  if (!p.locationEvent) return [];
-  return p.locationEvent.findMany({
-    where: { node: { caseId } },
-    orderBy: { timestamp: "asc" },
-  });
+  console.log("Fetching location events for case:", caseId);
+  try {
+    const p = prisma as any;
+    if (!p.locationEvent) {
+        console.error("CRITICAL: locationEvent model not found on prisma client");
+        return [];
+    }
+    const events = await p.locationEvent.findMany({
+      where: { node: { caseId } },
+      orderBy: { timestamp: "asc" },
+    });
+    console.log(`Found ${events.length} location events`);
+    return events;
+  } catch (err) {
+    console.error("Error in getLocationEvents:", err);
+    return [];
+  }
 }
 
 export async function getUserCases(userId: string) {
@@ -397,7 +408,8 @@ export async function getCaseDocuments(caseId: string) {
 
 export async function getCaseNews(caseId: string) {
   try {
-    const news = await prisma.news.findMany({
+    const p = prisma as any;
+    const news = await p.news.findMany({
       where: { caseId },
       orderBy: { publishedAt: "desc" },
     });
@@ -418,7 +430,8 @@ export async function createNewsItem(data: {
   sentiment?: number;
   publishedAt?: Date;
 }) {
-  return prisma.news.create({
+  const p = prisma as any;
+  return p.news.create({
     data: {
       ...data,
       publishedAt: data.publishedAt || new Date(),

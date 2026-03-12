@@ -49,10 +49,22 @@ function formatBytes(bytes: number) {
 }
 
 // Extend window type for SpeechRecognition
+interface SpeechRecognition extends EventTarget {
+    continuous: boolean;
+    interimResults: boolean;
+    lang: string;
+    start(): void;
+    stop(): void;
+    abort(): void;
+    onresult: (event: any) => void;
+    onerror: (event: any) => void;
+    onend: () => void;
+}
+
 declare global {
     interface Window {
-        SpeechRecognition: typeof SpeechRecognition;
-        webkitSpeechRecognition: typeof SpeechRecognition;
+        SpeechRecognition: any;
+        webkitSpeechRecognition: any;
     }
 }
 
@@ -104,9 +116,9 @@ export default function AIAssistant({ actions, askAI, isPanel, onClose }: AIAssi
             recognition.interimResults = true;
             recognition.lang = "en-US";
 
-            recognition.onresult = (event) => {
-                const transcript = Array.from(event.results)
-                    .map(r => r[0].transcript)
+            recognition.onresult = (event: any) => {
+                const transcript = Array.from(event.results as any[])
+                    .map((r: any) => r[0].transcript)
                     .join("");
                 setQuestion(transcript);
             };

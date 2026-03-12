@@ -1,5 +1,7 @@
 import os
 import ollama
+import base64
+from langchain_core.documents import Document as LCDocument
 
 from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -8,6 +10,25 @@ from langchain_community.vectorstores import Chroma
 
 EVIDENCE_DIR = "evidence"
 DB_DIR = "db"
+VISION_MODEL = "moondream"
+
+def describe_image(image_path: str):
+    """Uses a vision model to describe an image for investigative intelligence."""
+    try:
+        with open(image_path, "rb") as f:
+            image_data = f.read()
+        
+        # Call vision model
+        response = ollama.generate(
+            model=VISION_MODEL,
+            prompt="Analyze this investigative evidence image. Extract all readable text (OCR), identify people, objects, locations, and any suspicious activities. Be extremely detailed as this will be used for criminal analysis.",
+            images=[image_data]
+        )
+        description = response.get('response', '')
+        return f"--- [IMAGE ANALYSIS: {os.path.basename(image_path)}] ---\n{description}"
+    except Exception as e:
+        print(f"Vision error for {image_path}: {e}")
+        return ""
 
 
 def ingest_documents(case_id: str):
@@ -20,10 +41,13 @@ def ingest_documents(case_id: str):
         return
 
     for file in os.listdir(case_evidence_dir):
-        if file.endswith(".txt") or file.endswith(".pdf") or file.endswith(".md"):
+        file_lower = file.lower()
+        file_path = os.path.join(case_evidence_dir, file)
+        
+        if file_lower.endswith((".txt", ".pdf", ".md")):
             try:
-                # Basic TextLoader for tx/md. For PDF you might need PyPDFLoader
-                loader = TextLoader(os.path.join(case_evidence_dir, file))
+                # Basic TextLoader for txt/md.
+                loader = TextLoader(file_path)
                 docs = loader.load()
                 for d in docs:
                     d.metadata["case_id"] = case_id
@@ -31,6 +55,19 @@ def ingest_documents(case_id: str):
                 documents.extend(docs)
             except Exception as e:
                 print(f"Error loading {file}: {e}")
+        
+        elif file_lower.endswith((".png", ".jpg", ".jpeg", ".webp")):
+            try:
+                print(f"Processing visual evidence: {file}")
+                description = describe_image(file_path)
+                if description:
+                    doc = LCDocument(
+                        page_content=description,
+                        metadata={"case_id": case_id, "source": file, "type": "image_analysis"}
+                    )
+                    documents.append(doc)
+            except Exception as e:
+                print(f"Error analyzing image {file}: {e}")
 
     if not documents:
         return

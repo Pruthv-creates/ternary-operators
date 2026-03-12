@@ -19,6 +19,7 @@ import {
   ShieldAlert,
   Info,
   ExternalLink,
+  Image as ImageIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -227,11 +228,11 @@ export default function EvidencePage() {
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent pointer-events-none" />
                   
-                  <input
+                    <input
                     ref={fileInputRef}
                     type="file"
                     multiple
-                    accept=".txt,.pdf,.md,.csv"
+                    accept=".txt,.pdf,.md,.csv,.png,.jpg,.jpeg,.webp"
                     className="hidden"
                     onChange={(e) => e.target.files && handleFiles(Array.from(e.target.files))}
                   />
@@ -248,8 +249,8 @@ export default function EvidencePage() {
                         {dragging ? "Release to Index" : "Deploy Evidence Base"}
                     </h3>
                     <p className="text-sm text-slate-400 max-w-sm mx-auto mb-6">
-                        Drop high-sig Intel reports or financial logs here. <br/>
-                        <span className="text-slate-600">Supports .txt, .pdf, .md, .csv formats.</span>
+                        Drop high-sig Intel reports, financial logs, or <span className="text-blue-400 font-bold">visual evidence</span> here. <br/>
+                        <span className="text-slate-600">Supports text, PDF, and high-res imagery for OCR analysis.</span>
                     </p>
 
                     <button className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold shadow-lg shadow-blue-900/20 transition-all">
@@ -293,12 +294,14 @@ export default function EvidencePage() {
                                             className="px-6 py-4 flex items-center gap-4 hover:bg-white/2 transition-colors group"
                                         >
                                             <div className="w-10 h-10 rounded-lg bg-slate-800/50 flex items-center justify-center border border-slate-700/50 text-slate-400 group-hover:text-blue-400 transition-colors">
-                                                <FileText size={18} />
+                                                {file.name.match(/\.(jpg|jpeg|png|webp)$/i) ? <ImageIcon size={18} /> : <FileText size={18} />}
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="text-sm font-semibold text-slate-200 truncate">{file.name}</div>
                                                 <div className="flex items-center gap-2 mt-0.5">
-                                                    <span className="text-[10px] text-slate-500 uppercase font-bold">{formatBytes(file.size)}</span>
+                                                    <span className="text-[10px] text-slate-500 uppercase font-bold">
+                                                        {file.name.match(/\.(jpg|jpeg|png|webp)$/i) ? "Visual Evidence" : formatBytes(file.size)}
+                                                    </span>
                                                     <span className="text-[10px] text-slate-600">•</span>
                                                     <span className="text-[10px] text-slate-600 font-mono uppercase font-medium">
                                                         {file.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -347,6 +350,10 @@ export default function EvidencePage() {
                                         <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20">
                                             <Sparkles size={8} className="text-blue-400" />
                                             <span className="text-[8px] font-bold text-blue-400 uppercase">Neural</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20">
+                                            <ImageIcon size={8} className="text-purple-400" />
+                                            <span className="text-[8px] font-bold text-purple-400 uppercase">Visual Intel</span>
                                         </div>
                                     </div>
                                     <p className="text-[10px] text-slate-500 font-medium">Querying your current intelligence library</p>

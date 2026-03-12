@@ -2,23 +2,48 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Search, MessageSquare, X } from "lucide-react";
+import { Search, MessageSquare, X, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import ProfilePanel from "./ProfilePanel";
 import CollaboratorInvite from "./CollaboratorInvite";
 import TeamChat from "./TeamChat";
 import { useInvestigationStore } from "@/store/investigationStore";
-import { getCaseInvestigators } from "@/app/actions/case";
+import { getCaseInvestigators, deleteCase } from "@/app/actions/case";
+import { useRouter } from "next/navigation";
 
 export default function Topbar() {
+    const router = useRouter();
     const [userEmail, setUserEmail] = useState<string>("Agent");
     const [fullUser, setFullUser] = useState<any>(null);
     const [presenceUsers, setPresenceUsers] = useState<any[]>([]);
     const [profileOpen, setProfileOpen] = useState(false);
     const [chatOpen, setChatOpen] = useState(false);
     const [validInvestigators, setValidInvestigators] = useState<string[]>([]);
+    const [isDeleting, setIsDeleting] = useState(false);
     const { currentCaseId } = useInvestigationStore();
+    
+    const handleDeleteCase = async () => {
+        if (!currentCaseId || !fullUser) return;
+        
+        if (!window.confirm("Are you sure you want to delete this case? This action cannot be undone.")) {
+            return;
+        }
+        
+        setIsDeleting(true);
+        try {
+            const result = await deleteCase(currentCaseId, fullUser.id);
+            if (result.success) {
+                router.push("/cases");
+            } else {
+                alert("Failed to delete case: " + result.error);
+            }
+        } catch (error) {
+            alert("Error deleting case: " + String(error));
+        } finally {
+            setIsDeleting(false);
+        }
+    };
 
     useEffect(() => {
         if (!currentCaseId) {
@@ -159,7 +184,18 @@ export default function Topbar() {
 
             <CollaboratorInvite />
 
-
+            {/* Delete Case Button */}
+            {currentCaseId && (
+                <button
+                    onClick={handleDeleteCase}
+                    disabled={isDeleting}
+                    className="p-2 rounded-lg border bg-red-950/30 border-red-500/30 text-red-300 hover:bg-red-950/50 hover:border-red-500/50 disabled:opacity-50 transition-all flex items-center gap-2 group"
+                    title="Delete this case"
+                >
+                    <Trash2 size={14} className="group-hover:rotate-12 transition-transform" />
+                    <span className="text-[10px] font-black uppercase tracking-widest hidden lg:block">{isDeleting ? "Deleting..." : "Delete"}</span>
+                </button>
+            )}
 
             {/* User profile */}
             <div className="flex items-center gap-2 pl-3 border-l border-[#1e3a5f]/50 cursor-pointer group" onClick={() => setProfileOpen(!profileOpen)}>

@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { useInvestigationStore } from "@/store/investigationStore";
 import { useState, useEffect } from "react";
+import { X } from "lucide-react";
 
 interface HypothesisNoteProps {
     id?: string;
@@ -10,7 +11,7 @@ interface HypothesisNoteProps {
 }
 
 export default function HypothesisNote({ id, text, rotate = -2, prefix = "HYPOTHESIS:" }: HypothesisNoteProps) {
-    const { updateStickyText } = useInvestigationStore();
+    const { updateStickyText, deleteNode } = useInvestigationStore();
     const [isEditing, setIsEditing] = useState(false);
     const [localText, setLocalText] = useState(text);
 
@@ -49,7 +50,17 @@ export default function HypothesisNote({ id, text, rotate = -2, prefix = "HYPOTH
 
                 {/* Text Container */}
                 <div className="p-4 pr-6 flex-1 flex flex-col text-[12px] font-medium leading-relaxed break-words" style={{ color: '#000000' }}>
-                    <span className="font-bold mb-1.5 block">{prefix}</span>
+                    <div className="flex items-start justify-between mb-1.5">
+                        <span className="font-bold">{prefix}</span>
+                        {id && (
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); deleteNode(id); }}
+                                className="p-0.5 hover:bg-black/10 rounded transition-colors"
+                            >
+                                <X size={12} className="text-black/60" />
+                            </button>
+                        )}
+                    </div>
                     {isEditing ? (
                         <textarea
                             autoFocus

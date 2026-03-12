@@ -59,6 +59,12 @@ async def query(data: Question):
     }
 
 
+@app.post("/analyze")
+async def analyze():
+    from rag_engine import analyze_graph
+    return analyze_graph()
+
+
 # Alias endpoint so frontend can also call /ask
 @app.post("/ask")
 async def ask(data: Question):

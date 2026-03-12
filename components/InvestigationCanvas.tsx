@@ -13,8 +13,10 @@ import EntityNode from "./EntityNode";
 import EvidenceNode from "./EvidenceNode";
 import HypothesisNode from "./HypothesisNode";
 import { entities } from "@/lib/data";
-import { Entity } from "@/lib/data";
+import { Entity, EntityType } from "@/lib/data";
 import { useInvestigationStore } from "@/store/investigationStore";
+import { useState } from "react";
+import { Brain, Loader2, Plus } from "lucide-react";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const nodeTypes: any = {
@@ -34,15 +36,60 @@ export default function InvestigationCanvas() {
         addStickyNote,
     } = useInvestigationStore();
 
+    const [analyzing, setAnalyzing] = useState(false);
+    const [aiMessage, setAiMessage] = useState<string | null>(null);
+
     const onNodeClick: NodeMouseHandler = useCallback(
         (_event, node) => {
             if (node.type === "entity") {
-                const entity = entities.find((e: Entity) => e.id === node.id) || null;
-                setSelectedEntity(entity);
+                const staticEntity = entities.find((e: Entity) => e.id === node.id);
+                if (staticEntity) {
+                    setSelectedEntity(staticEntity);
+                } else {
+                    setSelectedEntity({
+                        id: node.id,
+                        name: node.data.name as string,
+                        role: node.data.role as string,
+                        type: node.data.type as EntityType,
+                        avatar: (node.data as any).avatar,
+                        status: (node.data as any).status,
+                    });
+                }
             }
         },
         [setSelectedEntity]
     );
+
+    const runAIAnalysis = async () => {
+        setAnalyzing(true);
+        setAiMessage(null);
+        try {
+            const res = await fetch("/api/ai/analyze", { method: "POST" });
+            const data = await res.json();
+            if (data.nodes || data.edges) {
+                const oldNodesCount = nodes.length;
+                useInvestigationStore.getState().addAIResult(data);
+                const newNodesCount = useInvestigationStore.getState().nodes.length - oldNodesCount;
+                setAiMessage(`AI identified ${newNodesCount} new entities and mapped their connections.`);
+                setTimeout(() => setAiMessage(null), 5000);
+            }
+        } catch (error) {
+            console.error("AI Analysis failed:", error);
+            setAiMessage("Analysis failed. Ensure backend-ai is reachable.");
+        } finally {
+            setAnalyzing(false);
+        }
+    };
+
+    const addNewEntity = () => {
+        const id = `user-ent-${Date.now()}`;
+        useInvestigationStore.getState().addNode({
+            id,
+            type: "entity",
+            position: { x: 500, y: 300 },
+            data: { name: "NEW ENTITY", role: "Assign role...", type: "person", status: "Active" }
+        });
+    };
 
     const onPaneClick = useCallback(() => {
         setSelectedEntity(null);
@@ -51,8 +98,32 @@ export default function InvestigationCanvas() {
     return (
         <div className="relative flex-1 overflow-hidden bg-[#0a0f1c] canvas-grid">
             {/* Canvas header */}
-            <div className="absolute top-4 left-4 z-10 flex items-center gap-3">
-                <h2 className="text-base font-medium text-slate-300 tracking-wide">Investigation Canvas</h2>
+            <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
+                <div className="flex items-center gap-3">
+                    <div className="px-2 py-1 rounded bg-blue-500/10 border border-blue-500/20">
+                        <h2 className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em]">Investigation Canvas</h2>
+                    </div>
+                    <button
+                        onClick={runAIAnalysis}
+                        disabled={analyzing}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition-all disabled:opacity-50 shadow-lg shadow-indigo-900/20"
+                    >
+                        {analyzing ? <Loader2 size={14} className="animate-spin" /> : <Brain size={14} />}
+                        <span className="text-[10px] font-bold uppercase tracking-wider">AI Analysis</span>
+                    </button>
+                    <button
+                        onClick={addNewEntity}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-200 transition-all shadow-lg"
+                    >
+                        <Plus size={14} />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">Add Entity</span>
+                    </button>
+                </div>
+                {aiMessage && (
+                    <div className="px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-wider animate-in fade-in slide-in-from-left-2 transition-all">
+                        ✨ {aiMessage}
+                    </div>
+                )}
             </div>
 
             {/* Real Search Box and Avatars Top Right like Image 1 */}

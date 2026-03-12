@@ -1,7 +1,8 @@
 import { memo } from "react";
 import { Handle, Position } from "@xyflow/react";
-import { Building2, Landmark, MapPin, Globe } from "lucide-react";
+import { Building2, Landmark, MapPin, Globe, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useInvestigationStore } from "@/store/investigationStore";
 import { EntityType } from "@/lib/data";
 
 const typeConfig: Record<
@@ -41,7 +42,8 @@ const typeConfig: Record<
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function EntityNode({ data, selected }: any) {
+function EntityNode({ id, data, selected }: any) {
+    const { deleteNode } = useInvestigationStore();
     const cfg = typeConfig[data.type as EntityType] ?? typeConfig.person;
 
     // Override color logic based on the image:
@@ -55,6 +57,12 @@ function EntityNode({ data, selected }: any) {
                 selected && "scale-105"
             )}
         >
+            <button 
+                onClick={(e) => { e.stopPropagation(); deleteNode(id); }}
+                className="absolute -top-2 -right-2 z-20 p-1 rounded-full bg-red-500/80 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+            >
+                <X size={10} />
+            </button>
             <Handle type="target" position={Position.Top} className="opacity-0 group-hover:opacity-100" />
             <Handle type="source" position={Position.Bottom} className="opacity-0 group-hover:opacity-100" />
             <Handle type="target" position={Position.Left} className="opacity-0 group-hover:opacity-100" />

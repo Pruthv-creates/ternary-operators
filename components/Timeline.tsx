@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { TimelineEvent } from "@/lib/data";
+import { useInvestigationStore } from "@/store/investigationStore";
 
 interface TimelineProps {
     events: TimelineEvent[];
@@ -10,6 +11,7 @@ interface TimelineProps {
 const months = ["Jan 2023", "Mar", "Jul", "Sep", "Nov", "Dec 2023", "Jan 2024", "Mar", "Jul", "Sep", "Nov", "Dec 2024"];
 
 export default function Timeline({ }: TimelineProps) {
+    const { addStickyNote, addEvidenceCard } = useInvestigationStore();
     return (
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-4/5 max-w-5xl h-32 flex flex-col justify-end z-10 pointers-event-none">
             {/* Timeline base track */}
@@ -72,14 +74,20 @@ export default function Timeline({ }: TimelineProps) {
             </div>
 
             {/* Bottom Buttons */}
-            <div className="flex justify-center gap-2 pointer-events-auto">
-                <button className="flex items-center gap-2 px-4 py-1.5 rounded-md bg-[#1e293b]/80 border-t border-slate-700/50 shadow-md">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-400"><rect width="18" height="18" x="3" y="4" rx="2" ry="2" /><line x1="16" x2="16" y1="2" y2="6" /><line x1="8" x2="8" y1="2" y2="6" /><line x1="3" x2="21" y1="10" y2="10" /></svg>
-                    <span className="text-[11px] font-semibold text-slate-300">Events</span>
+            <div className="flex justify-center gap-4 pointer-events-auto">
+                <button 
+                    onClick={() => addEvidenceCard("NEW EVIDENCE", { x: 800, y: 300 })}
+                    className="flex items-center gap-2 px-6 py-2 rounded-xl bg-blue-600/10 border border-blue-500/30 hover:bg-blue-600/20 text-blue-400 font-bold transition-all shadow-lg shadow-blue-900/10"
+                >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect width="18" height="18" x="3" y="4" rx="2" ry="2" /><line x1="16" x2="16" y1="2" y2="6" /><line x1="8" x2="8" y1="2" y2="6" /><line x1="3" x2="21" y1="10" y2="10" /></svg>
+                    <span className="text-[11px] uppercase tracking-wider">Add Evidence</span>
                 </button>
-                <button className="flex items-center gap-2 px-4 py-1.5 rounded-md bg-transparent border border-slate-700/50 hover:bg-[#1e293b]/40">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-500"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /><line x1="4" x2="4" y1="22" y2="15" /></svg>
-                    <span className="text-[11px] font-semibold text-slate-500">Hypothesises</span>
+                <button 
+                    onClick={() => addStickyNote({ x: 100, y: 600 }, "Investigate money laundering link...")}
+                    className="flex items-center gap-2 px-6 py-2 rounded-xl bg-amber-500 text-amber-950 font-bold hover:bg-amber-400 transition-all shadow-lg shadow-amber-900/20"
+                >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /><line x1="4" x2="4" y1="22" y2="15" /></svg>
+                    <span className="text-[11px] uppercase tracking-wider">Add Hypothesis</span>
                 </button>
             </div>
         </div>

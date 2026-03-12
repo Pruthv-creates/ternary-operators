@@ -85,3 +85,75 @@ Question:
     sources = list(set([d.metadata["source"] for d in docs]))
 
     return answer, sources
+
+
+def analyze_graph():
+    """
+    Analyzes all ingested documents to extract entities and relationships.
+    Returns a JSON-formatted string containing nodes and edges.
+    """
+    documents = []
+    if not os.path.exists(EVIDENCE_DIR):
+        return {"nodes": [], "edges": []}
+
+    for file in os.listdir(EVIDENCE_DIR):
+        if file.endswith(".txt"):
+            loader = TextLoader(os.path.join(EVIDENCE_DIR, file))
+            documents.extend(loader.load())
+
+    if not documents:
+        return {"nodes": [], "edges": []}
+
+    # Combine all documents into a single context for analysis
+    # For a large number of documents, this should be chunked/summarized, 
+    # but for this investigation, we'll process the combined text.
+    full_text = "\n\n".join([d.page_content for d in documents[:10]]) # Limit to first 10 docs for safety
+
+    prompt = f"""
+You are a Lead Intelligence Analyst. Analyze the following evidence and extract a network of entities and their relationships.
+
+Evidence:
+{full_text}
+
+Output ONLY a valid JSON object with the following structure:
+{{
+  "nodes": [
+    {{
+      "id": "unique_lowercase_id",
+      "name": "Full Name",
+      "type": "person|company|bank|location|offshore",
+      "role": "Their job or function",
+      "status": "Active|Abnormal|Flagged|Inactive"
+    }}
+  ],
+  "edges": [
+    {{
+      "source": "source_node_id",
+      "target": "target_node_id",
+      "label": "Relationship description (e.g. 'Money Flow: $10M' or 'Owner')",
+      "credibilityScore": 0-100
+    }}
+  ]
+}}
+
+Ensure all IDs mentioned in 'edges' exist in 'nodes'.
+"""
+
+    response = ollama.chat(
+        model="llama3",
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    try:
+        # Extract JSON from potential markdown code blocks
+        content = response["message"]["content"]
+        if "```json" in content:
+            content = content.split("```json")[1].split("```")[0].strip()
+        elif "```" in content:
+            content = content.split("```")[1].split("```")[0].strip()
+        
+        import json
+        return json.loads(content)
+    except Exception as e:
+        print(f"Failed to parse AI graph response: {e}")
+        return {"nodes": [], "edges": [], "error": str(e)}

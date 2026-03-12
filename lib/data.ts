@@ -11,6 +11,7 @@ export interface Entity {
     industry?: string;
     location?: string;
     riskScore?: number;
+    credibilityScore?: number;
     aiInsights?: string[];
     links?: string[];
     timelineEvents?: string[];

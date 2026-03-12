@@ -104,6 +104,13 @@ function EntityNode({ id, data, selected }: any) {
                         ) : cfg.icon}
                     </div>
                 )}
+
+                {/* Credibility Score indicator */}
+                {data.credibilityScore !== undefined && (
+                    <div className="absolute -bottom-1 -right-1 z-10 bg-emerald-500 text-white text-[8px] font-black px-1 rounded-sm border border-emerald-600">
+                        {data.credibilityScore}%
+                    </div>
+                )}
             </div>
 
             {/* Label */}

@@ -55,6 +55,14 @@ export default function InvestigationCanvas() {
                         avatar: (node.data as any).avatar,
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         status: (node.data as any).status,
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        credibilityScore: (node.data as any).credibilityScore,
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        industry: (node.data as any).industry,
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        location: (node.data as any).location,
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        riskScore: (node.data as any).riskScore,
                     });
                 }
             }
@@ -89,7 +97,16 @@ export default function InvestigationCanvas() {
             id,
             type: "entity",
             position: { x: 500, y: 300 },
-            data: { name: "NEW ENTITY", role: "Assign role...", type: "person", status: "Active" }
+            data: { 
+                name: "NEW ENTITY", 
+                role: "Assign role...", 
+                type: "person", 
+                status: "Active",
+                riskScore: 0,
+                credibilityScore: 100,
+                industry: "Unknown",
+                location: "Unknown"
+            }
         });
     };
 

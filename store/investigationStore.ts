@@ -52,7 +52,7 @@ type InvestigationState = {
     loadCaseData: (caseId: string) => Promise<void>;
 };
 
-import { updateNodePosition, createNewNode } from "@/actions/nodes";
+import { updateNodePosition, createNewNode, updateNodeContent } from "@/actions/nodes";
 
 export const useInvestigationStore = create<InvestigationState>((set, get) => ({
     nodes: initialNodes,
@@ -125,10 +125,28 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
     },
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    updateNodeData: (id: string, data: any) => {
+    updateNodeData: async (id: string, data: any) => {
+        const updatedNodes = get().nodes.map((n) => n.id === id ? { ...n, data: { ...n.data, ...data } } : n);
+        const selectedEntity = get().selectedEntity;
+        let newSelectedEntity = selectedEntity;
+
+        if (selectedEntity?.id === id) {
+            newSelectedEntity = {
+                ...selectedEntity,
+                ...data
+            };
+        }
+
         set({
-            nodes: get().nodes.map((n) => n.id === id ? { ...n, data: { ...n.data, ...data } } : n),
+            nodes: updatedNodes,
+            selectedEntity: newSelectedEntity
         });
+
+        // PERSIST CONTENT!
+        const targetNode = updatedNodes.find(n => n.id === id);
+        if (targetNode) {
+            await updateNodeContent(id, targetNode.data);
+        }
     },
 
     addStickyNote: async (position: { x: number, y: number }, text = "", prefix = "HYPOTHESIS:") => {
@@ -179,10 +197,24 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
         });
     },
 
-    addNode: (node: Node) => {
+    addNode: async (node: Node) => {
         set({
             nodes: [...get().nodes, node],
         });
+
+        // PERSIST!
+        // Map data.type to Prisma NodeType
+        let prismaType = 'ENTITY_PERSON';
+        if (node.data.type === 'company' || node.data.type === 'offshore') prismaType = 'ENTITY_ORG';
+        else if (node.data.type === 'location') prismaType = 'ENTITY_LOCATION';
+        else if (node.data.type === 'bank') prismaType = 'ENTITY_PERSON'; // or add specific bank type if possible
+
+        const nodeWithPrismaType = {
+            ...node,
+            nodeType: prismaType
+        };
+
+        await createNewNode("demo-nexus", nodeWithPrismaType);
     },
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

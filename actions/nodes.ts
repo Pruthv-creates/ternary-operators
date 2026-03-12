@@ -26,15 +26,32 @@ export async function createNewNode(caseId: string, node: any) {
             data: {
                 id: node.id,
                 caseId,
-                type: node.data.type || 'ENTITY_PERSON',
+                type: (node.nodeType as any) || 'ENTITY_PERSON',
                 label: node.data.name || node.data.label || 'New Node',
                 positionX: node.position.x,
                 positionY: node.position.y,
+                content: JSON.stringify(node.data)
             }
         });
         return { success: true, node: newNode };
     } catch (error) {
         console.error("Failed to create node:", error);
+        return { success: false };
+    }
+}
+
+export async function updateNodeContent(nodeId: string, data: any) {
+    try {
+        await prisma.node.update({
+            where: { id: nodeId },
+            data: { 
+                label: data.name || data.label,
+                content: JSON.stringify(data)
+            }
+        });
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to update node content:", error);
         return { success: false };
     }
 }

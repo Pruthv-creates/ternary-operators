@@ -205,3 +205,14 @@ export async function rejectInvitation(invitationId: string) {
     });
     return { success: true };
 }
+
+export async function getCaseCollaborators(caseId: string) {
+    const caseData = await prisma.case.findUnique({
+        where: { id: caseId },
+        include: {
+            users: true
+        }
+    });
+    
+    return caseData?.users || [];
+}

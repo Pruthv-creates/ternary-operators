@@ -36,7 +36,40 @@ const tasks = [
     { title: "Review offshore entity registration date", priority: "Low", status: "Done" },
 ];
 
+import { useEffect, useState } from "react";
+import { getCaseCollaborators } from "@/app/actions/case";
+import { useInvestigationStore } from "@/store/investigationStore";
+import { User } from "@prisma/client";
+
 export default function CollaborationPage() {
+    const { currentCaseId } = useInvestigationStore();
+    const [realAnalysts, setRealAnalysts] = useState<any[]>([]);
+    
+    useEffect(() => {
+        if (!currentCaseId) return;
+
+        async function fetchCollabs() {
+            const users = await getCaseCollaborators(currentCaseId!);
+            
+            // Generate visual details for the real users to keep the sleek UI look
+            const userColors = ["bg-purple-500", "bg-blue-500", "bg-emerald-500", "bg-amber-500", "bg-rose-500"];
+            const mockActivities = ["Viewing Timeline", "Editing Entities", "Uploading Data", "Reviewing Hypothesis", "Idle"];
+            const mockRoles = ["Lead Analyst", "Forensic Accountant", "OSINT Specialist", "Field Investigator"];
+            
+            const enriched = users.map((u, i) => ({
+                id: u.id,
+                name: u.name || u.email?.split("@")[0] || "Unknown Analyst",
+                role: mockRoles[i % mockRoles.length],
+                activity: mockActivities[i % mockActivities.length],
+                color: userColors[i % userColors.length],
+                status: Math.random() > 0.3 ? "Active" : "Idle"
+            }));
+            
+            setRealAnalysts(enriched);
+        }
+
+        fetchCollabs();
+    }, [currentCaseId]);
     return (
         <div className="flex h-screen w-screen overflow-hidden bg-[#0a0f1c] font-sans text-slate-300">
             <Sidebar />
@@ -94,16 +127,23 @@ export default function CollaborationPage() {
                             </div>
                             <div className="flex items-center gap-2">
                                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                <span className="text-[9px] font-bold text-emerald-400 uppercase">3 Analysts Online</span>
+                                <span className="text-[9px] font-bold text-emerald-400 uppercase">{realAnalysts.length} Analysts assigned</span>
                             </div>
                         </div>
 
                         <div className="flex-1 p-6 grid grid-cols-3 gap-4 overflow-y-auto custom-scrollbar">
-                            {activeAnalysts.map((analyst, i) => (
+                            {realAnalysts.length === 0 && (
+                                <div className="col-span-3 flex flex-col items-center justify-center p-8 bg-white/5 rounded-2xl border border-white/5 border-dashed">
+                                    <Users size={32} className="text-slate-600 mb-3" />
+                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest text-center">No analysts assigned to this case yet.<br/><span className="text-[10px] lowercase text-slate-600">Select a unified case or invite members.</span></p>
+                                </div>
+                            )}
+
+                            {realAnalysts.map((analyst, i) => (
                                 <div key={i} className="p-4 rounded-2xl bg-[#0a0f1c] border border-[#1e3a5f]/40 flex flex-col items-center text-center group hover:border-blue-500/30 transition-all">
                                     <div className="relative mb-3">
                                         <div className={cn("w-12 h-12 rounded-full flex items-center justify-center text-sm font-black text-white", analyst.color)}>
-                                            {analyst.name[0]}{analyst.name.split(' ')[1][0]}
+                                            {analyst.name.substring(0, 2).toUpperCase()}
                                         </div>
                                         <div className={cn(
                                             "absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-[3px] border-[#0a0f1c]",

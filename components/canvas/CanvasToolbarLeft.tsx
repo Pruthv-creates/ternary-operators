@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Brain, Loader2, Plus } from "lucide-react";
+import { Brain, Loader2, Plus, Layout } from "lucide-react";
 import { useInvestigationStore } from "@/store/investigationStore";
 
 interface CanvasToolbarLeftProps {
@@ -21,7 +21,7 @@ export default function CanvasToolbarLeft({
     setActiveFilter,
     aiMessage,
 }: CanvasToolbarLeftProps) {
-    const { addStickyNote } = useInvestigationStore();
+    const { addStickyNote, autoLayout } = useInvestigationStore();
 
     return (
         <div className="absolute top-3 left-4 z-10 flex items-center gap-2">
@@ -37,6 +37,14 @@ export default function CanvasToolbarLeft({
             >
                 {analyzing ? <Loader2 size={13} className="animate-spin" /> : <Brain size={13} />}
                 <span className="text-[10px] font-black uppercase tracking-wider">AI Analysis</span>
+            </button>
+
+            <button
+                onClick={autoLayout}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0d1424]/90 border border-[#1e3a5f]/50 hover:bg-slate-800 text-slate-300 transition-all shadow-sm backdrop-blur-sm"
+            >
+                <Layout size={13} className="text-emerald-400" />
+                <span className="text-[10px] font-bold uppercase tracking-wider">Auto Organize</span>
             </button>
 
             <button

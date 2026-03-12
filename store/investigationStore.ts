@@ -14,7 +14,8 @@ import {
   MarkerType,
 } from "@xyflow/react";
 import { Entity } from "@/lib/data";
-import { getCaseGraph } from "@/app/actions/case";
+import { getCaseGraph, getLocationEvents } from "@/app/actions/case";
+import dagre from "dagre";
 import {
   updateNodePosition,
   createNewNode,
@@ -113,6 +114,21 @@ type InvestigationState = {
   setChatOpen: (open: boolean) => void;
   incrementUnreadMessagesCount: () => void;
   resetUnreadMessagesCount: () => void;
+
+  // Geo-Spatial Intelligence
+  locationEvents: any[];
+  mapMarkers: any[];
+  activeMapNodeId: string | null;
+  setActiveMapNodeId: (id: string | null) => void;
+  highlightedGraphNodeId: string | null;
+  setHighlightedGraphNodeId: (id: string | null) => void;
+  playbackTime: number;
+  setPlaybackTime: (time: number | ((prev: number) => number)) => void;
+  isPlaybackPlaying: boolean;
+  setIsPlaybackPlaying: (playing: boolean) => void;
+
+  // Auto-Layout
+  autoLayout: () => void;
 };
 
 export const useInvestigationStore = create<InvestigationState>((set, get) => ({
@@ -136,6 +152,56 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
   },
   resetUnreadMessagesCount: () => set({ unreadMessagesCount: 0 }),
 
+  // Geo-Spatial
+  locationEvents: [],
+  mapMarkers: [],
+  activeMapNodeId: null,
+  setActiveMapNodeId: (id) => set({ activeMapNodeId: id }),
+  highlightedGraphNodeId: null,
+  setHighlightedGraphNodeId: (id) => set({ highlightedGraphNodeId: id }),
+  playbackTime: 0,
+  setPlaybackTime: (time) => set((state) => ({ 
+    playbackTime: typeof time === "function" ? time(state.playbackTime) : time 
+  })),
+  isPlaybackPlaying: false,
+  setIsPlaybackPlaying: (playing) => set({ isPlaybackPlaying: playing }),
+
+  autoLayout: () => {
+    const { nodes, edges } = get();
+    const g = new dagre.graphlib.Graph();
+    g.setGraph({ rankdir: "LR", marginx: 100, marginy: 100, ranksep: 200, nodesep: 150 });
+    g.setDefaultEdgeLabel(() => ({}));
+
+    nodes.forEach((node) => {
+      g.setNode(node.id, { width: 250, height: 100 });
+    });
+
+    edges.forEach((edge) => {
+      g.setEdge(edge.source, edge.target);
+    });
+
+    dagre.layout(g);
+
+    const newNodes = nodes.map((node) => {
+      const nodeWithPosition = g.node(node.id);
+      return {
+        ...node,
+        position: {
+          x: nodeWithPosition.x - 125,
+          y: nodeWithPosition.y - 50,
+        },
+      };
+    });
+
+    set({ nodes: newNodes });
+    // Broadcast new positions
+    realtimeSyncManager.broadcast({
+      type: "graph-full-update",
+      nodes: newNodes,
+      edges: edges,
+    });
+  },
+
   setAIPanelOpen: (open: boolean) => set({ aiPanelOpen: open }),
   toggleAIPanel: () => set((state) => ({ aiPanelOpen: !state.aiPanelOpen })),
 
@@ -148,9 +214,13 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
 
     const { nodes: backendNodes, edges: backendEdges } =
       await getCaseGraph(caseId);
+    
+    const events = await getLocationEvents(caseId);
+
     set({
       nodes: backendNodes as any,
       edges: backendEdges as any,
+      locationEvents: events,
     });
 
     // Subscribe to real-time updates

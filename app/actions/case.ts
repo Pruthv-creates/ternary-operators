@@ -48,6 +48,8 @@ export async function getCaseGraph(caseId: string) {
         credibilityScore: (parsedContent.credibilityScore as number) ?? 80,
         industry: (parsedContent.industry as string) || "",
         location: (parsedContent.location as string) || "",
+        latitude: (n as any).latitude,
+        longitude: (n as any).longitude,
         avatar:
           parsedContent.type === "person"
             ? `https://i.pravatar.cc/150?u=${n.id}`
@@ -75,6 +77,13 @@ export async function getCaseGraph(caseId: string) {
   }));
 
   return { nodes: rfNodes, edges: rfEdges };
+}
+
+export async function getLocationEvents(caseId: string) {
+  return (prisma as any).locationEvent.findMany({
+    where: { node: { caseId } },
+    orderBy: { timestamp: "asc" },
+  });
 }
 
 export async function getUserCases(userId: string) {

@@ -12,6 +12,7 @@ import {
     Brain,
     MessageSquare,
     Newspaper,
+    Map as MapIcon,
 } from "lucide-react";
 
 interface NavItem {
@@ -26,6 +27,7 @@ const navItems: NavItem[] = [
     { icon: <FolderOpen size={16} />, label: "Cases", href: "/cases" },
     { icon: <Archive size={16} />, label: "Evidence Library", href: "/evidence" },
     { icon: <Clock size={16} />, label: "Timeline", href: "/timeline" },
+    { icon: <MapIcon size={16} />, label: "Map Intelligence", href: "/map" },
     { icon: <Newspaper size={16} />, label: "News Feed", href: "/news" },
     { icon: <Brain size={16} />, label: "AI Intelligence", href: "/intelligence" },
     { icon: <MessageSquare size={16} />, label: "Collaboration", href: "/collaboration" },

@@ -88,12 +88,25 @@ model Node {
   content   String?
   positionX Float     @default(0)
   positionY Float     @default(0)
+  latitude  Float?
+  longitude Float?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   document  Document?
   edgesOut  Edge[]    @relation("FromNode")
   edgesIn   Edge[]    @relation("ToNode")
   case      Case      @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  locationEvents LocationEvent[]
+}
+
+model LocationEvent {
+  id        String   @id @default(cuid())
+  entityId  String
+  latitude  Float
+  longitude Float
+  timestamp DateTime
+  source    String
+  node      Node     @relation(fields: [entityId], references: [id], onDelete: Cascade)
 }
 
 model Edge {

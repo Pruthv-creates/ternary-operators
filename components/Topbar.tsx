@@ -92,10 +92,7 @@ export default function Topbar() {
 
     return (
         <>
-        <motion.header
-            initial={{ y: -40, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
+        <header
             className="flex items-center gap-4 px-6 py-3 bg-[#0d1424]/80 backdrop-blur-sm border-b border-[#1e3a5f]/50 h-14 relative z-50"
         >
             {/* Search */}
@@ -175,7 +172,7 @@ export default function Topbar() {
                 </div>
             </div>
 
-        </motion.header>
+        </header>
 
         {fullUser && (
             <ProfilePanel 

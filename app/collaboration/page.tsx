@@ -110,13 +110,8 @@ export default function CollaborationPage() {
         return () => clearInterval(interval);
     }, [currentCaseId]);
     return (
-        <div className="flex h-screen w-screen overflow-hidden bg-[#0a0f1c] font-sans text-slate-300">
-            <Sidebar />
-            
-            <div className="flex flex-col flex-1 min-w-0 overflow-hidden relative">
-                <Topbar />
-
-                <main className="flex-1 overflow-hidden p-6 gap-6 grid grid-cols-3 grid-rows-2 relative z-10">
+        <>
+        <main className="flex-1 overflow-hidden p-6 gap-6 grid grid-cols-3 grid-rows-2 relative z-10">
                     
                     {/* Live Case Audit (Spans 2 rows on left) */}
                     <div className="col-span-1 row-span-2 bg-[#0d1424]/60 border border-[#1e3a5f]/30 rounded-3xl flex flex-col overflow-hidden backdrop-blur-sm">
@@ -248,15 +243,12 @@ export default function CollaborationPage() {
                         </div>
                     </div>
                 </main>
-            </div>
-
-
 
             <style jsx global>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 10px; }
             `}</style>
-        </div>
+        </>
     );
 }

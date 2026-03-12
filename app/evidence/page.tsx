@@ -18,8 +18,6 @@ import {
   Info,
   ExternalLink,
 } from "lucide-react";
-import Sidebar from "@/components/Sidebar";
-import Topbar from "@/components/Topbar";
 import { cn } from "@/lib/utils";
 
 type UploadStatus = "idle" | "uploading" | "success" | "error";
@@ -138,12 +136,7 @@ export default function EvidencePage() {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#0a0f1c] font-sans text-slate-300">
-      <Sidebar />
-
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden relative">
-        <Topbar />
-
+    <>
         {/* Hero Section Background Decor */}
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/5 blur-[120px] rounded-full pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-purple-600/5 blur-[100px] rounded-full pointer-events-none" />
@@ -487,7 +480,6 @@ export default function EvidencePage() {
             </div>
           </div>
         </main>
-      </div>
 
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar {
@@ -504,6 +496,6 @@ export default function EvidencePage() {
           background: #263144;
         }
       `}</style>
-    </div>
+    </>
   );
 }

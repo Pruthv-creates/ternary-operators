@@ -8,6 +8,7 @@ export const metadata: Metadata = {
 };
 
 import AuthGate from "@/components/AuthGate";
+import AppShell from "@/components/AppShell";
 
 export default function RootLayout({
   children,
@@ -26,7 +27,9 @@ export default function RootLayout({
       </head>
       <body className="antialiased bg-[#0f172a] text-slate-100 overflow-hidden">
         <AuthGate>
-          {children}
+          <AppShell>
+            {children}
+          </AppShell>
         </AuthGate>
       </body>
     </html>

@@ -15,8 +15,6 @@ import {
     Brain,
     Info
 } from "lucide-react";
-import Sidebar from "@/components/Sidebar";
-import Topbar from "@/components/Topbar";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -39,13 +37,8 @@ export default function EntitiesPage() {
     const [selectedEntity, setSelectedEntity] = useState(pendingEntities[0]);
 
     return (
-        <div className="flex h-screen w-screen overflow-hidden bg-[#0a0f1c] font-sans text-slate-300">
-            <Sidebar />
-            
-            <div className="flex flex-col flex-1 min-w-0 overflow-hidden relative">
-                <Topbar />
-
-                <main className="flex-1 overflow-hidden p-6 gap-6 flex relative z-10">
+        <>
+        <main className="flex-1 overflow-hidden p-6 gap-6 flex relative z-10">
                     
                     {/* Left: Entity List & Search */}
                     <div className="w-80 flex flex-col gap-4">
@@ -235,13 +228,12 @@ export default function EntitiesPage() {
                         />
                     </div>
                 </main>
-            </div>
 
             <style jsx global>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 10px; }
             `}</style>
-        </div>
+        </>
     );
 }

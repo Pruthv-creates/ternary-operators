@@ -20,7 +20,6 @@ import Topbar from "@/components/Topbar";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
-// --- Mock Data ---
 const ingestedFiles = [
     { id: 1, name: "Travel_Logs_Sarah.csv", size: "42KB", status: "ready", timestamp: "10m ago" },
     { id: 2, name: "Shell_Co_Registration.pdf", size: "1.2MB", status: "processing", progress: 88, timestamp: "2m ago" },
@@ -45,19 +44,15 @@ import { useAI } from "@/hooks/useAI";
 import AIAssistant from "@/components/AIAssistant";
 import { aiActions } from "@/lib/data";
 
+// --- Mock Data ---
+
 export default function CasesPage() {
     const { aiPanelOpen, setAIPanelOpen } = useInvestigationStore();
     const { askAI } = useAI();
     const [selectedFile, setSelectedFile] = useState(ingestedFiles[0]);
 
     return (
-        <div className="flex h-screen w-screen overflow-hidden bg-[#0a0f1c] font-sans text-slate-300">
-            <Sidebar />
-            
-            <div className="flex flex-col flex-1 min-w-0 overflow-hidden relative">
-                <Topbar />
-
-                <main className="flex-1 overflow-hidden p-6 gap-6 flex relative z-10">
+        <main className="flex-1 overflow-hidden p-6 gap-6 flex relative z-10">
                     <div className="flex-1 grid grid-cols-12 grid-rows-12 gap-6">
                     
                     {/* UI Section 1: Case Detail Header (Top Banner - Spans All Columns) */}
@@ -332,7 +327,5 @@ export default function CasesPage() {
                     />
                 </div>
                 </main>
-            </div>
-        </div>
     );
 }

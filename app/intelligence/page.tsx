@@ -2,8 +2,6 @@
 
 import { motion } from "framer-motion";
 import { Brain, Sparkles, Send, Search, AlertTriangle, BarChart2, ChevronRight, X, Maximize2 } from "lucide-react";
-import Sidebar from "@/components/Sidebar";
-import Topbar from "@/components/Topbar";
 import { aiActions } from "@/lib/data";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -24,12 +22,7 @@ export default function AIIntelligencePage() {
     const [question, setQuestion] = useState("");
 
     return (
-        <div className="flex h-screen w-screen overflow-hidden bg-[#0a0f1c] font-sans text-slate-300">
-            <Sidebar />
-            
-            <div className="flex flex-col flex-1 min-w-0 overflow-hidden relative">
-                <Topbar />
-
+        <>
                 {/* Background Glows */}
                 <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-600/5 blur-[120px] rounded-full pointer-events-none" />
                 <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-600/5 blur-[100px] rounded-full pointer-events-none" />
@@ -124,7 +117,6 @@ export default function AIIntelligencePage() {
                         </div>
                     </motion.div>
                 </main>
-            </div>
-        </div>
+        </>
     );
 }

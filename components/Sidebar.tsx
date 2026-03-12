@@ -62,7 +62,8 @@ export default function Sidebar() {
             setLoading(false);
         };
         fetchCases();
-    }, [loadCaseData, currentCaseId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const handleCreateCase = async () => {
         const title = prompt("Enter Case Title:");
@@ -84,10 +85,7 @@ export default function Sidebar() {
     };
 
     return (
-        <motion.aside
-            initial={{ x: -240, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
+        <aside
             className="flex flex-col w-64 min-w-[256px] h-full bg-[#0d1424] border-r border-[#1e3a5f]/40 z-10"
         >
             {/* Logo */}
@@ -217,6 +215,6 @@ export default function Sidebar() {
                     <span>System Operational</span>
                 </div>
             </div>
-        </motion.aside>
+        </aside>
     );
 }

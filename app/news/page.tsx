@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useInvestigationStore } from "@/store/investigationStore";
 import { getCaseNews } from "@/app/actions/case";
+import { fetchLiveIntelligence } from "@/app/actions/news";
 import { 
     Newspaper, 
     ExternalLink, 
@@ -15,7 +16,9 @@ import {
     ShieldCheck,
     Search,
     Filter,
-    ArrowUpRight
+    ArrowUpRight,
+    RefreshCw,
+    Globe
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -35,28 +38,44 @@ export default function NewsPage() {
     const { currentCaseId } = useInvestigationStore();
     const [news, setNews] = useState<NewsItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [filter, setFilter] = useState("all");
     const [searchQuery, setSearchQuery] = useState("");
 
-    useEffect(() => {
-        const fetchNews = async () => {
-            if (!currentCaseId) return;
-            setLoading(true);
-            try {
-                const data = await getCaseNews(currentCaseId);
-                // Convert string dates to Date objects if needed
-                const formattedData = data.map((item: any) => ({
-                    ...item,
-                    publishedAt: new Date(item.publishedAt)
-                }));
-                setNews(formattedData);
-            } catch (error) {
-                console.error("Failed to fetch news:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
+    const fetchNews = async () => {
+        if (!currentCaseId) return;
+        setLoading(true);
+        try {
+            const data = await getCaseNews(currentCaseId);
+            // Convert string dates to Date objects if needed
+            const formattedData = data.map((item: any) => ({
+                ...item,
+                publishedAt: new Date(item.publishedAt)
+            }));
+            setNews(formattedData);
+        } catch (error) {
+            console.error("Failed to fetch news:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    const handleRefresh = async () => {
+        if (!currentCaseId) return;
+        setRefreshing(true);
+        try {
+            const res = await fetchLiveIntelligence(currentCaseId);
+            if (res.success) {
+                await fetchNews();
+            }
+        } catch (error) {
+            console.error("Refresh failed:", error);
+        } finally {
+            setRefreshing(false);
+        }
+    };
+
+    useEffect(() => {
         fetchNews();
     }, [currentCaseId]);
 
@@ -101,6 +120,19 @@ export default function NewsPage() {
                     </div>
 
                     <div className="flex items-center gap-3">
+                        <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={handleRefresh}
+                            disabled={refreshing}
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition-all shadow-lg shadow-blue-900/20 disabled:opacity-50"
+                        >
+                            <RefreshCw size={14} className={cn(refreshing && "animate-spin")} />
+                            {refreshing ? "Correlating Feed..." : "Refresh Intelligence"}
+                        </motion.button>
+
+                        <div className="h-8 w-px bg-[#1e3a5f]/30 mx-2" />
+
                         <div className="relative group">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-400 transition-colors" size={14} />
                             <input 
@@ -108,7 +140,7 @@ export default function NewsPage() {
                                 placeholder="Search intel..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-9 pr-4 py-2 bg-[#162035] border border-[#1e3a5f]/50 rounded-lg text-xs outline-none focus:border-blue-500/50 transition-all w-64 shadow-inner"
+                                className="pl-9 pr-4 py-2 bg-[#162035] border border-[#1e3a5f]/50 rounded-lg text-xs outline-none focus:border-blue-500/50 transition-all w-48 xl:w-64 shadow-inner"
                             />
                         </div>
 
@@ -120,7 +152,7 @@ export default function NewsPage() {
                                     className={cn(
                                         "px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all",
                                         filter === f 
-                                            ? "bg-blue-600 text-white shadow-lg" 
+                                            ? "bg-slate-700 text-white shadow-lg" 
                                             : "text-slate-500 hover:text-slate-300"
                                     )}
                                 >
@@ -128,6 +160,22 @@ export default function NewsPage() {
                                 </button>
                             ))}
                         </div>
+                    </div>
+                </div>
+
+                {/* Status Bar */}
+                <div className="flex items-center gap-6 mt-4 pt-4 border-t border-[#1e3a5f]/20">
+                    <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Global Scan Active</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-blue-400">
+                        <Globe size={12} />
+                        <span className="text-[10px] font-bold uppercase tracking-widest">Sources: OSINT, Reuters, Bellingcat</span>
+                    </div>
+                    <div className="flex-1" />
+                    <div className="text-[10px] text-slate-500 font-mono tracking-tighter">
+                        Last Intel Sync: {new Date().toLocaleTimeString()}
                     </div>
                 </div>
             </div>

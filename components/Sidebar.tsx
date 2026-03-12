@@ -216,13 +216,6 @@ export default function Sidebar() {
                 })}
             </nav>
 
-            {/* Bottom status */}
-            <div className="px-4 py-4 border-t border-[#1e3a5f]/50">
-                <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                    <span>System Operational</span>
-                </div>
-            </div>
         </aside>
     );
 }

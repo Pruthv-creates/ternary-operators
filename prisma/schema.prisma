@@ -48,8 +48,8 @@ model Case {
   edges        Edge[]
   invitations  Invitation[]
   nodes        Node[]
-  news         News[]
   chatMessages ChatMessage[]
+  news         News[]
   users        User[]        @relation("CaseInvestigators")
 }
 
@@ -121,17 +121,6 @@ model AuditLog {
   user      User     @relation(fields: [userId], references: [id])
 }
 
-enum NodeType {
-  DOCUMENT
-  SUMMARY
-  CONJECTURE
-  INVESTIGATION_TASK
-  ENTITY_PERSON
-  ENTITY_ORG
-  ENTITY_LOCATION
-  EVENT
-}
-
 model News {
   id          String   @id @default(uuid())
   caseId      String
@@ -145,4 +134,15 @@ model News {
   case        Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
 
   @@map("news")
+}
+
+enum NodeType {
+  DOCUMENT
+  SUMMARY
+  CONJECTURE
+  INVESTIGATION_TASK
+  ENTITY_PERSON
+  ENTITY_ORG
+  ENTITY_LOCATION
+  EVENT
 }

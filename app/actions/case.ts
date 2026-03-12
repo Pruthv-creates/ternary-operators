@@ -143,6 +143,15 @@ export async function createCase(title: string, userId: string) {
     return newCase;
 }
 
+export async function getCaseInvestigators(caseId: string) {
+    if (!caseId) return [];
+    const users = await prisma.user.findMany({
+        where: { cases: { some: { id: caseId } } },
+        select: { id: true }
+    });
+    return users.map(u => u.id);
+}
+
 export async function createInvitation(caseId: string, inviterId: string, inviteeId: string, role: string = "VIEWER") {
     // Check if user is already in case
     const existingCase = await prisma.case.findFirst({

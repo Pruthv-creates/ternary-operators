@@ -6,12 +6,24 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import ProfilePanel from "./ProfilePanel";
 import CollaboratorInvite from "./CollaboratorInvite";
+import { useInvestigationStore } from "@/store/investigationStore";
+import { getCaseInvestigators } from "@/app/actions/case";
 
 export default function Topbar() {
     const [userEmail, setUserEmail] = useState<string>("Agent");
     const [fullUser, setFullUser] = useState<any>(null);
     const [presenceUsers, setPresenceUsers] = useState<any[]>([]);
     const [profileOpen, setProfileOpen] = useState(false);
+    const [validInvestigators, setValidInvestigators] = useState<string[]>([]);
+    const { currentCaseId } = useInvestigationStore();
+
+    useEffect(() => {
+        if (!currentCaseId) {
+            setValidInvestigators([]);
+            return;
+        }
+        getCaseInvestigators(currentCaseId).then(setValidInvestigators);
+    }, [currentCaseId]);
 
     useEffect(() => {
         // 1. Get current user
@@ -40,12 +52,19 @@ export default function Topbar() {
         channel
             .on("presence", { event: "sync" }, () => {
                 const state = channel.presenceState();
-                const users = Object.values(state).flat().map((p: any) => ({
+                const allOnline = Object.values(state).flat().map((p: any) => ({
+                    id: p.user_id,
                     initials: (p.name || "A").substring(0, 2).toUpperCase(),
                     name: p.name || "Agent",
                     color: p.color || "bg-blue-500",
                 }));
-                setPresenceUsers(users);
+
+                // Filter by investigators on this case
+                if (currentCaseId && validInvestigators.length > 0) {
+                    setPresenceUsers(allOnline.filter(u => validInvestigators.includes(u.id)));
+                } else {
+                    setPresenceUsers(allOnline);
+                }
             })
             .subscribe(async (status) => {
                 if (status === "SUBSCRIBED") {
@@ -66,7 +85,7 @@ export default function Topbar() {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, []);
+    }, [currentCaseId, validInvestigators]);
 
     return (
         <>

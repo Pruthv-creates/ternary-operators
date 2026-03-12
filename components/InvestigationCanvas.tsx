@@ -16,11 +16,10 @@ import EvidenceNode from "./EvidenceNode";
 import HypothesisNode from "./HypothesisNode";
 import RelationEdge from "./RelationEdge";
 import EdgeEditModal from "./EdgeEditModal";
-import CollaboratorsBar from "./CollaboratorsBar";
 import { entities } from "@/lib/data";
 import { Entity, EntityType } from "@/lib/data";
 import { useInvestigationStore } from "@/store/investigationStore";
-import { Brain, Loader2, Plus, Shield, Search, Users, Info } from "lucide-react";
+import { Brain, Loader2, Plus, Shield, Search, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 
@@ -264,54 +263,52 @@ function CanvasInner() {
             className="relative flex-1 overflow-hidden bg-[#0a0f1c] canvas-grid"
             onMouseMove={handleMouseMove}
         >
-            {/* UI Overlays */}
-            <CollaboratorsBar />
+            {/* UI Overlays — CollaboratorsBar removed, presence shown inline in toolbar */}
             
-            {/* Canvas header */}
-            <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
-                <div className="flex items-center gap-3">
-                    <div className="px-2.5 py-1.5 rounded bg-blue-500/10 border border-blue-500/20 shadow-sm">
-                        <h2 className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                             <div className="w-1 h-1 rounded-full bg-blue-500 animate-pulse" />
-                             Investigation Canvas
-                        </h2>
-                    </div>
-                    <button
-                        onClick={runAIAnalysis}
-                        disabled={analyzing}
-                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition-all disabled:opacity-50 shadow-lg shadow-indigo-900/40 group overflow-hidden relative"
-                    >
-                        {analyzing ? <Loader2 size={14} className="animate-spin" /> : <Brain size={14} />}
-                        <span className="text-[10px] font-black uppercase tracking-wider">AI Analysis</span>
-                    </button>
-                    <button
-                        onClick={addNewEntity}
-                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700/50 hover:bg-slate-700 text-slate-200 transition-all shadow-md group"
-                    >
-                        <Plus size={14} className="text-blue-400" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">Add Entity</span>
-                    </button>
-
-                    <div className="h-4 w-px bg-slate-800/50 mx-1" />
-
-                    <div className="flex bg-[#1e293b]/50 p-1 rounded-lg border border-slate-700/30">
-                        {["all", "entity", "evidence"].map((f) => (
-                            <button
-                                key={f}
-                                onClick={() => setActiveFilter(f)}
-                                className={cn(
-                                    "px-2 py-1 rounded text-[9px] font-bold uppercase tracking-widest transition-all",
-                                    activeFilter === f ? "bg-blue-500 text-white shadow-sm" : "text-slate-500 hover:text-slate-300"
-                                )}
-                            >
-                                {f}
-                            </button>
-                        ))}
-                    </div>
+            {/* Canvas toolbar — Left */}
+            <div className="absolute top-3 left-4 z-10 flex items-center gap-2">
+                <div className="flex items-center gap-0.5 px-2 py-1 rounded-lg bg-[#0d1424]/90 border border-[#1e3a5f]/50 backdrop-blur-sm shadow-sm">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse mr-1.5" />
+                    <span className="text-[9px] font-black text-blue-400 uppercase tracking-[0.2em]">Investigation Canvas</span>
                 </div>
+
+                <button
+                    onClick={runAIAnalysis}
+                    disabled={analyzing}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition-all disabled:opacity-50 shadow-lg shadow-indigo-900/40"
+                >
+                    {analyzing ? <Loader2 size={13} className="animate-spin" /> : <Brain size={13} />}
+                    <span className="text-[10px] font-black uppercase tracking-wider">AI Analysis</span>
+                </button>
+
+                <button
+                    onClick={addNewEntity}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0d1424]/90 border border-[#1e3a5f]/50 hover:bg-slate-800 text-slate-300 transition-all shadow-sm backdrop-blur-sm"
+                >
+                    <Plus size={13} className="text-blue-400" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Add Entity</span>
+                </button>
+
+                <div className="h-5 w-px bg-slate-700/50" />
+
+                <div className="flex bg-[#0d1424]/90 backdrop-blur-sm p-0.5 rounded-lg border border-[#1e3a5f]/50 shadow-sm">
+                    {["all", "entity", "evidence"].map((f) => (
+                        <button
+                            key={f}
+                            onClick={() => setActiveFilter(f)}
+                            className={cn(
+                                "px-2.5 py-1 rounded text-[9px] font-bold uppercase tracking-widest transition-all",
+                                activeFilter === f ? "bg-blue-500 text-white shadow-sm" : "text-slate-500 hover:text-slate-300"
+                            )}
+                        >
+                            {f}
+                        </button>
+                    ))}
+                </div>
+
                 {aiMessage && (
                     <div className={cn(
-                        "px-3 py-1.5 rounded-lg border text-[10px] font-bold uppercase tracking-wider animate-in fade-in slide-in-from-left-2 transition-all",
+                        "px-3 py-1.5 rounded-lg border text-[10px] font-bold uppercase tracking-wider animate-in fade-in slide-in-from-left-2",
                         aiMessage.startsWith("⚠️") || aiMessage.startsWith("⏱")
                             ? "bg-red-500/10 border-red-500/20 text-red-400"
                             : aiMessage.startsWith("✓")
@@ -323,59 +320,31 @@ function CanvasInner() {
                 )}
             </div>
 
-            {/* Top Right Header Buttons */}
-            <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
-                <button
-                    onClick={() => setShowLegend(!showLegend)}
-                    className={cn(
-                        "p-2 rounded-lg border transition-all relative group",
-                        showLegend ? "bg-blue-500 border-blue-400 text-white shadow-[0_0_15px_rgba(59,130,246,0.5)]" : "bg-[#1e293b]/80 border-slate-700 text-slate-400 hover:border-slate-500"
-                    )}
-                >
-                    <Shield size={16} />
-                    {showLegend && (
-                        <div className="absolute top-full right-0 mt-3 w-64 bg-[#0f172a]/95 backdrop-blur-xl border border-blue-500/30 rounded-xl p-4 shadow-2xl z-50 pointer-events-auto">
-                            <h3 className="text-xs font-black text-white uppercase tracking-widest mb-3 border-b border-white/10 pb-2">Scoring System</h3>
-                            <div className="space-y-4">
-                                <div className="space-y-1.5">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-6 py-0.5 rounded bg-red-600 text-[8px] font-black text-white text-center">R:87%</div>
-                                        <div className="text-[10px] font-bold text-red-400 uppercase tracking-tighter">Adverse Risk</div>
-                                    </div>
-                                    <p className="text-[9px] text-slate-400 italic">Probability of criminal involvement based on anomalies.</p>
-                                </div>
-                                <div className="space-y-1.5">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-6 py-0.5 rounded bg-emerald-500 text-[8px] font-black text-white text-center">C:98%</div>
-                                        <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-tighter">Credibility</div>
-                                    </div>
-                                    <p className="text-[9px] text-slate-400 italic">Trustworthiness of the primary source or record.</p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </button>
 
+                {/* Sticky note */}
                 <button
                     onClick={() => addStickyNote({ x: 400, y: 300 })}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#fde88a] text-[#422006] hover:bg-[#d6b83f] transition-all shadow-lg font-black text-[10px] uppercase tracking-wider"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#fde88a] text-[#422006] hover:bg-[#f0d060] transition-all shadow-md font-black text-[10px] uppercase tracking-wider"
                 >
-                    <Plus size={14} strokeWidth={3} />
+                    <Plus size={13} strokeWidth={3} />
                     Sticky
                 </button>
 
+                {/* Search */}
                 <div className={cn(
                     "flex items-center transition-all duration-300 rounded-lg border",
-                    isSearching ? "w-48 bg-[#1e293b] border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.1)]" : "w-10 bg-[#1e293b]/80 border-slate-700/50"
+                    isSearching
+                        ? "w-44 bg-[#0d1424] border-blue-500/50"
+                        : "w-9 bg-[#0d1424]/90 border-[#1e3a5f]/50 backdrop-blur-sm"
                 )}>
-                    <button 
+                    <button
                         onClick={() => setIsSearching(!isSearching)}
-                        className="w-10 h-10 flex items-center justify-center text-slate-400 flex-shrink-0"
+                        className="w-9 h-9 flex items-center justify-center text-slate-400 flex-shrink-0"
                     >
-                        <Search size={15} strokeWidth={2.5} />
+                        <Search size={14} strokeWidth={2.5} />
                     </button>
                     {isSearching && (
-                        <input 
+                        <input
                             autoFocus
                             placeholder="Find node..."
                             value={searchQuery}
@@ -385,20 +354,21 @@ function CanvasInner() {
                     )}
                 </div>
 
-                <div className="flex items-center gap-2 pl-2 border-l border-slate-800 ml-1">
-                    <div className="flex -space-x-1.5">
-                        <img className="w-8 h-8 rounded-full border-2 border-[#0a0f1c] object-cover ring-1 ring-emerald-500/30" src="https://i.pravatar.cc/150?u=a1" alt="A1" title="Analyst James (Active)" />
-                        <img className="w-8 h-8 rounded-full border-2 border-[#0a0f1c] object-cover ring-1 ring-emerald-500/30" src="https://i.pravatar.cc/150?u=a2" alt="A2" title="Analyst Priya (Active)" />
+                {/* Live collaborators from real presence data */}
+                {Object.keys(collaborators).length > 0 && (
+                    <div className="flex -space-x-1.5 pl-1 border-l border-slate-700/50">
+                        {Object.values(collaborators).slice(0, 4).map((c) => (
+                            <div
+                                key={c.userId}
+                                title={c.name}
+                                className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold text-white border-2 border-[#0a0f1c]"
+                                style={{ backgroundColor: c.color }}
+                            >
+                                {c.name?.substring(0, 2).toUpperCase()}
+                            </div>
+                        ))}
                     </div>
-                </div>
-
-                <div 
-                    onClick={() => alert("ASTRA Intelligence Portal\nAnalyst: DHARYAJ4N1\nAccess: Project Nexus Administrator")}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-br from-[#1e293b] to-[#0f172a] border border-slate-700/50 cursor-pointer hover:border-blue-500/30 transition-all font-black text-[11px] text-slate-300 uppercase italic"
-                >
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                    Agent
-                </div>
+                )}
             </div>
 
             <ReactFlow

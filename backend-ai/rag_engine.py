@@ -219,37 +219,30 @@ JSON:"""
     return {"nodes": [], "edges": [], "error": f"Failed to extract graph for case {case_id}"}
 def reconstruct_timeline(case_id: str):
     """
-    Extracts chronological events from case evidence.
+    Extracts chronological events from case evidence using the RAG engine.
     """
     import json
     import re
     import os
-    from langchain_community.document_loaders import TextLoader
-
-    documents = []
-    case_evidence_dir = os.path.join(EVIDENCE_DIR, case_id)
     
-    if not os.path.exists(case_evidence_dir):
-        return {"events": []}
+    # Check if DB exists for this case
+    case_db_dir = os.path.join(DB_DIR, case_id)
+    if not os.path.exists(case_db_dir):
+        return {"events": [], "status": "no_database"}
 
-    for file in sorted(os.listdir(case_evidence_dir)):
-        if file.endswith(".txt") or file.endswith(".md"):
-            try:
-                loader = TextLoader(os.path.join(case_evidence_dir, file))
-                documents.extend(loader.load())
-            except Exception:
-                pass
-
-    if not documents:
-        return {"events": []}
-
-    # Use first few docs for timeline extraction
-    top_docs = documents[:4]
-    full_text = "\n\n".join([d.page_content[:2000] for d in top_docs])
+    # Use RAG to fetch the most event-rich chunks across ALL evidence (text & images)
+    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    vectordb = Chroma(persist_directory=case_db_dir, embedding_function=embeddings)
+    
+    # Query specifically for temporal data to get high-density context
+    retriever = vectordb.as_retriever(search_kwargs={"k": 10})
+    docs = retriever.invoke("What are all the dates, specific events, travel activities, financial transfers, and meetings mentioned in the reports and image analysis?")
+    
+    full_text = "\n\n".join([f"FROM {d.metadata.get('source', 'Unknown')}:\n{d.page_content}" for d in docs])
 
     user_prompt = f"""[TIMELINE RECONSTRUCTION TASK]
 Extract a chronological sequence of events from the evidence for Case ID: {case_id}.
-Focus on specific dates, travel, meetings, transfers, and critical findings.
+Focus on specific dates, travel, meetings, transfers, and critical findings mentioned in the text and visual evidence analysis.
 
 TEXT TO ANALYZE:
 {full_text}
@@ -272,6 +265,7 @@ STRICT RULES:
 1. Respond with ONLY valid JSON.
 2. Sort events by date (ascending).
 3. If a specific day is missing, use "YYYY-MM-01" or similar approximation based on context.
+4. DO NOT invent events.
 
 JSON:"""
 
@@ -288,6 +282,8 @@ JSON:"""
             try:
                 result = json.loads(brace_match.group(0))
                 if "events" in result:
+                    # Final sort just in case
+                    result["events"].sort(key=lambda x: x.get("date", ""))
                     return result
             except: pass
 

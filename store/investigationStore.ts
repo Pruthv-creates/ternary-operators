@@ -76,6 +76,7 @@ type InvestigationState = {
   nodes: Node[];
   edges: Edge[];
   currentCaseId: string | null;
+  currentCaseTitle: string | null;
   selectedEntity: Entity | null;
   /** Live cursors of other investigators — keyed by userId */
   collaborators: Record<string, CursorUser>;
@@ -97,7 +98,7 @@ type InvestigationState = {
   updateStickyText: (id: string, text: string) => void;
   addAIResult: (result: { nodes: any[]; edges: any[] }) => Promise<void>;
   addEvidenceCard: (title: string, position: { x: number; y: number }) => void;
-  loadCaseData: (caseId: string) => Promise<void>;
+  loadCaseData: (caseId: string, title?: string) => Promise<void>;
   aiPanelOpen: boolean;
   setAIPanelOpen: (open: boolean) => void;
   toggleAIPanel: () => void;
@@ -118,6 +119,7 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
   nodes: initialNodes,
   edges: [],
   currentCaseId: null,
+  currentCaseTitle: null,
   selectedEntity: null,
   collaborators: {},
   unreadMessagesCount: 0,
@@ -137,12 +139,12 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
   setAIPanelOpen: (open: boolean) => set({ aiPanelOpen: open }),
   toggleAIPanel: () => set((state) => ({ aiPanelOpen: !state.aiPanelOpen })),
 
-  loadCaseData: async (caseId: string) => {
+  loadCaseData: async (caseId: string, title?: string) => {
     const currentCase = get().currentCaseId;
     if (currentCase === caseId) return;
 
     // Immediately clear for fast UX
-    set({ nodes: [], edges: [], currentCaseId: caseId });
+    set({ nodes: [], edges: [], currentCaseId: caseId, currentCaseTitle: title || null });
 
     const { nodes: backendNodes, edges: backendEdges } =
       await getCaseGraph(caseId);

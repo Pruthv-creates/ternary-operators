@@ -339,7 +339,7 @@ function EventDetail({ event, onClose }: { event: TimelineEvent; onClose: () => 
 
 // ─── Main Page ──────────────────────────────────────────────────────────────
 export default function TimelinePage() {
-    const { currentCaseId } = useInvestigationStore();
+    const { currentCaseId, currentCaseTitle } = useInvestigationStore();
     const [events, setEvents] = useState<TimelineEvent[]>([]);
     const [loading, setLoading] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<TimelineEvent | null>(null);
@@ -467,7 +467,7 @@ export default function TimelinePage() {
                             <p className="text-[11px] text-slate-500 font-medium tracking-wide ml-11">
                                 {loading
                                     ? "Reconstructing chronological sequences from case intelligence..."
-                                    : `${filteredEvents.length} events across ${years.length} period${years.length !== 1 ? "s" : ""} · Case: ${currentCaseId ? "VANGUARD OMEGA" : "Demo Mode"}`}
+                                    : `${filteredEvents.length} events across ${years.length} period${years.length !== 1 ? "s" : ""} · Case: ${currentCaseTitle || (currentCaseId ? "ID: " + currentCaseId.slice(0, 8) : "Demo Mode")}`}
                             </p>
                         </div>
 

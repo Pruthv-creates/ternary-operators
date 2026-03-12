@@ -100,7 +100,7 @@ async def generate_relation(data: RelationRequest):
         
         # Also query for direct connections
         connection_query = f"What is the relationship between {data.entity1} and {data.entity2}? Are they connected? How?"
-        connection_info, _ = query_rag(connection_query)
+        connection_info, _ = query_rag(connection_query, data.case_id)
         
         # Build the prompt for LLM to determine relationship type
         prompt = f"""Based on the following information, determine the most likely relationship type between {data.entity1} and {data.entity2}.

@@ -24,9 +24,9 @@ export function useSidebarCases() {
                 const caseExists = casesData.find(c => c.id === lastCaseId);
 
                 if (caseExists) {
-                    loadCaseData(lastCaseId as string);
+                    loadCaseData(lastCaseId as string, caseExists.title);
                 } else if (casesData.length > 0 && !currentCaseId) {
-                    loadCaseData(casesData[0].id);
+                    loadCaseData(casesData[0].id, casesData[0].title);
                 }
             }
             setLoading(false);
@@ -36,8 +36,9 @@ export function useSidebarCases() {
     }, []);
 
     const handleSelectCase = (caseId: string) => {
+        const c = userCases.find(tc => tc.id === caseId);
         localStorage.setItem("astraeus_last_case_id", caseId);
-        loadCaseData(caseId);
+        loadCaseData(caseId, c?.title);
     };
 
     const handleCreateCase = () => {

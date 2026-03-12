@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Send, Hash, Shield, Zap, Sparkles, Terminal, User, Clock, AlertCircle, MoreHorizontal } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
-import VoiceComms from "./VoiceComms";
+
 
 interface Message {
   id: string;
@@ -157,10 +157,7 @@ export default function TeamChat({ caseId, currentUser }: TeamChatProps) {
         </div>
       </header>
 
-      {/* Voice Comms Module - Fixed position */}
-      <div className="px-6 py-2 bg-blue-500/5 overflow-hidden">
-        <VoiceComms caseId={caseId} currentUser={currentUser} />
-      </div>
+
 
       {/* Messages - Atmospheric Intel Log */}
       <main 

@@ -26,6 +26,8 @@ interface VoiceCommsProps {
     name: string;
     avatar?: string;
   };
+  /** Called whenever the call goes active/inactive — lets the parent show a live indicator */
+  onActiveChange?: (active: boolean) => void;
 }
 
 interface PeerConnection {
@@ -68,7 +70,7 @@ const ICE_SERVERS: RTCIceServer[] = [
   },
 ];
 
-export default function VoiceComms({ caseId, currentUser }: VoiceCommsProps) {
+export default function VoiceComms({ caseId, currentUser, onActiveChange }: VoiceCommsProps) {
   const [isActive, setIsActive] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isSecure, setIsSecure] = useState(false);
@@ -94,8 +96,12 @@ export default function VoiceComms({ caseId, currentUser }: VoiceCommsProps) {
   const audioContextRef = useRef<AudioContext | null>(null);
   const analysersRef = useRef<Record<string, AnalyserNode>>({});
   const gainNodesRef = useRef<Record<string, GainNode>>({});
+  const audioDestNodesRef = useRef<Record<string, MediaStreamAudioDestinationNode>>({});
   const animFrames = useRef<Record<string, number>>();
   if (!animFrames.current) animFrames.current = {};
+
+  // Processed (boosted + EQ'd) streams for each peer — used by <audio> elements
+  const [processedStreams, setProcessedStreams] = useState<Record<string, MediaStream>>({});
 
   // ─── Ensure AudioContext is ready ────────────────────────────────────────
   const getAudioContext = useCallback(() => {
@@ -137,52 +143,65 @@ export default function VoiceComms({ caseId, currentUser }: VoiceCommsProps) {
     }
   }, [getAudioContext]);
 
-  // ─── Remote audio: boost + compress + analyse ─────────────────────────────
-  // Routes: source → gain (×2 boost) → compressor (clarity) → destination (speakers)
-  //                           └→ analyser (speaker detection)
+  // ─── Remote audio: boost + compress + EQ, output via <audio> element ──────────────
+  //
+  // WHY MediaStreamAudioDestinationNode instead of ctx.destination:
+  // ctx.destination is unreliable for playback across browsers (can be suspended,
+  // silenced by browser autoplay policy, or just not map to speakers in all contexts).
+  // The ONLY guaranteed way to play audio is via an HTML <audio autoPlay> element.
+  // So: remote stream → Web Audio processing chain → MediaStreamDestination → <audio>.
   const setupRemoteAudioProcessing = useCallback((key: string, stream: MediaStream) => {
     try {
       const ctx = getAudioContext();
       const source = ctx.createMediaStreamSource(stream);
 
-      // 1. Gain node — doubles the volume
-      const gain = ctx.createGain();
-      gain.gain.setValueAtTime(2.0, ctx.currentTime); // 2× amplification
-      gainNodesRef.current[key] = gain;
-
-      // 2. Dynamics compressor — reduces harsh peaks, brings up quiet voices
-      const compressor = ctx.createDynamicsCompressor();
-      compressor.threshold.setValueAtTime(-24, ctx.currentTime); // start compressing at -24dB
-      compressor.knee.setValueAtTime(12, ctx.currentTime);        // soft knee for natural sound
-      compressor.ratio.setValueAtTime(4, ctx.currentTime);        // 4:1 ratio
-      compressor.attack.setValueAtTime(0.003, ctx.currentTime);   // fast attack
-      compressor.release.setValueAtTime(0.15, ctx.currentTime);   // smooth release
-
-      // 3. High-pass filter — removes low-frequency rumble/noise below 80Hz
+      // 1. High-pass filter — cut rumble / noise below 80Hz
       const highPass = ctx.createBiquadFilter();
       highPass.type = "highpass";
       highPass.frequency.setValueAtTime(80, ctx.currentTime);
       highPass.Q.setValueAtTime(0.7, ctx.currentTime);
 
-      // 4. Presence boost — slight boost in the 2-4kHz range for speech clarity
+      // 2. Presence EQ — +4dB at 3kHz (human voice clarity band)
       const presenceEQ = ctx.createBiquadFilter();
       presenceEQ.type = "peaking";
       presenceEQ.frequency.setValueAtTime(3000, ctx.currentTime);
-      presenceEQ.gain.setValueAtTime(4, ctx.currentTime); // +4dB at 3kHz
+      presenceEQ.gain.setValueAtTime(4, ctx.currentTime);
       presenceEQ.Q.setValueAtTime(1, ctx.currentTime);
 
-      // 5. Analyser for speaking detection
+      // 3. Gain — 2× amplification
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(2.0, ctx.currentTime);
+      gainNodesRef.current[key] = gain;
+
+      // 4. Dynamics compressor — normalize levels, prevent distortion
+      const compressor = ctx.createDynamicsCompressor();
+      compressor.threshold.setValueAtTime(-24, ctx.currentTime);
+      compressor.knee.setValueAtTime(12, ctx.currentTime);
+      compressor.ratio.setValueAtTime(4, ctx.currentTime);
+      compressor.attack.setValueAtTime(0.003, ctx.currentTime);
+      compressor.release.setValueAtTime(0.15, ctx.currentTime);
+
+      // 5. Analyser — for the speaking indicator
       const analyser = ctx.createAnalyser();
       analyser.fftSize = 128;
       analysersRef.current[key] = analyser;
 
-      // Wire the chain: source → highPass → presenceEQ → gain → compressor → destination
+      // 6. MediaStreamDestination — the processed audio comes out as a MediaStream
+      //    that an <audio autoPlay> element can reliably play
+      const destination = ctx.createMediaStreamDestination();
+      audioDestNodesRef.current[key] = destination;
+
+      // Chain: source → highPass → presenceEQ → gain → compressor → destination (MediaStream)
+      //                                                    └→ analyser (metering only)
       source.connect(highPass);
       highPass.connect(presenceEQ);
       presenceEQ.connect(gain);
       gain.connect(compressor);
-      compressor.connect(ctx.destination); // → speakers
-      gain.connect(analyser);              // → speaking detector (tap off gain node)
+      gain.connect(analyser);
+      compressor.connect(destination);
+
+      // Expose the processed MediaStream so the <audio> element can play it
+      setProcessedStreams((prev) => ({ ...prev, [key]: destination.stream }));
 
       const check = () => {
         if (!analysersRef.current[key] || !isActiveRef.current) return;
@@ -228,6 +247,10 @@ export default function VoiceComms({ caseId, currentUser }: VoiceCommsProps) {
       try { gainNodesRef.current[peerKey].disconnect(); } catch {}
       delete gainNodesRef.current[peerKey];
     }
+    if (audioDestNodesRef.current[peerKey]) {
+      try { audioDestNodesRef.current[peerKey].disconnect(); } catch {}
+      delete audioDestNodesRef.current[peerKey];
+    }
     if (peerConnections.current[peerKey]) {
       peerConnections.current[peerKey].ontrack = null;
       peerConnections.current[peerKey].onicecandidate = null;
@@ -239,6 +262,11 @@ export default function VoiceComms({ caseId, currentUser }: VoiceCommsProps) {
     delete makingOfferRef.current[peerKey];
     delete ignoreOfferRef.current[peerKey];
     setPeers((prev) => {
+      const n = { ...prev };
+      delete n[peerKey];
+      return n;
+    });
+    setProcessedStreams((prev) => {
       const n = { ...prev };
       delete n[peerKey];
       return n;
@@ -913,8 +941,23 @@ export default function VoiceComms({ caseId, currentUser }: VoiceCommsProps) {
                   <div className="text-[12px] font-black text-white uppercase">
                     {peer.userName.substring(0, 2)}
                   </div>
-                  {/* Audio is routed via Web Audio API chain (gain → compressor → ctx.destination).
-                       No <audio> element needed — avoids double playback / echo. */}
+                  {/* Processed (boosted + EQ'd) audio plays through a real <audio> element.
+                      srcObject = the MediaStream from our Web Audio destination node. */}
+                  <audio
+                    autoPlay
+                    playsInline
+                    controls={false}
+                    ref={(el) => {
+                      if (el) {
+                        const src = processedStreams[peerKey] ?? peer.stream;
+                        if (el.srcObject !== src) {
+                          el.srcObject = src;
+                          el.volume = 1.0;
+                        }
+                      }
+                    }}
+                    style={{ display: "none" }}
+                  />
                   {peer.state === "connecting" && (
                     <motion.div
                       animate={{ rotate: 360 }}

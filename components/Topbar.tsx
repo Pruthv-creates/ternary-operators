@@ -2,12 +2,13 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Search, MessageSquare, X, Trash2 } from "lucide-react";
+import { Search, MessageSquare, X, Trash2, Mic, Radio } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import ProfilePanel from "./ProfilePanel";
 import CollaboratorInvite from "./CollaboratorInvite";
 import TeamChat from "./TeamChat";
+import VoiceComms from "./VoiceComms";
 import { useInvestigationStore } from "@/store/investigationStore";
 import { getCaseInvestigators, deleteCase } from "@/app/actions/case";
 import { useRouter } from "next/navigation";
@@ -19,6 +20,8 @@ export default function Topbar() {
     const [presenceUsers, setPresenceUsers] = useState<any[]>([]);
     const [profileOpen, setProfileOpen] = useState(false);
     const [chatOpen, setChatOpen] = useState(false);
+    const [voiceOpen, setVoiceOpen] = useState(false);
+    const [voiceActive, setVoiceActive] = useState(false); // true while a call is live
     const [validInvestigators, setValidInvestigators] = useState<string[]>([]);
     const [isDeleting, setIsDeleting] = useState(false);
     const { currentCaseId } = useInvestigationStore();
@@ -135,9 +138,40 @@ export default function Topbar() {
 
             {/* Team Chat Trigger & Collaboration indicator */}
             <div className="flex items-center gap-2">
+                {/* Voice Comms Button — stays green while call is live, even when panel is closed */}
+                <div className="relative">
+                    <button
+                        onClick={() => setVoiceOpen(!voiceOpen)}
+                        className={cn(
+                            "p-2 rounded-lg border transition-all flex items-center gap-2 group relative",
+                            voiceOpen
+                                ? "bg-emerald-600 border-emerald-400 text-white shadow-[0_0_20px_rgba(16,185,129,0.5)]"
+                                : voiceActive
+                                ? "bg-emerald-600/20 border-emerald-500/50 text-emerald-400"
+                                : "bg-[#1e293b] border-[#1e3a5f]/60 text-slate-400 hover:border-emerald-500/50 hover:text-emerald-400"
+                        )}
+                        title="Voice Comms"
+                    >
+                        <motion.div
+                            animate={voiceActive ? { scale: [1, 1.15, 1] } : {}}
+                            transition={{ repeat: Infinity, duration: 1.8 }}
+                        >
+                            <Radio size={14} className={voiceOpen || voiceActive ? "text-emerald-300" : ""} />
+                        </motion.div>
+                        <span className="text-[10px] font-black uppercase tracking-widest hidden lg:block">Voice</span>
+                        {/* Live call indicator — visible even when panel is closed */}
+                        {voiceActive && (
+                            <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
+                            </span>
+                        )}
+                    </button>
+                </div>
+
+                {/* Team Chat Button */}
                 <button 
                     onClick={() => {
-                        console.log("Chat toggle clicked. Current state:", !chatOpen, "CaseId:", currentCaseId, "User:", fullUser?.id);
                         setChatOpen(!chatOpen);
                     }}
                     className={cn(
@@ -152,8 +186,8 @@ export default function Topbar() {
                     <span className="text-[10px] font-black uppercase tracking-widest hidden lg:block">Chat</span>
                     {chatOpen && (
                         <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500" />
                         </span>
                     )}
                 </button>
@@ -209,6 +243,59 @@ export default function Topbar() {
             </div>
 
         </header>
+
+        {/* ── Voice Comms floating panel ──────────────────────────────────────
+             IMPORTANT: VoiceComms is ALWAYS mounted — never conditionally rendered.
+             Closing the panel only hides it visually (CSS/animation). This ensures
+             the WebRTC connection and audio streams persist when the user closes
+             the panel. Only the user clicking "End Call" stops the connection.
+        ────────────────────────────────────────────────────── */}
+        {fullUser && currentCaseId && (
+            <motion.div
+                animate={{
+                    opacity: voiceOpen ? 1 : 0,
+                    y: voiceOpen ? 0 : -10,
+                    scale: voiceOpen ? 1 : 0.97,
+                    pointerEvents: voiceOpen ? "auto" : "none",
+                }}
+                initial={false}
+                transition={{ type: "spring", damping: 28, stiffness: 300 }}
+                className="fixed top-[56px] right-[260px] z-[80] w-[480px] max-w-[calc(100vw-2rem)]"
+                style={{ visibility: voiceOpen ? "visible" : "hidden" }}
+            >
+                {/* Arrow notch */}
+                <div className="absolute -top-1.5 right-[68px] w-3 h-3 bg-[#0d1424] border-l border-t border-[#1e3a5f]/50 rotate-45" />
+                <div className="mt-1 rounded-2xl overflow-hidden shadow-[0_24px_80px_rgba(0,0,0,0.7)] border border-[#1e3a5f]/40">
+                    <VoiceComms
+                        caseId={currentCaseId}
+                        currentUser={{
+                            id: fullUser.id,
+                            name: fullUser.name,
+                            avatar: fullUser.avatar,
+                        }}
+                        onActiveChange={setVoiceActive}
+                    />
+                </div>
+            </motion.div>
+        )}
+
+        {/* No-case placeholder — only shown when panel open but no case selected */}
+        {fullUser && !currentCaseId && voiceOpen && (
+            <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                className="fixed top-[56px] right-[260px] z-[80] w-[480px] max-w-[calc(100vw-2rem)]"
+            >
+                <div className="mt-1 rounded-2xl overflow-hidden shadow-[0_24px_80px_rgba(0,0,0,0.7)] border border-[#1e3a5f]/40 bg-[#0d1424]/95 backdrop-blur-xl p-8 flex flex-col items-center text-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                        <Radio size={22} className="text-emerald-500" />
+                    </div>
+                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">No Case Active</p>
+                    <p className="text-[10px] text-slate-600 max-w-[240px]">Open a case to enable tactical voice communications.</p>
+                </div>
+            </motion.div>
+        )}
 
         {fullUser && (
             <ProfilePanel 

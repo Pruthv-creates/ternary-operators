@@ -14,6 +14,7 @@ import EntityNode from "./EntityNode";
 import EvidenceNode from "./EvidenceNode";
 import HypothesisNode from "./HypothesisNode";
 import RelationEdge from "./RelationEdge";
+import EdgeEditModal from "./EdgeEditModal";
 import { entities } from "@/lib/data";
 import { Entity, EntityType } from "@/lib/data";
 import { useInvestigationStore } from "@/store/investigationStore";
@@ -42,6 +43,7 @@ function CanvasInner() {
         onEdgesChange,
         onConnect,
         setSelectedEntity,
+        deleteEdgeByIds,
     } = useInvestigationStore();
 
     const canvasRef = useRef<HTMLDivElement>(null);
@@ -159,6 +161,25 @@ function CanvasInner() {
                 <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="rgba(255,255,255,0.04)" />
             </ReactFlow>
 
+            {/* Relationship Edit Modal */}
+            {editingEdgeId && (
+                (() => {
+                    const edge = edges.find(e => e.id === editingEdgeId);
+                    if (!edge) return null;
+                    const sNode = nodes.find(n => n.id === edge.source);
+                    const tNode = nodes.find(n => n.id === edge.target);
+                    return (
+                        <EdgeEditModal
+                            edgeId={editingEdgeId}
+                            sourceLabel={(sNode?.data?.name || sNode?.data?.label || "Unknown") as string}
+                            targetLabel={(tNode?.data?.name || tNode?.data?.label || "Unknown") as string}
+                            currentLabel={(edge.label as string) || ""}
+                            onClose={() => setEditingEdgeId(null)}
+                            onDeleteEdge={() => deleteEdgeByIds(edge.source, edge.target)}
+                        />
+                    );
+                })()
+            )}
             <GhostCursors collaborators={collaborators} throttleMs={CURSOR_THROTTLE_MS} />
         </div>
     );

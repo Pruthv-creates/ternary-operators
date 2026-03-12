@@ -57,6 +57,7 @@ export default function ChatSidePanel({
                                 name: fullUser.name,
                                 avatar: fullUser.avatar 
                             }} 
+                            onClose={() => setIsOpen(false)}
                         />
                     ) : (
                         <div className="flex flex-col h-full bg-[#0d1424]/90 border border-[#1e3a5f]/30 rounded-3xl items-center justify-center p-8 text-center backdrop-blur-md">

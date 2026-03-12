@@ -14,14 +14,17 @@ import { useCaseActions } from "@/hooks/cases/useCaseActions";
 import { TopbarSearch } from "@/components/topbar/TopbarSearch";
 import { PresenceIndicator } from "@/components/topbar/PresenceIndicator";
 import { UserNav } from "@/components/topbar/UserNav";
+import { useChatBackgroundListener } from "@/hooks/chat/useChatBackgroundListener";
 
 export default function Topbar() {
-    const { currentCaseId } = useInvestigationStore();
+    const { currentCaseId, chatOpen, setChatOpen, unreadMessagesCount } = useInvestigationStore();
     const { userEmail, fullUser, presenceUsers } = useTopbarPresence(currentCaseId);
     const { isDeleting, handleDeleteCase } = useCaseActions();
 
+    // Background listener for chat unread count
+    useChatBackgroundListener(currentCaseId);
+
     const [profileOpen, setProfileOpen] = useState(false);
-    const [chatOpen, setChatOpen] = useState(false);
     const [voiceOpen, setVoiceOpen] = useState(false);
     const [voiceActive, setVoiceActive] = useState(false); // true while a call is live
 
@@ -88,7 +91,14 @@ export default function Topbar() {
                     )}
                     title="Team Chat"
                 >
-                    <MessageSquare size={14} className={cn(chatOpen ? "animate-pulse" : "group-hover:rotate-12 transition-transform")} />
+                    <div className="relative">
+                        <MessageSquare size={14} className={cn(chatOpen ? "animate-pulse" : "group-hover:rotate-12 transition-transform")} />
+                        {unreadMessagesCount > 0 && !chatOpen && (
+                            <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-black text-white ring-2 ring-[#0d1424] animate-bounce">
+                                {unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}
+                            </span>
+                        )}
+                    </div>
                     <span className="text-[10px] font-black uppercase tracking-widest hidden lg:block">Chat</span>
                     {chatOpen && (
                         <span className="absolute -top-1 -right-1 flex h-3 w-3">

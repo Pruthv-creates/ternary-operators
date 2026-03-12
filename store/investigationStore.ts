@@ -107,6 +107,11 @@ type InvestigationState = {
   syncNodes: (nodes: Node[]) => void;
   syncEdges: (edges: Edge[]) => void;
   handleRemoteEvent: (event: SyncEvent) => void;
+  unreadMessagesCount: number;
+  chatOpen: boolean;
+  setChatOpen: (open: boolean) => void;
+  incrementUnreadMessagesCount: () => void;
+  resetUnreadMessagesCount: () => void;
 };
 
 export const useInvestigationStore = create<InvestigationState>((set, get) => ({
@@ -115,7 +120,19 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
   currentCaseId: null,
   selectedEntity: null,
   collaborators: {},
+  unreadMessagesCount: 0,
+  chatOpen: false,
   aiPanelOpen: false,
+  setChatOpen: (open) => {
+    set({ chatOpen: open });
+    if (open) set({ unreadMessagesCount: 0 });
+  },
+  incrementUnreadMessagesCount: () => {
+    if (!get().chatOpen) {
+      set((state) => ({ unreadMessagesCount: state.unreadMessagesCount + 1 }));
+    }
+  },
+  resetUnreadMessagesCount: () => set({ unreadMessagesCount: 0 }),
 
   setAIPanelOpen: (open: boolean) => set({ aiPanelOpen: open }),
   toggleAIPanel: () => set((state) => ({ aiPanelOpen: !state.aiPanelOpen })),

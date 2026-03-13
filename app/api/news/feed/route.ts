@@ -1,9 +1,6 @@
-
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { scrapeCaseNews } from "@/lib/newsScraper";
-
-const prisma = new PrismaClient();
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,9 +17,10 @@ export async function POST(req: NextRequest) {
         nodes: {
           where: {
             type: {
-              in: ["ENTITY_PERSON", "ENTITY_ORG"]
+              in: ["ENTITY_PERSON", "ENTITY_ORG", "ENTITY_LOCATION"]
             }
-          }
+          },
+          take: 10
         }
       }
     });
@@ -31,24 +29,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Case not found" }, { status: 404 });
     }
 
-    // Construct keywords: Case Title + Entity Labels
+    // Construct keywords: Case Title + short Entity Labels (< 40 chars)
     const keywords = [
       currentCase.title,
-      ...currentCase.nodes.map(n => n.label)
-    ].filter((v, i, a) => a.indexOf(v) === i); // Unique only
+      ...currentCase.nodes
+        .map(n => n.label)
+        .filter(label => label.length > 2 && label.length < 40)
+    ].filter((v, i, a) => a.indexOf(v) === i); 
 
     console.log(`[API] Fetching intelligence for case: "${currentCase.title}" (${caseId})`);
-    console.log(`[API] Extracted keywords: ${keywords.join(', ')}`);
+    console.log(`[API] Refined keywords: ${keywords.join(', ')}`);
 
     // 2. Scrape news
     const scrapedNews = await scrapeCaseNews(keywords);
     console.log(`[API] Ingested ${scrapedNews.length} news items from signal feed.`);
 
-    // 3. Store in database (Upsert based on URL to avoid duplicates)
+    // 3. Store in database (Upsert based on CaseID + URL to allow same article in different cases)
     if (scrapedNews.length > 0) {
       for (const item of scrapedNews) {
-        // Use a deterministic ID based on URL to prevent duplicates without unique constraint
-        const newsId = Buffer.from(item.url).toString('base64').slice(0, 30);
+        // Deterministic ID derived from CaseID and URL Hash
+        const urlHash = Buffer.from(item.url).toString('base64').slice(-20);
+        const newsId = `news-${caseId.slice(0, 8)}-${urlHash}`;
         
         await prisma.news.upsert({
           where: { id: newsId },
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
             publishedAt: item.publishedAt,
             imageUrl: item.imageUrl,
             sentiment: 0,
-          } as any,
+          },
           create: {
             id: newsId,
             caseId: currentCase.id,
@@ -68,18 +69,19 @@ export async function POST(req: NextRequest) {
             imageUrl: item.imageUrl,
             publishedAt: item.publishedAt,
             sentiment: 0
-          } as any
+          }
         });
       }
     }
 
-    // 4. Return latest 20 articles
+    // 4. Return latest 20 articles for this specific case
     const latestNews = await prisma.news.findMany({
       where: { caseId },
       orderBy: { publishedAt: "desc" },
       take: 20
     });
 
+    console.log(`[API] Returning ${latestNews.length} news items for UI.`);
     return NextResponse.json(latestNews);
   } catch (error) {
     console.error("API News Feed Error:", error);

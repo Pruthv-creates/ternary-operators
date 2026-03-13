@@ -34,7 +34,7 @@ export function useCollaboratorInvite(caseId: string | null) {
         setSearching(true);
         searchTimeout.current = setTimeout(async () => {
             try {
-                const found = await searchAgents(query, currentUserId || "");
+                const found = await searchAgents(query, currentUserId || "", caseId || undefined);
                 setResults(found);
             } catch {
                 setResults([]);
@@ -48,11 +48,16 @@ export function useCollaboratorInvite(caseId: string | null) {
         if (!caseId || !selected || !currentUserId) return;
         setStatus("loading");
         try {
-            await createInvitation(caseId, currentUserId, selected.id);
-            setStatus("success");
+            const result = await createInvitation(caseId, currentUserId, selected.id);
+            if (result.success) {
+                setStatus("success");
+            } else {
+                setStatus("error");
+                setErrorMsg(result.error || "Failed to send invitation.");
+            }
         } catch (e: any) {
             setStatus("error");
-            setErrorMsg(e.message || "Failed to send invitation.");
+            setErrorMsg("A system error occurred. Please try again.");
         }
     };
 

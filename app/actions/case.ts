@@ -117,7 +117,7 @@ export async function inviteCollaborator(caseId: string, email: string) {
   });
 
   if (!userToInvite) {
-    throw new Error("User not found. They must sign up first.");
+    return { success: false, error: "User not found. They must sign up first." };
   }
 
   await prisma.case.update({
@@ -142,20 +142,32 @@ export async function inviteCollaboratorById(caseId: string, userId: string) {
   return { success: true };
 }
 
-export async function searchAgents(query: string, excludeUserId: string) {
+export async function searchAgents(query: string, excludeUserId: string, caseId?: string) {
   if (!query || query.length < 2) return [];
+
+  const where: any = {
+    AND: [
+      { id: { not: excludeUserId } },
+      {
+        OR: [
+          { name: { contains: query, mode: "insensitive" } },
+          { email: { contains: query, mode: "insensitive" } },
+        ],
+      },
+    ],
+  };
+
+  // Optionally exclude users already in the case
+  if (caseId) {
+    where.AND.push({
+      cases: {
+        none: { id: caseId }
+      }
+    });
+  }
+
   return prisma.user.findMany({
-    where: {
-      AND: [
-        { id: { not: excludeUserId } },
-        {
-          OR: [
-            { name: { contains: query, mode: "insensitive" } },
-            { email: { contains: query, mode: "insensitive" } },
-          ],
-        },
-      ],
-    },
+    where,
     select: { id: true, name: true, email: true },
     take: 8,
   });
@@ -194,14 +206,17 @@ export async function createInvitation(
   const existingCase = await prisma.case.findFirst({
     where: { id: caseId, users: { some: { id: inviteeId } } },
   });
-  if (existingCase) throw new Error("Agent is already assigned to this case.");
+  if (existingCase) {
+    return { success: false, error: "Agent is already assigned to this case." };
+  }
 
   // Check for pending invite
   const existingInvite = await prisma.invitation.findFirst({
     where: { caseId, inviteeId, status: "PENDING" },
   });
-  if (existingInvite)
-    throw new Error("An invitation is already pending for this agent.");
+  if (existingInvite) {
+    return { success: false, error: "An invitation is already pending for this agent." };
+  }
 
   await prisma.invitation.create({
     data: {
@@ -230,7 +245,7 @@ export async function acceptInvitation(invitationId: string) {
   const invite = await prisma.invitation.findUnique({
     where: { id: invitationId },
   });
-  if (!invite) throw new Error("Invitation not found");
+  if (!invite) return { success: false, error: "Invitation not found" };
 
   // Add user to case
   await prisma.case.update({

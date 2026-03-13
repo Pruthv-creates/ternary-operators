@@ -147,8 +147,8 @@ export default function NewsFeed({ caseId }: NewsFeedProps) {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  onClick={() => window.open(item.url, "_blank")}
-                  className="group relative flex flex-col bg-[#11192d]/50 border border-[#1e3a5f]/20 rounded-xl p-4 cursor-pointer hover:bg-[#11192d] hover:border-blue-500/40 transition-all"
+                  onDoubleClick={() => window.open(item.url, "_blank")}
+                  className="group relative flex flex-col bg-[#11192d]/50 border border-[#1e3a5f]/20 rounded-xl p-4 cursor-default hover:bg-[#11192d] hover:border-blue-500/40 transition-all select-all shadow-sm shadow-black/20"
                 >
                   <div className="flex gap-4">
                     {item.imageUrl && (
@@ -166,7 +166,11 @@ export default function NewsFeed({ caseId }: NewsFeedProps) {
                                  {new Date(item.publishedAt).toLocaleDateString()}
                                </div>
                             </div>
-                            <ExternalLink size={12} className="text-slate-600 group-hover:text-blue-400 transition-colors" />
+                            <ExternalLink 
+                              size={12} 
+                              className="text-slate-600 group-hover:text-blue-400 transition-colors cursor-pointer" 
+                              onClick={() => window.open(item.url, "_blank")}
+                            />
                           </div>
                           
                           <TextHighlightPromoter
@@ -183,20 +187,30 @@ export default function NewsFeed({ caseId }: NewsFeedProps) {
 
                        <div className="flex items-center justify-between">
                          {getSentimentBadge(item.sentiment)}
-                         <button 
-                           onClick={(e) => handleCorrelate(e, item.id)}
-                           disabled={correlatingIds.has(item.id)}
-                           className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-600 hover:text-white transition-all text-[10px] font-bold uppercase tracking-wider disabled:opacity-50 group/btn"
-                         >
-                           {correlatingIds.has(item.id) ? (
-                             <RefreshCw size={12} className="animate-spin" />
-                           ) : (
-                             <>
-                               Correlate
-                               <ArrowUpRight size={12} className="group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
-                             </>
-                           )}
-                         </button>
+                         
+                         <div className="flex items-center gap-2">
+                           <button 
+                             onClick={(e) => { e.stopPropagation(); window.open(item.url, "_blank"); }}
+                             className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 hover:text-white transition-all text-[10px] font-bold uppercase tracking-wider"
+                           >
+                              View Source
+                           </button>
+
+                           <button 
+                             onClick={(e) => handleCorrelate(e, item.id)}
+                             disabled={correlatingIds.has(item.id)}
+                             className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-600 hover:text-white transition-all text-[10px] font-bold uppercase tracking-wider disabled:opacity-50 group/btn"
+                           >
+                             {correlatingIds.has(item.id) ? (
+                               <RefreshCw size={12} className="animate-spin" />
+                             ) : (
+                               <>
+                                 Correlate
+                                 <ArrowUpRight size={12} className="group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
+                               </>
+                             )}
+                           </button>
+                         </div>
                        </div>
                      </div>
                   </div>

@@ -22,6 +22,7 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { TextHighlightPromoter } from "@/components/staging/TextHighlightPromoter";
 
 type UploadStatus = "idle" | "uploading" | "success" | "error";
 
@@ -449,9 +450,11 @@ export default function EvidencePage() {
                                             <div className="w-1.5 h-1.5 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
                                             Intel Brief
                                         </div>
-                                        <div className="text-sm font-medium text-slate-200 leading-relaxed whitespace-pre-wrap">
-                                            {aiResult.answer}
-                                        </div>
+                                        <TextHighlightPromoter source="Astra AI Intel Brief" className="text-sm font-medium text-slate-200 leading-relaxed">
+                                            <div className="whitespace-pre-wrap">
+                                              {aiResult.answer}
+                                            </div>
+                                        </TextHighlightPromoter>
                                     </div>
 
                                     {/* Sources */}

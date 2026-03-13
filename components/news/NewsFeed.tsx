@@ -15,6 +15,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { correlateNewsToCase } from "@/app/actions/news";
+import { TextHighlightPromoter } from "@/components/staging/TextHighlightPromoter";
 
 interface NewsItem {
   id: string;
@@ -155,45 +156,49 @@ export default function NewsFeed({ caseId }: NewsFeedProps) {
                         <img src={item.imageUrl} alt="" className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
                       </div>
                     )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center gap-2">
-                           <span className="text-[10px] font-black text-blue-400 uppercase tracking-wider">{item.source}</span>
-                           <span className="text-[8px] text-slate-600">•</span>
-                           <div className="flex items-center gap-1 text-[9px] text-slate-500 font-medium">
-                             <Clock size={10} />
-                             {new Date(item.publishedAt).toLocaleDateString()}
-                           </div>
-                        </div>
-                        <ExternalLink size={12} className="text-slate-600 group-hover:text-blue-400 transition-colors" />
-                      </div>
-                      
-                      <h3 className="text-sm font-bold text-white group-hover:text-blue-200 transition-colors line-clamp-2 leading-tight mb-2">
-                        {item.title}
-                      </h3>
-                      
-                      <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed mb-3">
-                        {item.summary}
-                      </p>
-
-                      <div className="flex items-center justify-between">
-                        {getSentimentBadge(item.sentiment)}
-                        <button 
-                          onClick={(e) => handleCorrelate(e, item.id)}
-                          disabled={correlatingIds.has(item.id)}
-                          className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-600 hover:text-white transition-all text-[10px] font-bold uppercase tracking-wider disabled:opacity-50 group/btn"
+                    <TextHighlightPromoter
+                          source={`${item.source}: ${item.title}`}
+                          className="flex-1 min-w-0"
                         >
-                          {correlatingIds.has(item.id) ? (
-                            <RefreshCw size={12} className="animate-spin" />
-                          ) : (
-                            <>
-                              Correlate
-                              <ArrowUpRight size={12} className="group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </div>
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-2">
+                               <span className="text-[10px] font-black text-blue-400 uppercase tracking-wider">{item.source}</span>
+                               <span className="text-[8px] text-slate-600">•</span>
+                               <div className="flex items-center gap-1 text-[9px] text-slate-500 font-medium">
+                                 <Clock size={10} />
+                                 {new Date(item.publishedAt).toLocaleDateString()}
+                               </div>
+                            </div>
+                            <ExternalLink size={12} className="text-slate-600 group-hover:text-blue-400 transition-colors" />
+                          </div>
+                          
+                          <h3 className="text-sm font-bold text-white group-hover:text-blue-200 transition-colors line-clamp-2 leading-tight mb-2">
+                            {item.title}
+                          </h3>
+                          
+                          <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed mb-3">
+                            {item.summary}
+                          </p>
+                        
+
+                       <div className="flex items-center justify-between">
+                         {getSentimentBadge(item.sentiment)}
+                         <button 
+                           onClick={(e) => handleCorrelate(e, item.id)}
+                           disabled={correlatingIds.has(item.id)}
+                           className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-600 hover:text-white transition-all text-[10px] font-bold uppercase tracking-wider disabled:opacity-50 group/btn"
+                         >
+                           {correlatingIds.has(item.id) ? (
+                             <RefreshCw size={12} className="animate-spin" />
+                           ) : (
+                             <>
+                               Correlate
+                               <ArrowUpRight size={12} className="group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
+                             </>
+                           )}
+                         </button>
+                       </div>
+                     </TextHighlightPromoter>
                   </div>
                 </motion.div>
               ))}

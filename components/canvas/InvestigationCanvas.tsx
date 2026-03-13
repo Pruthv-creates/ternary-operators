@@ -24,6 +24,8 @@ import GhostCursors from "@/components/canvas/GhostCursors";
 import { useCanvasCollaborators } from "@/hooks/canvas/useCanvasCollaborators";
 import { useCanvasAI } from "@/hooks/canvas/useCanvasAI";
 import { useCanvasSearch } from "@/hooks/canvas/useCanvasSearch";
+import { StagingAreaPanel } from "@/components/staging/StagingAreaPanel";
+import { useStagingStore } from "@/store/stagingStore";
 
 const nodeTypes: any = {
     entity: EntityNode,
@@ -53,6 +55,8 @@ function CanvasInner() {
 
     const [activeFilter, setActiveFilter] = useState("all");
     const [editingEdgeId, setEditingEdgeId] = useState<string | null>(null);
+    const { currentCaseId } = useInvestigationStore();
+    const { stagingPanelOpen } = useStagingStore();
 
     // Handle edge edit event
     useEffect(() => {
@@ -140,6 +144,8 @@ function CanvasInner() {
                 handleSearch={handleSearch}
                 collaborators={collaborators}
             />
+
+            {currentCaseId && <StagingAreaPanel caseId={currentCaseId} />}
 
             <ReactFlow
                 nodes={filteredNodes}

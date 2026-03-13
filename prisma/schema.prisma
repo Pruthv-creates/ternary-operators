@@ -12,6 +12,7 @@ model User {
   id                  String       @id @default(uuid())
   email               String       @unique
   name                String?      @unique
+  avatar              String?
   createdAt           DateTime     @default(now())
   auditLogs           AuditLog[]
   invitationsReceived Invitation[] @relation("InvitationsReceived")

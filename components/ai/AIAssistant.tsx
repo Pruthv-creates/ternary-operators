@@ -23,6 +23,7 @@ export default function AIAssistant({ actions, askAI, isPanel, onClose }: AIAssi
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [userInitial, setUserInitial] = useState("U");
+    const [userAvatar, setUserAvatar] = useState<string | undefined>(undefined);
 
     // File attachment state
     const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
@@ -38,8 +39,10 @@ export default function AIAssistant({ actions, askAI, isPanel, onClose }: AIAssi
     useEffect(() => {
         supabase.auth.getUser().then(({ data }) => {
             if (data.user?.email) setUserInitial(data.user.email[0].toUpperCase());
-            else if (data.user?.user_metadata?.full_name)
+            if (data.user?.user_metadata?.full_name)
                 setUserInitial(data.user.user_metadata.full_name[0].toUpperCase());
+            if (data.user?.user_metadata?.avatar_url)
+                setUserAvatar(data.user.user_metadata.avatar_url);
         });
     }, []);
 
@@ -172,6 +175,7 @@ export default function AIAssistant({ actions, askAI, isPanel, onClose }: AIAssi
                         key={i} 
                         message={msg} 
                         userInitial={userInitial} 
+                        userAvatar={userAvatar}
                     />
                 ))}
 

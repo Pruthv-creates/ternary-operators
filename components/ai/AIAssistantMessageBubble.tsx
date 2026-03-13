@@ -6,9 +6,10 @@ import { formatBytes } from "./utils";
 interface AIAssistantMessageBubbleProps {
     message: Message;
     userInitial: string;
+    userAvatar?: string;
 }
 
-export function AIAssistantMessageBubble({ message, userInitial }: AIAssistantMessageBubbleProps) {
+export function AIAssistantMessageBubble({ message, userInitial, userAvatar }: AIAssistantMessageBubbleProps) {
     const isAssistant = message.role === "assistant";
     
     return (
@@ -18,15 +19,18 @@ export function AIAssistantMessageBubble({ message, userInitial }: AIAssistantMe
         )}>
             {/* Avatar */}
             <div className={cn(
-                "w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white",
+                "w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white overflow-hidden",
                 isAssistant
                     ? "bg-indigo-600 shadow-md shadow-indigo-900/40"
                     : "bg-gradient-to-br from-purple-500 to-blue-500"
             )}>
-                {isAssistant
-                    ? <Sparkles size={14} />
-                    : <div className="text-[10px] font-bold uppercase">{userInitial}</div>
-                }
+                {isAssistant ? (
+                    <Sparkles size={14} />
+                ) : userAvatar ? (
+                    <img src={userAvatar} alt="User" className="w-full h-full object-cover" />
+                ) : (
+                    <div className="text-[10px] font-bold uppercase">{userInitial}</div>
+                )}
             </div>
 
             <div className="flex flex-col gap-1.5 max-w-[85%]">

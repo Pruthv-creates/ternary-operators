@@ -8,6 +8,7 @@ export interface PresenceUser {
     initials: string;
     name: string;
     color: string;
+    avatar?: string;
 }
 
 export function useTopbarPresence(currentCaseId: string | null) {
@@ -59,6 +60,7 @@ export function useTopbarPresence(currentCaseId: string | null) {
                     initials: (p.name || "A").substring(0, 2).toUpperCase(),
                     name: p.name || "Agent",
                     color: p.color || "bg-blue-500",
+                    avatar: p.avatar,
                 }));
 
                 // Filter by investigators on this case
@@ -78,6 +80,7 @@ export function useTopbarPresence(currentCaseId: string | null) {
                         await channel.track({
                             user_id: user.id,
                             name: user.user_metadata?.full_name || user.email?.split("@")[0],
+                            avatar: user.user_metadata?.avatar_url,
                             color: randomColor,
                         });
                     }

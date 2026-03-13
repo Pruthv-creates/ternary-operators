@@ -4,6 +4,7 @@ interface ProfileHeaderProps {
     user: {
         name: string;
         email: string;
+        avatar?: string;
     };
 }
 
@@ -11,8 +12,12 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
     return (
         <div className="p-6 border-b border-[#1e3a5f]/30 bg-gradient-to-br from-blue-500/10 to-purple-500/10 shrink-0">
             <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-2xl font-bold text-white shadow-lg ring-4 ring-blue-500/20">
-                    {user.name && user.name.length > 0 ? user.name[0].toUpperCase() : "?"}
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-2xl font-bold text-white shadow-lg ring-4 ring-blue-500/20 overflow-hidden">
+                    {user.avatar ? (
+                        <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                    ) : (
+                        user.name && user.name.length > 0 ? user.name[0].toUpperCase() : "?"
+                    )}
                 </div>
                 <div className="flex-1 min-w-0">
                     <h3 className="text-lg font-bold text-white truncate leading-tight">{user.name}</h3>

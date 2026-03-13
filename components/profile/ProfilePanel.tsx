@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Shield, Bell, LogOut, ChevronRight, Settings } from "lucide-react";
 import InvitationWizard from "@/components/profile/InvitationWizard";
 import { useProfileLogic } from "@/hooks/profile/useProfileLogic";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileMenuItem } from "@/components/profile/ProfileMenuItem";
+import ProfileEditor from "@/components/profile/ProfileEditor";
 
 interface ProfilePanelProps {
     isOpen: boolean;
@@ -19,6 +21,7 @@ interface ProfilePanelProps {
 }
 
 export default function ProfilePanel({ isOpen, onClose, user }: ProfilePanelProps) {
+    const [editorOpen, setEditorOpen] = useState(false);
     const {
         invitations,
         wizardOpen,
@@ -32,6 +35,11 @@ export default function ProfilePanel({ isOpen, onClose, user }: ProfilePanelProp
                 isOpen={wizardOpen} 
                 onClose={() => setWizardOpen(false)} 
                 userId={user.id} 
+            />
+            <ProfileEditor 
+                isOpen={editorOpen}
+                onClose={() => setEditorOpen(false)}
+                user={user}
             />
             <AnimatePresence>
                 {isOpen && (
@@ -58,6 +66,7 @@ export default function ProfilePanel({ isOpen, onClose, user }: ProfilePanelProp
                                     icon={<User size={16} />} 
                                     label="Personal Profile" 
                                     description="Adjust your investigator details"
+                                    onClick={() => setEditorOpen(true)}
                                 />
                                 
                                 <ProfileMenuItem 

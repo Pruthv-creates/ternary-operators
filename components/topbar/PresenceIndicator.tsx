@@ -13,9 +13,13 @@ export function PresenceIndicator({ presenceUsers }: PresenceIndicatorProps) {
                         <div
                             key={`${u.initials}-${i}`}
                             title={u.name}
-                            className={`w-5 h-5 rounded-full ${u.color} flex items-center justify-center text-[8px] font-bold text-white border border-[#0d1424]`}
+                            className={`w-5 h-5 rounded-full ${u.color} flex items-center justify-center text-[8px] font-bold text-white border border-[#0d1424] overflow-hidden`}
                         >
-                            {u.initials}
+                            {u.avatar ? (
+                                <img src={u.avatar} alt={u.name} className="w-full h-full object-cover" />
+                            ) : (
+                                u.initials
+                            )}
                         </div>
                     ))
                 ) : (

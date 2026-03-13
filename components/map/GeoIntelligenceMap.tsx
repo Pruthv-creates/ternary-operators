@@ -63,6 +63,7 @@ function MapController({ hoveredNodeId }: { hoveredNodeId: string | null }) {
 export default function GeoIntelligenceMap() {
   const { 
     nodes, 
+    currentCaseId,
     activeMapNodeId, 
     setActiveMapNodeId, 
     setHighlightedGraphNodeId,
@@ -70,17 +71,43 @@ export default function GeoIntelligenceMap() {
   } = useInvestigationStore();
   const [showHeatmap, setShowHeatmap] = useState(true);
   const [showPaths, setShowPaths] = useState(true);
+  const [triggering, setTriggering] = useState(false);
+
+  // Sync location data on mount or case change
+  useEffect(() => {
+    if (currentCaseId) {
+      refreshLocationEvents();
+    }
+  }, [currentCaseId, refreshLocationEvents]);
 
   // Filter nodes with coordinates
   const geoNodes = useMemo(() => {
     return nodes.filter(n => n.data?.latitude && n.data?.longitude && !n.data?.isDeleted);
   }, [nodes]);
 
+  const handleTriggerIntel = async () => {
+    if (!currentCaseId) return;
+    setTriggering(true);
+    try {
+      const res = await fetch(`/api/simulate-geo?caseId=${currentCaseId}`);
+      const data = await res.json();
+      if (data.success) {
+        await refreshLocationEvents();
+      } else {
+        alert(data.error || "Failed to trigger intelligence.");
+      }
+    } catch (err) {
+      console.error("Trigger error:", err);
+    } finally {
+      setTriggering(false);
+    }
+  };
+
   return (
     <div className="relative h-full w-full">
       <MapContainer
-        center={[20, 0]}
-        zoom={2}
+        center={[19.0760, 72.8777]} // Default to Mumbai center
+        zoom={11}
         className="h-full w-full grayscale-[0.8] invert-[0.1]"
         zoomControl={false}
       >
@@ -139,13 +166,16 @@ export default function GeoIntelligenceMap() {
       {/* Map Controls */}
       <div className="absolute right-6 top-6 z-[1000] flex flex-col gap-2">
         <button
-          onClick={async () => {
-            await fetch('/api/simulate-geo');
-            refreshLocationEvents();
-          }}
-          className="px-3 py-2 rounded-xl border border-emerald-500/50 bg-emerald-500/20 text-emerald-400 font-mono text-[9px] font-black uppercase tracking-widest transition-all hover:bg-emerald-500/30"
+          onClick={handleTriggerIntel}
+          disabled={triggering}
+          className={cn(
+            "px-3 py-2 rounded-xl border font-mono text-[9px] font-black uppercase tracking-widest transition-all",
+            triggering 
+              ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 cursor-not-allowed"
+              : "border-emerald-500/50 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
+          )}
         >
-          Trigger Real-time Intel
+          {triggering ? "Reconstructing..." : "Trigger Real-time Intel"}
         </button>
         <button
           onClick={() => setShowHeatmap(!showHeatmap)}

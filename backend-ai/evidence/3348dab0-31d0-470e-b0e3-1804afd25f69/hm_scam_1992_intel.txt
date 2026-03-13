@@ -1,0 +1,32 @@
+[INTEL REPORT: THE BIG BULL - HARSHAD MEHTA 1992]
+CASE ID: 3348dab0-31d0-470e-b0e3-1804afd25f69
+
+1. SUMMARY OF THE SCAM
+The 1992 Indian securities scam was a market manipulation orchestrated by stockbroker Harshad Mehta. He exploited loopholes in the banking system, specifically the Ready Forward (RF) deal system and Bank Receipts (BRs), to divert massive funds from public sector banks to the stock market.
+
+2. CORE ENTITIES
+- HARSHAD MEHTA: Primary orchestrator, known as "The Big Bull".
+- GROWMORE RESEARCH & ASSET MANAGEMENT: Mehta's firm.
+- STATE BANK OF INDIA (SBI): Source of significant diverted funds (approx. ₹4,000 crore).
+- NATIONAL HOUSING BANK (NHB): Heavily involved in the BR irregularities.
+- BOMBAY STOCK EXCHANGE (BSE): The primary arena for the speculation.
+
+3. KEY RELATIONSHIPS
+- MEHTA -> controls -> GROWMORE
+- GROWMORE -> transacts_with -> BOMBAY STOCK EXCHANGE
+- SBI -> funds (unauthorized) -> MEHTA
+- NHB -> issued (fraudulent) -> BANK RECEIPTS
+
+4. GEOGRAPHIC MOVEMENT LOGS (SIGNAL RECONSTRUCTION)
+- Mumbai: Phiroze Jeejeebhoy Towers (BSE) [18.9284, 72.8340]
+- Mumbai: SBI Main Branch [18.9322, 72.8335]
+- Mumbai: Madhuli Apartment, Worli [19.0118, 72.8441]
+- New Delhi: Ministry of Finance [28.6146, 77.2091]
+- New Delhi: CBI Headquarters [28.5888, 77.2281]
+
+5. CRITICAL FINDINGS
+- Mehta's net worth exploded within 24 months.
+- The "Blue Lexus LS400" became a symbol of his wealth and evidence of the scale of the diversion.
+- Spatial Convergence: Mehta was detected at the SBI Main Branch treasury department exactly 48 hours before the April 1992 market crash.
+
+--- CONFIDENTIAL ---

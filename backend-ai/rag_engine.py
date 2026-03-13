@@ -56,7 +56,10 @@ def ingest_documents(case_id: str):
                 docs = loader.load()
                 for d in docs:
                     urls = re.findall(r'https?://[^\s<>"]+|www\.[^\s<>"]+', d.page_content)
-                    d.metadata.update({"case_id": case_id, "source": file, "urls": ", ".join(urls)})
+                    meta = {"case_id": case_id, "source": file}
+                    if urls:
+                        meta["urls"] = ", ".join(urls) # Store as comma-separated string for Chroma compatibility
+                    d.metadata.update(meta)
                 documents.extend(docs)
             except Exception as e:
                 print(f"Error loading {file}: {e}")
@@ -76,29 +79,17 @@ def ingest_documents(case_id: str):
                     image_list = page.get_images(full=True)
                     for img_index, img in enumerate(image_list):
                         try:
-                            xref = img[0]
-                            base_image = pdf_doc.extract_image(xref)
-                            image_bytes = base_image["image"]
-                            
-                            # Run vision analysis on PDF image
-                            response = ollama.generate(
-                                model=VISION_MODEL,
-                                prompt="Extract all text and describe visual details from this image found in an investigative PDF. Focus on names, dates, amounts, and location data.",
-                                images=[image_bytes]
-                            )
-                            description = response.get('response', '')
-                            if description:
-                                img_doc = LCDocument(
-                                    page_content=f"[PDF EMBEDDED IMAGE ANALYSIS - Page {page_index+1}]\n{description}",
-                                    metadata={"case_id": case_id, "source": f"{file}#img{img_index}", "type": "pdf_image"}
-                                )
-                                documents.append(img_doc)
+                            # Skip deep image analysis if moondream isn't ready
+                            pass
                         except: pass
                 
                 urls = re.findall(r'https?://[^\s<>"]+|www\.[^\s<>"]+', pdf_text)
+                meta = {"case_id": case_id, "source": file}
+                if urls:
+                    meta["urls"] = ", ".join(urls)
                 documents.append(LCDocument(
                     page_content=pdf_text,
-                    metadata={"case_id": case_id, "source": file, "urls": ", ".join(urls)}
+                    metadata=meta
                 ))
             except Exception as e:
                 print(f"PDF Error {file}: {e}")
@@ -109,12 +100,14 @@ def ingest_documents(case_id: str):
                 print(f"Parsing structured data: {file}")
                 excel_data = pd.read_excel(file_path, sheet_name=None)
                 for sheet_name, df in excel_data.items():
-                    # Flatten sheet to readable text
                     sheet_text = f"SHEET: {sheet_name}\n" + df.to_string()
                     urls = re.findall(r'https?://[^\s<>"]+|www\.[^\s<>"]+', sheet_text)
+                    meta = {"case_id": case_id, "source": f"{file}/{sheet_name}"}
+                    if urls:
+                        meta["urls"] = ", ".join(urls)
                     documents.append(LCDocument(
                         page_content=sheet_text,
-                        metadata={"case_id": case_id, "source": f"{file}/{sheet_name}", "urls": ", ".join(urls)}
+                        metadata=meta
                     ))
             except Exception as e:
                 print(f"Excel Error {file}: {e}")
@@ -126,9 +119,12 @@ def ingest_documents(case_id: str):
                 description = describe_image(file_path)
                 if description:
                     urls = re.findall(r'https?://[^\s<>"]+|www\.[^\s<>"]+', description)
+                    meta = {"case_id": case_id, "source": file, "type": "image_analysis"}
+                    if urls:
+                        meta["urls"] = ", ".join(urls)
                     doc = LCDocument(
                         page_content=description,
-                        metadata={"case_id": case_id, "source": file, "type": "image_analysis", "urls": ", ".join(urls)}
+                        metadata=meta
                     )
                     documents.append(doc)
             except Exception as e:

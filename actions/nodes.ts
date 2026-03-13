@@ -37,8 +37,16 @@ export async function updateNodePosition(nodeId: string, x: number, y: number) {
 
 export async function createNewNode(caseId: string, node: any) {
   try {
-    const newNode = await prisma.node.create({
-      data: {
+    const newNode = await prisma.node.upsert({
+      where: { id: node.id },
+      update: {
+        label: node.data.name || node.data.label || "New Node",
+        positionX: node.position.x,
+        positionY: node.position.y,
+        content: JSON.stringify(node.data),
+        type: (node.nodeType as any) || "ENTITY_PERSON",
+      },
+      create: {
         id: node.id,
         caseId,
         type: (node.nodeType as any) || "ENTITY_PERSON",

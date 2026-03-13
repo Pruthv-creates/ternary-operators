@@ -1,9 +1,7 @@
 "use server";
 
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/app/actions/case";
-
-const prisma = new PrismaClient();
 
 export async function updateNodePosition(nodeId: string, x: number, y: number) {
   try {
@@ -16,15 +14,8 @@ export async function updateNodePosition(nodeId: string, x: number, y: number) {
       include: { case: { include: { users: { take: 1 } } } },
     });
 
-    // Log the movement if possible (using first user as a placeholder if session not passed)
-    if (updatedNode.case.users[0]) {
-      await createAuditLog(
-        updatedNode.caseId,
-        updatedNode.case.users[0].id,
-        `Moved node '${updatedNode.label}' to [${Math.round(x)}, ${Math.round(y)}]`,
-        "zap",
-      );
-    }
+    // Audit logging for movement is removed to prevent high-frequency database spam.
+    // Movement is tracked via real-time presence instead.
 
     return { success: true };
   } catch (error: any) {

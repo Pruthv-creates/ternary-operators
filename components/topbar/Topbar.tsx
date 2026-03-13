@@ -126,7 +126,11 @@ export default function Topbar() {
                 </button>
             )}
 
-            <UserNav userEmail={userEmail} onClick={() => setProfileOpen(!profileOpen)} />
+            <UserNav 
+                userEmail={userEmail} 
+                avatar={fullUser?.avatar}
+                onClick={() => setProfileOpen(!profileOpen)} 
+            />
 
         </header>
 

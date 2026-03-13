@@ -1,9 +1,7 @@
 "use server";
 
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { createNewNode } from "@/actions/nodes";
-
-const prisma = new PrismaClient();
 
 // In a real production app, this would call a News API (like NewsAPI.org or Serper)
 // For this advanced intelligence dashboard, we simulate the "Ingestion Engine" 

@@ -44,21 +44,6 @@ export default function CanvasToolbarRight({
                 )}
             </div>
 
-            {/* Live collaborators from real presence data */}
-            {Object.keys(collaborators).length > 0 && (
-                <div className="flex -space-x-1.5 pl-1 border-l border-slate-700/50">
-                    {Object.values(collaborators).slice(0, 4).map((c) => (
-                        <div
-                            key={c.userId}
-                            title={c.name}
-                            className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold text-white border-2 border-[#0a0f1c]"
-                            style={{ backgroundColor: c.color }}
-                        >
-                            {c.name?.substring(0, 2).toUpperCase()}
-                        </div>
-                    ))}
-                </div>
-            )}
         </div>
     );
 }

@@ -1,8 +1,6 @@
 "use server";
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 export async function syncUser(supabaseUser: { id: string; email?: string; user_metadata?: { full_name?: string; avatar_url?: string } }) {
   if (!supabaseUser.id || !supabaseUser.email) return null;

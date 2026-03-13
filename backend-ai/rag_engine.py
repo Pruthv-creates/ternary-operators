@@ -188,29 +188,45 @@ def analyze_graph(case_id: str):
     import json
     import re
 
-    documents = []
-    case_evidence_dir = os.path.join(EVIDENCE_DIR, case_id)
-    
-    if not os.path.exists(case_evidence_dir):
-        return {"nodes": [], "edges": []}
+    # Strategy: Use RAG to fetch the most "relationship-dense" context for analysis
+    case_db_dir = os.path.join(DB_DIR, case_id)
+    if os.path.exists(case_db_dir):
+        try:
+            embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+            vectordb = Chroma(persist_directory=case_db_dir, embedding_function=embeddings)
+            # Fetch a larger set of chunks to build a high-fidelity graph
+            docs = vectordb.as_retriever(search_kwargs={"k": 12}).invoke(
+                "Identify all primary subjects, banks, organizations, and the specific relationships, financial flows, and associations between them."
+            )
+            full_text = "\n\n".join([f"[FROM {d.metadata.get('source', 'Intel')}]: {d.page_content}" for d in docs])
+        except Exception as e:
+            print(f"RAG fetch error for analyze_graph: {e}")
+            # Fallback to simple file reading
+            full_text = ""
+    else:
+        full_text = ""
 
-    for file in sorted(os.listdir(case_evidence_dir)):
-        if file.endswith(".txt") or file.endswith(".md"):
-            try:
-                loader = TextLoader(os.path.join(case_evidence_dir, file))
-                documents.extend(loader.load())
-            except Exception:
-                pass
+    if not full_text:
+        # Fallback to direct file reading if Vector DB doesn't exist or failed
+        case_evidence_dir = os.path.join(EVIDENCE_DIR, case_id)
+        if not os.path.exists(case_evidence_dir):
+            return {"nodes": [], "edges": []}
 
-    if not documents:
-        return {"nodes": [], "edges": []}
+        file_contents = []
+        for file in sorted(os.listdir(case_evidence_dir)):
+            if file.endswith((".txt", ".md")):
+                try:
+                    with open(os.path.join(case_evidence_dir, file), "r") as f:
+                        file_contents.append(f.read())
+                except: pass
+        
+        if not file_contents:
+            return {"nodes": [], "edges": []}
+        
+        # Take up to 6000 chars for analysis
+        full_text = "\n\n".join(file_contents)[:6000]
 
-    # Take only the most relevant chunks to keep context short
-    documents.sort(key=lambda x: str(x.metadata.get("source", "")), reverse=True)
-    top_docs = documents[:3]
-    full_text = "\n\n".join([d.page_content[:1500] for d in top_docs])
-
-    # Build a safe case slug for node IDs to avoid cross-case collisions
+    # Build a safe case slug for node IDs
     import hashlib
     case_slug = hashlib.md5(case_id.encode()).hexdigest()[:8]
 

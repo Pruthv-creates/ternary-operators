@@ -35,7 +35,7 @@ export async function updateNodePosition(nodeId: string, x: number, y: number) {
   }
 }
 
-export async function createNewNode(caseId: string, node: any) {
+export async function createNewNode(caseId: string, node: any, userId?: string) {
   try {
     const newNode = await prisma.node.upsert({
       where: { id: node.id },
@@ -58,10 +58,11 @@ export async function createNewNode(caseId: string, node: any) {
       include: { case: { include: { users: { take: 1 } } } },
     });
 
-    if (newNode.case.users[0]) {
+    const actorId = userId || newNode.case.users[0]?.id;
+    if (actorId) {
       await createAuditLog(
         caseId,
-        newNode.case.users[0].id,
+        actorId,
         `Created new ${newNode.type} node: '${newNode.label}'`,
         "zap",
       );

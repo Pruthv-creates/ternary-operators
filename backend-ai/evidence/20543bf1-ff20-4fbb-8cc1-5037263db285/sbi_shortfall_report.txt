@@ -1,0 +1,10 @@
+# CONFIDENTIAL: SBI SHORTFALL REPORT 1991-92
+Date: April 14, 1992
+To: Main Branch Manager, Mumbai
+From: Internal Audit Division
+
+Our reconciliation of government securities against the Physical Custody Register has revealed a critical shortfall of approximately ₹500 Crores in sGL account balances.
+
+The discrepancies involve 'Ready Forward' transactions conducted with broker Harshad Shantilal Mehta. Specifically, our holdings of 11.5% 2010 GOI Bonds appear to have been transferred out without corresponding Bank Receipts (BRs) or legitimate delivery challans.
+
+Immediate investigation into the role of the Securities Department is recommended.

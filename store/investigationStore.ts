@@ -776,8 +776,24 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
 
     const idMap = new Map<string, string>();
     
+    // 1. Resolve entities by name to avoid duplicates and link AI edges to existing nodes
+    result.nodes.forEach(n => {
+      const aiName = (n.name || "").toLowerCase().trim();
+      if (!aiName) return;
+
+      const existing = currentNodes.find(cn => {
+        const cnName = ((cn.data?.name as string) || (cn.data?.label as string) || "").toLowerCase().trim();
+        return cnName === aiName;
+      });
+
+      if (existing) {
+        idMap.set(n.id, existing.id);
+      }
+    });
+
+    // 2. Filter nodes that don't exist yet (neither by ID nor by verified name)
     const filteredNodes = result.nodes.filter(
-      (n) => !currentNodes.find((cn) => cn.id === n.id),
+      (n) => !idMap.has(n.id) && !currentNodes.find((cn) => cn.id === n.id),
     );
 
     // Map AI type strings to Prisma NodeType enum values

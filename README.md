@@ -1,4 +1,4 @@
-# ASTRAEUS – Investigation Intelligence Platform
+# Epsilon3 – Investigation Intelligence Platform
 
 > A collaborative investigation & intelligence analysis platform for uncovering relationships between people, organizations, events, financial activities, and evidence sources.
 
@@ -20,7 +20,7 @@
 
 ## 1. Project Overview
 
-**Astraeus** is a collaborative **Investigation & Intelligence Analysis Platform** that helps investigators analyze large amounts of data and uncover relationships between:
+**Epsilon3** is a collaborative **Investigation & Intelligence Analysis Platform** that helps investigators analyze large amounts of data and uncover relationships between:
 
 - People
 - Organizations
@@ -28,7 +28,7 @@
 - Financial activities
 - Evidence sources
 
-Instead of using scattered tools like docs, spreadsheets, and chats, Astraeus provides a **single investigation workspace**.
+Instead of using scattered tools like docs, spreadsheets, and chats, Epsilon3 provides a **single investigation workspace**.
 
 ### Core Capabilities
 
@@ -193,8 +193,8 @@ AI features include:
 ### Step 1 — Initialize Project
 
 ```bash
-npx create-next-app@latest astraeus
-cd astraeus
+npx create-next-app@latest epsilon3
+cd epsilon3
 ```
 
 Install core libraries:

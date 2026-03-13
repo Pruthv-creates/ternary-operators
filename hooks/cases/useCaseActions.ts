@@ -29,7 +29,7 @@ export function useCaseActions() {
                     edges: [],
                     selectedEntity: null
                 });
-                localStorage.removeItem("astraeus_last_case_id");
+                localStorage.removeItem("epsilon3_last_case_id");
                 toast.success("Case deleted successfully");
                 router.push("/cases");
             } else {

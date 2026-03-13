@@ -265,7 +265,7 @@ export default function CasesPage() {
     const openCase = () => {
         if (!selectedCase) return;
         loadCaseData(selectedCase.id);
-        localStorage.setItem("astraeus_last_case_id", selectedCase.id);
+        localStorage.setItem("epsilon3_last_case_id", selectedCase.id);
         router.push("/");
     };
 

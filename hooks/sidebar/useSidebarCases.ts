@@ -22,7 +22,7 @@ export function useSidebarCases() {
                 const casesData = await getUserCases(user.id);
                 setUserCases(casesData);
                 
-                const lastCaseId = localStorage.getItem("astraeus_last_case_id");
+                const lastCaseId = localStorage.getItem("epsilon3_last_case_id");
                 const caseExists = casesData.find(c => c.id === lastCaseId);
 
                 if (caseExists) {
@@ -39,7 +39,7 @@ export function useSidebarCases() {
 
     const handleSelectCase = (caseId: string) => {
         const c = userCases.find(tc => tc.id === caseId);
-        localStorage.setItem("astraeus_last_case_id", caseId);
+        localStorage.setItem("epsilon3_last_case_id", caseId);
         loadCaseData(caseId, c?.title);
     };
 

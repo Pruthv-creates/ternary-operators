@@ -92,11 +92,11 @@ export default function CollaborationPage() {
                 if (caseTasks.length > 0) {
                     setRealTasks(caseTasks);
                 } else if (enriched.length > 0) {
-                    // Seed mock tasks referencing real people if DB is empty
+                    const randomAnalyst = enriched[Math.floor(Math.random() * enriched.length)]?.name || 'Lead Analyst';
                     const generatedTasks = [
                         { title: "Verify Synergy Corp beneficial ownership", priority: "High", status: "In Progress" },
                         { title: "Reconcile Cyprus travel logs with Swift logs", priority: "Medium", status: "To Do" },
-                        { title: `Review ${enriched[0]?.name || 'analyst'} findings on offshore entities`, priority: "Low", status: "Done" },
+                        { title: `Review ${randomAnalyst} findings on offshore entities`, priority: "Low", status: "Done" },
                     ];
                     setRealTasks(generatedTasks);
                 }

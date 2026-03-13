@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { getCaseInvestigators } from "@/app/actions/case";
+import { useInvestigationStore } from "@/store/investigationStore";
 
 export interface PresenceUser {
     id: string;
@@ -14,6 +15,7 @@ export function useTopbarPresence(currentCaseId: string | null) {
     const [fullUser, setFullUser] = useState<any>(null);
     const [presenceUsers, setPresenceUsers] = useState<PresenceUser[]>([]);
     const [validInvestigators, setValidInvestigators] = useState<string[]>([]);
+    const { setCurrentUser } = useInvestigationStore();
 
     useEffect(() => {
         if (!currentCaseId) {
@@ -29,12 +31,14 @@ export function useTopbarPresence(currentCaseId: string | null) {
             if (data.user) {
                 const name = data.user.user_metadata?.full_name || data.user.email?.split("@")[0] || "Agent";
                 setUserEmail(name);
-                setFullUser({
+                const userData = {
                     id: data.user.id,
                     name,
-                    email: data.user.email,
+                    email: data.user.email || "",
                     avatar: data.user.user_metadata?.avatar_url
-                });
+                };
+                setFullUser(userData);
+                setCurrentUser(userData);
             }
         });
 

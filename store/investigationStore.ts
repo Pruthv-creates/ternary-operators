@@ -130,6 +130,8 @@ type InvestigationState = {
 
   // Auto-Layout
   autoLayout: () => void;
+  currentUser: { id: string; name: string; email: string } | null;
+  setCurrentUser: (user: { id: string; name: string; email: string } | null) => void;
 };
 
 export const useInvestigationStore = create<InvestigationState>((set, get) => ({
@@ -139,6 +141,8 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
   currentCaseTitle: null,
   selectedEntity: null,
   collaborators: {},
+  currentUser: null,
+  setCurrentUser: (user) => set({ currentUser: user }),
   unreadMessagesCount: 0,
   chatOpen: false,
   aiPanelOpen: false,
@@ -379,7 +383,7 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
 
     changes.forEach((change) => {
       if (change.type === "position" && change.position) {
-        updateNodePosition(change.id, change.position.x, change.position.y);
+        updateNodePosition(change.id, change.position.x, change.position.y, get().currentUser?.id);
 
         // Get current version and bump it
         const node = currentNodes.find((n) => n.id === change.id);
@@ -548,7 +552,7 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
     });
 
     if (caseId) {
-      const result = await deleteNodeAction(id, caseId);
+      const result = await deleteNodeAction(id, caseId, get().currentUser?.id);
       if (result.success) {
         // Broadcast tombstone to peers
         await realtimeSyncManager.broadcast({ type: "node-delete", id });
@@ -660,7 +664,7 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
 
     set({ nodes: [...get().nodes, newNode] });
 
-    const result = await createNewNode(caseId, newNode);
+    const result = await createNewNode(caseId, newNode, get().currentUser?.id);
     if (result.success) {
       // Broadcast creation
       await realtimeSyncManager.broadcast({
@@ -699,7 +703,7 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
     const result = await createNewNode(caseId, {
       ...newNode,
       nodeType: "DOCUMENT",
-    });
+    }, get().currentUser?.id);
     if (result.success) {
       // Broadcast creation
       await realtimeSyncManager.broadcast({
@@ -751,7 +755,7 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
       nodeType: prismaType,
     };
 
-    const result = await createNewNode(caseId, nodeWithPrismaType);
+    const result = await createNewNode(caseId, nodeWithPrismaType, get().currentUser?.id);
     if (result.success) {
       // Broadcast creation
       await realtimeSyncManager.broadcast({
@@ -869,7 +873,7 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
               nodeType: typeToNodeType((n.data as any).type),
               position: n.position,
               data: n.data,
-            });
+            }, get().currentUser?.id);
           } catch (e) {
             console.warn("[addAIResult] Failed to persist node:", n.id, e);
           }

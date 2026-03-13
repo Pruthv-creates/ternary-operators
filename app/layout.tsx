@@ -21,6 +21,7 @@ export const metadata: Metadata = {
 
 import AuthGate from "@/components/auth/AuthGate";
 import AppShell from "@/components/layout/AppShell";
+import { Toaster } from "sonner";
 
 export default function RootLayout({
   children,
@@ -38,6 +39,18 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased bg-[#0f172a] text-slate-100 overflow-hidden">
+        <Toaster 
+          position="bottom-right" 
+          theme="dark" 
+          richColors 
+          toastOptions={{
+            style: {
+              background: '#0d1424',
+              border: '1px solid #1e3a5f',
+              color: '#cbd5e1',
+            }
+          }}
+        />
         <AuthGate>
           <AppShell>
             {children}

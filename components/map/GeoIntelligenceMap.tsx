@@ -10,6 +10,7 @@ import { RiskHeatmapLayer } from "./RiskHeatmapLayer";
 import { MovementPathLayer } from "./MovementPathLayer";
 import { TimelinePlayback } from "./TimelinePlayback";
 import { GeoPatternPanel } from "./GeoPatternPanel";
+import { toast } from "sonner";
 
 // Fix Leaflet icon issue
 const DefaultIcon = L.icon({
@@ -93,8 +94,9 @@ export default function GeoIntelligenceMap() {
       const data = await res.json();
       if (data.success) {
         await refreshLocationEvents();
+        toast.success("Intelligence simulation started successfully");
       } else {
-        alert(data.error || "Failed to trigger intelligence.");
+        toast.error(data.error || "Failed to trigger intelligence.");
       }
     } catch (err) {
       console.error("Trigger error:", err);
@@ -164,7 +166,7 @@ export default function GeoIntelligenceMap() {
       </MapContainer>
 
       {/* Map Controls */}
-      <div className="absolute right-6 top-6 z-[1000] flex flex-col gap-2">
+      <div className="absolute right-6 top-6 z-[1000] flex flex-col gap-2 p-2 rounded-2xl bg-[#0a0f1c]/80 border border-[#1e3a5f]/40 backdrop-blur-md shadow-2xl">
         <button
           onClick={handleTriggerIntel}
           disabled={triggering}

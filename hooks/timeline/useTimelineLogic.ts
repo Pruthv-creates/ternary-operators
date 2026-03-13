@@ -1,6 +1,8 @@
 import { useRef, useState } from "react";
 import { useInvestigationStore } from "@/store/investigationStore";
 
+import { toast } from "sonner";
+
 export function useTimelineLogic() {
     const { addStickyNote, addEvidenceCard } = useInvestigationStore();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -22,14 +24,13 @@ export function useTimelineLogic() {
 
             if (res.ok) {
                 addEvidenceCard(file.name.toUpperCase(), { x: 700, y: 400 });
-                // Note: Consider using a custom Toast component instead of alert
-                alert(`Evidence successfully ingested: ${file.name}`);
+                toast.success(`Evidence successfully ingested: ${file.name}`);
             } else {
-                alert("Upload failed. Ensure backend is running.");
+                toast.error("Upload failed. Ensure backend is running.");
             }
         } catch (error) {
             console.error("Upload error:", error);
-            alert("An error occurred during upload.");
+            toast.error("An error occurred during upload.");
         } finally {
             setUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = "";

@@ -4,6 +4,8 @@ import { getUserCases, createCase, renameCase } from "@/app/actions/case";
 import { useInvestigationStore } from "@/store/investigationStore";
 import { useRouter } from "next/navigation";
 
+import { toast } from "sonner";
+
 export function useSidebarCases() {
     const router = useRouter();
     const { loadCaseData, currentCaseId } = useInvestigationStore();
@@ -55,9 +57,11 @@ export function useSidebarCases() {
                 loadCaseData(newCase.id);
                 setIsCreateModalOpen(false);
                 router.push("/");
+                toast.success(`Case "${title}" created successfully`);
             }
         } catch (error) {
             console.error("Failed to create case:", error);
+            toast.error("Failed to create case");
         } finally {
             setCreating(false);
         }
@@ -71,12 +75,14 @@ export function useSidebarCases() {
                 if (result.success) {
                     setUserCases(userCases.map(c => c.id === caseId ? { ...c, title: newTitle } : c));
                     router.refresh();
+                    toast.success("Case renamed successfully");
                 } else {
-                    alert("Failed to rename case: " + result.error);
+                    toast.error("Failed to rename case: " + result.error);
                 }
             }
         } catch (error) {
             console.error("Failed to rename case:", error);
+            toast.error("Internal error during rename");
         }
     };
 

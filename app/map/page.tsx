@@ -59,12 +59,6 @@ export default function MapPage() {
           </div>
         </div>
 
-        <div className="flex h-12 items-center gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 px-5 backdrop-blur-xl">
-          <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
-          <span className="font-mono text-[9px] font-black uppercase tracking-widest text-emerald-400">
-            Secure Spatial Link Active
-          </span>
-        </div>
       </div>
 
       <div className="flex-1">

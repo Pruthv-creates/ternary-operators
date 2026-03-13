@@ -7,6 +7,8 @@ import { useEdgeAI } from "@/hooks/graph/useEdgeAI";
 import { RelationshipTypeSelector } from "./edges/RelationshipTypeSelector";
 import { AISuggestionCard } from "./edges/AISuggestionCard";
 
+import { toast } from "sonner";
+
 interface EdgeEditModalProps {
     edgeId: string;
     sourceLabel: string;
@@ -35,9 +37,11 @@ export default function EdgeEditModal({
         setIsSaving(true);
         try {
             await updateEdge(edgeId, selectedType);
+            toast.success("Relationship link updated");
             onClose();
         } catch (error) {
             console.error("Failed to update edge:", error);
+            toast.error("Failed to update link");
         } finally {
             setIsSaving(false);
         }
@@ -56,9 +60,10 @@ export default function EdgeEditModal({
             if (suggestion.confidence > 70) {
                 setSelectedType(suggestion.relationship_type);
                 setCredibility(Math.min(suggestion.confidence, 100));
+                toast.success("AI Intelligence applied to link");
             }
         } catch (e) {
-            alert("Secure channel timeout. AI suggestion failed.");
+            toast.error("Secure channel timeout. AI suggestion failed.");
         }
     };
 

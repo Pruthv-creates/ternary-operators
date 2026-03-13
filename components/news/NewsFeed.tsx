@@ -17,6 +17,8 @@ import { cn } from "@/lib/utils";
 import { correlateNewsToCase } from "@/app/actions/news";
 import { TextHighlightPromoter } from "@/components/staging/TextHighlightPromoter";
 
+import { toast } from "sonner";
+
 interface NewsItem {
   id: string;
   title: string;
@@ -67,12 +69,13 @@ export default function NewsFeed({ caseId }: NewsFeedProps) {
     try {
       const res = await correlateNewsToCase(newsId);
       if (res.success) {
-        alert("Intelligence promoted to investigation graph!");
+        toast.success("Intelligence promoted to investigation graph!");
       } else {
-        alert("Failed to correlate: " + (res.error || "Unknown error"));
+        toast.error("Failed to correlate: " + (res.error || "Unknown error"));
       }
     } catch (error) {
       console.error("Correlation error:", error);
+      toast.error("Internal correlation error");
     } finally {
       setCorrelatingIds(prev => {
         const next = new Set(prev);

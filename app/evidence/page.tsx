@@ -24,6 +24,8 @@ import {
 import { cn } from "@/lib/utils";
 import { TextHighlightPromoter } from "@/components/staging/TextHighlightPromoter";
 
+import { toast } from "sonner";
+
 type UploadStatus = "idle" | "uploading" | "success" | "error";
 
 interface EvidenceFile {
@@ -87,7 +89,7 @@ export default function EvidencePage() {
   /* ── Upload ── */
   async function handleFiles(newFiles: File[]) {
     if (!currentCaseId) {
-      alert("Please select or create an investigation case first.");
+      toast.error("Please select or create an investigation case first.");
       return;
     }
 

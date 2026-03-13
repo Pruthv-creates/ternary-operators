@@ -5,6 +5,8 @@ import { supabase } from "@/lib/supabase";
 import { LogIn, UserPlus, Fingerprint, MailCheck } from "lucide-react";
 import { syncUser } from "@/app/actions/auth";
 
+import { toast } from "sonner";
+
 export default function AuthGate({ children }: { children: React.ReactNode }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -54,10 +56,11 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
         email,
         password,
       });
-      if (error) alert(error.message);
+      if (error) toast.error(error.message);
       else {
         setUser(data.user);
         if (data.user) await syncUser(data.user);
+        toast.success("Security credentials verified. Access granted.");
       }
     } else if (view === "signup") {
       // Sign up normally, which sends the email verification OTP
@@ -71,9 +74,10 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
         },
       });
       if (error) {
-        alert(error.message);
+        toast.error(error.message);
       } else {
         // Shift view to OTP verification
+        toast.success("Security code sent to your email.");
         setView("verify_otp");
       }
     } else if (view === "verify_otp") {
@@ -84,10 +88,11 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
         type: "signup",
       });
       if (error) {
-        alert(error.message);
+        toast.error(error.message);
       } else {
         setUser(data.user);
         if (data.user) await syncUser(data.user);
+        toast.success("Identity verified. Welcome, Agent.");
       }
     }
 

@@ -3,6 +3,8 @@ import { useRouter } from "next/navigation";
 import { deleteCase, renameCase } from "@/app/actions/case";
 import { useInvestigationStore } from "@/store/investigationStore";
 
+import { toast } from "sonner";
+
 export function useCaseActions() {
     const router = useRouter();
     const [isDeleting, setIsDeleting] = useState(false);
@@ -28,12 +30,13 @@ export function useCaseActions() {
                     selectedEntity: null
                 });
                 localStorage.removeItem("astraeus_last_case_id");
+                toast.success("Case deleted successfully");
                 router.push("/cases");
             } else {
-                alert("Failed to delete case: " + result.error);
+                toast.error("Failed to delete case: " + result.error);
             }
         } catch (error) {
-            alert("Error deleting case: " + String(error));
+            toast.error("Error deleting case: " + String(error));
         } finally {
             setIsDeleting(false);
         }
@@ -46,12 +49,13 @@ export function useCaseActions() {
         try {
             const result = await renameCase(caseId, newTitle.trim(), fullUser.id);
             if (result.success) {
+                toast.success("Case renamed successfully");
                 router.refresh();
             } else {
-                alert("Failed to rename case: " + result.error);
+                toast.error("Failed to rename case: " + result.error);
             }
         } catch (error) {
-            alert("Error renaming case: " + String(error));
+            toast.error("Error renaming case: " + String(error));
         } finally {
             setIsRenaming(false);
         }

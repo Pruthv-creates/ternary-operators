@@ -194,9 +194,9 @@ def analyze_graph(case_id: str):
         try:
             embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
             vectordb = Chroma(persist_directory=case_db_dir, embedding_function=embeddings)
-            # Fetch a larger set of chunks to build a high-fidelity graph
-            docs = vectordb.as_retriever(search_kwargs={"k": 12}).invoke(
-                "Identify all primary subjects, banks, organizations, and the specific relationships, financial flows, and associations between them."
+            # Fetch an ultra-deep set of chunks for maximum network discovery
+            docs = vectordb.as_retriever(search_kwargs={"k": 40}).invoke(
+                "Identify ALL subjects, banks, brokers, government officials, and shell companies. Extract every single relationship, indirect association, and financial flow mentioned."
             )
             full_text = "\n\n".join([f"[FROM {d.metadata.get('source', 'Intel')}]: {d.page_content}" for d in docs])
         except Exception as e:
@@ -223,16 +223,17 @@ def analyze_graph(case_id: str):
         if not file_contents:
             return {"nodes": [], "edges": []}
         
-        # Take up to 6000 chars for analysis
-        full_text = "\n\n".join(file_contents)[:6000]
+        # Take up to 18000 chars for analysis
+        full_text = "\n\n".join(file_contents)[:18000]
 
     # Build a safe case slug for node IDs
     import hashlib
     case_slug = hashlib.md5(case_id.encode()).hexdigest()[:8]
 
-    user_prompt = f"""[STRICT DATA EXTRACTION TASK]
-You are a precision data extractor for an investigative platform. Analyze the text for Case ID: {case_id}.
-Return ONLY a valid JSON object. No words outside of the JSON.
+    user_prompt = f"""[ULTRA-EXHAUSTIVE INTELLIGENCE EXTRACTION]
+You are a senior forensic analyst. Your mission is to reconstruct the COMPLETE web of influence and financial activity for Case ID: {case_id}.
+Think step by step. Identify every person, bank, broker, government entity, and potential shell company mentioned. 
+Map every relationship: direct ownership, indirect association, money transfers, and shared networks.
 
 TEXT TO ANALYZE:
 {full_text}
@@ -266,6 +267,9 @@ STRICT RULES:
 3. Every person or company must have exactly one node.
 4. Extract only facts present in the text.
 5. Node IDs MUST start with '{case_slug}-' (e.g., {case_slug}-n1, {case_slug}-n2).
+6. Be as EXHAUSTIVE as possible. If a bank, broker, or official is mentioned, include them.
+7. Look for indirect connections (e.g., 'X works through Y', 'Z is a front for Mehta').
+8. Identify shell companies and opaque entities.
 
 JSON:"""
 
@@ -273,15 +277,27 @@ JSON:"""
         response = ollama.chat(
             model="llama3",
             messages=[{"role": "user", "content": user_prompt}],
-            options={"temperature": 0.1, "num_predict": 1800}
+            format="json",
+            options={
+                "temperature": 0.1,
+                "num_predict": 8000,
+                "num_ctx": 16384
+            }
         )
         raw = response["message"]["content"].strip()
+        
+        # DEBUG: Log raw response
+        with open("/tmp/ai_raw_response.log", "w") as f:
+            f.write(raw)
 
-        # Strategy 1: find JSON block
+        # Strategy 1: find largest JSON block using balanced braces if possible, or simple greedy
         brace_match = re.search(r'\{[\s\S]*\}', raw)
         if brace_match:
             try:
-                result = json.loads(brace_match.group(0))
+                json_str = brace_match.group(0)
+                # Remove common markdown cleanups if model messed up
+                json_str = json_str.replace("```json", "").replace("```", "")
+                result = json.loads(json_str)
                 if "nodes" in result:
                     return result
             except: pass

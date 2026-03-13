@@ -664,13 +664,15 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
 
     set({ nodes: [...get().nodes, newNode] });
 
+    // Broadcast creation INSTANTLY for real-time responsiveness
+    realtimeSyncManager.broadcast({
+      type: "node-create",
+      node: newNode,
+    });
+
     const result = await createNewNode(caseId, newNode, get().currentUser?.id);
-    if (result.success) {
-      // Broadcast creation
-      await realtimeSyncManager.broadcast({
-        type: "node-create",
-        node: newNode,
-      });
+    if (!result.success) {
+       console.warn("[addHypothesis] Database persistence failed for node:", id);
     }
   },
 
@@ -700,16 +702,18 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
 
     set({ nodes: [...get().nodes, newNode] });
 
+    // Broadcast creation INSTANTLY
+    realtimeSyncManager.broadcast({
+      type: "node-create",
+      node: newNode,
+    });
+
     const result = await createNewNode(caseId, {
       ...newNode,
       nodeType: "DOCUMENT",
     }, get().currentUser?.id);
-    if (result.success) {
-      // Broadcast creation
-      await realtimeSyncManager.broadcast({
-        type: "node-create",
-        node: newNode,
-      });
+    if (!result.success) {
+       console.warn("[addEvidenceCard] Database persistence failed for node:", id);
     }
   },
 
@@ -744,6 +748,12 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
       nodes: [...get().nodes, node],
     });
 
+    // Broadcast creation INSTANTLY
+    realtimeSyncManager.broadcast({
+      type: "node-create",
+      node,
+    });
+
     let prismaType = "ENTITY_PERSON";
     if (node.data.type === "company" || node.data.type === "offshore")
       prismaType = "ENTITY_ORG";
@@ -756,12 +766,8 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
     };
 
     const result = await createNewNode(caseId, nodeWithPrismaType, get().currentUser?.id);
-    if (result.success) {
-      // Broadcast creation
-      await realtimeSyncManager.broadcast({
-        type: "node-create",
-        node,
-      });
+    if (!result.success) {
+       console.warn("[addNode] Database persistence failed for node:", node.id);
     }
   },
 
@@ -872,10 +878,24 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
       }));
 
     // Update in-memory store immediately for instant UI response
+    const finalNodes = [...currentNodes, ...newNodes];
+    const finalEdges = [...currentEdges, ...newEdges];
+    
     set({
-      nodes: [...currentNodes, ...newNodes],
-      edges: [...currentEdges, ...newEdges],
+      nodes: finalNodes,
+      edges: finalEdges,
     });
+
+    // Broadcast to other investigators INSTANTLY
+    try {
+      realtimeSyncManager.broadcast({
+        type: "graph-full-update",
+        nodes: finalNodes,
+        edges: finalEdges,
+      });
+    } catch (e) {
+      console.warn("[addAIResult] Instant broadcast failed:", e);
+    }
 
     // Persist to database so Cases page stats are accurate
     if (caseId) {
@@ -920,16 +940,7 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
         }
       }
 
-      // Broadcast to other investigators
-      try {
-        await realtimeSyncManager.broadcast({
-          type: "graph-full-update",
-          nodes: get().nodes,
-          edges: get().edges,
-        });
-      } catch (e) {
-        console.warn("[addAIResult] Broadcast failed:", e);
-      }
+      // Note: Full update broadcast handled instantly above for better UX
     }
 
     setTimeout(() => {

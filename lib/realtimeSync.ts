@@ -98,6 +98,11 @@ export class RealtimeSyncManager {
       onEvent({ type: "cursor-move", ...payload });
     });
 
+    // Full graph updates (e.g. after AI analysis or auto-organize)
+    this.channel.on("broadcast", { event: "graph-full-update" }, ({ payload }) => {
+      onEvent({ type: "graph-full-update", ...payload });
+    });
+
     // Track presence (who's currently viewing the case)
     this.channel.on("presence", { event: "sync" }, () => {
       const state = this.channel?.presenceState();

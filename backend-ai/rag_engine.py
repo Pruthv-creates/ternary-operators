@@ -154,25 +154,36 @@ def query_rag(question: str, case_id: str):
 
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
     vectordb = Chroma(persist_directory=case_db_dir, embedding_function=embeddings)
-    retriever = vectordb.as_retriever(search_kwargs={"k": 5})
+    # Increased k to 10 for better coverage in General Evidence Queries
+    retriever = vectordb.as_retriever(search_kwargs={"k": 10})
     docs = retriever.invoke(question)
 
     context = "\n\n".join([d.page_content for d in docs])
     prompt = f"""
-You are an investigative intelligence assistant. You are analyzing evidence for Case ID: {case_id}.
+[SYSTEM: SENIOR FORENSIC INVESTIGATOR MODE]
+You are a top-tier intelligence analyst. Your goal is to provide deep, detailed, and factual answers based on the evidence provided for Case ID: {case_id}.
+BE EXTREMELY DETAILED. Look for financial connections, shell companies, behavioral patterns, and indirect associations.
 
-Use ONLY the evidence below to answer the question. If the information isn't in the evidence, state that you don't know based on current case files.
-
-Evidence:
+EVIDENCE BLOCK:
 {context}
 
-Question:
+QUERY:
 {question}
+
+INSTRUCTIONS:
+- Use ONLY the provided evidence.
+- If the answer is not in the evidence, precisely state what information is missing.
+- Format for maximum readability using bolding for key entities.
 """
 
     response = ollama.chat(
         model="llama3",
-        messages=[{"role": "user", "content": prompt}]
+        messages=[{"role": "user", "content": prompt}],
+        options={
+            "temperature": 0.1,
+            "num_ctx": 8192,
+            "num_predict": 2048
+        }
     )
 
     answer = response["message"]["content"]

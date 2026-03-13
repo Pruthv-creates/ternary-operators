@@ -215,15 +215,21 @@ export async function createInvitation(
   inviteeId: string,
   role: string = "VIEWER",
 ) {
-  // Check if user is already in case
-  const existingCase = await prisma.case.findFirst({
-    where: { id: caseId, users: { some: { id: inviteeId } } },
+  // 1. Verify case existence and check if user is already in case
+  const targetCase = await prisma.case.findUnique({
+    where: { id: caseId },
+    include: { users: { where: { id: inviteeId }, select: { id: true } } }
   });
-  if (existingCase) {
+
+  if (!targetCase) {
+    return { success: false, error: "Target investigation case no longer exists." };
+  }
+
+  if (targetCase.users.length > 0) {
     return { success: false, error: "Agent is already assigned to this case." };
   }
 
-  // Check for pending invite
+  // 2. Check for pending invite
   const existingInvite = await prisma.invitation.findFirst({
     where: { caseId, inviteeId, status: "PENDING" },
   });
@@ -231,16 +237,20 @@ export async function createInvitation(
     return { success: false, error: "An invitation is already pending for this agent." };
   }
 
-  await prisma.invitation.create({
-    data: {
-      caseId,
-      inviterId,
-      inviteeId,
-      role,
-    },
-  });
-
-  return { success: true };
+  try {
+    await prisma.invitation.create({
+      data: {
+        caseId,
+        inviterId,
+        inviteeId,
+        role,
+      },
+    });
+    return { success: true };
+  } catch (err: any) {
+    console.error("Invitation Error:", err);
+    return { success: false, error: "System failed to dispatch invitation. Verify agent clearance." };
+  }
 }
 
 export async function getPendingInvitations(userId: string) {

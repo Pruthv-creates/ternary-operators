@@ -896,26 +896,28 @@ export const useInvestigationStore = create<InvestigationState>((set, get) => ({
         }),
       ]);
 
-      // Persist edges — only after nodes are in DB (use small delay for safety)
+      // Persist edges — only after nodes are in DB
       if (newEdges.length > 0) {
-        setTimeout(async () => {
-          const allNodeIds = new Set(get().nodes.map((n) => n.id));
-          for (const e of newEdges) {
-            // Only create edge if both endpoints exist in DB
-            if (allNodeIds.has(e.source) && allNodeIds.has(e.target)) {
-              try {
-                await createEdgeAction(
-                  caseId,
-                  e.source,
-                  e.target,
-                  (e.label as string) || "related_to",
-                );
-              } catch (err) {
-                console.warn("[addAIResult] Failed to persist edge:", e.id, err);
-              }
+        const allNodes = get().nodes;
+        const allNodeIds = new Set(allNodes.map((n) => n.id));
+        const currentUserId = get().currentUser?.id;
+
+        for (const e of newEdges) {
+          // Only create edge if both endpoints exist in our local graph state
+          if (allNodeIds.has(e.source) && allNodeIds.has(e.target)) {
+            try {
+              await createEdgeAction(
+                caseId,
+                e.source,
+                e.target,
+                (e.label as string) || "related_to",
+                currentUserId
+              );
+            } catch (err) {
+              console.warn("[addAIResult] Failed to persist edge:", e.id, err);
             }
           }
-        }, 1000);
+        }
       }
 
       // Broadcast to other investigators

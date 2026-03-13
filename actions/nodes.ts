@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/app/actions/case";
 
-export async function updateNodePosition(nodeId: string, x: number, y: number) {
+export async function updateNodePosition(nodeId: string, x: number, y: number, userId?: string) {
   try {
     const updatedNode = await prisma.node.update({
       where: { id: nodeId },
@@ -82,7 +82,7 @@ export async function updateNodeContent(nodeId: string, data: any) {
   }
 }
 
-export async function deleteNodeAction(nodeId: string, caseId: string) {
+export async function deleteNodeAction(nodeId: string, caseId: string, userId?: string) {
   try {
     // Delete all related edges first
     await prisma.edge.deleteMany({
@@ -120,22 +120,45 @@ export async function createEdgeAction(
   sourceId: string,
   targetId: string,
   relationshipType: string = "related_to",
+  userId?: string,
 ) {
   try {
-    const edge = await prisma.edge.create({
-      data: {
+    const edge = await prisma.edge.upsert({
+      where: {
+        sourceId_targetId_relationshipType: {
+          sourceId,
+          targetId,
+          relationshipType,
+        },
+      },
+      update: {},
+      create: {
         caseId,
         sourceId,
         targetId,
         relationshipType,
       },
+      include: {
+        source: true,
+        target: true,
+        case: { include: { users: { take: 1 } } },
+      },
     });
+
+    const actorId = userId || edge.case.users[0]?.id;
+    if (actorId) {
+      await createAuditLog(
+        caseId,
+        actorId,
+        `Established connection: '${edge.source.label}' -> ${edge.relationshipType} -> '${edge.target.label}'`,
+        "link",
+      );
+    }
 
     return {
       success: true,
       edge: {
         ...edge,
-        // Return with full edge data for React Flow
         source: edge.sourceId,
         target: edge.targetId,
         type: "relation",
@@ -145,7 +168,7 @@ export async function createEdgeAction(
   } catch (error: unknown) {
     const err = error as any;
     if (err?.code === "P2002") {
-      return { success: false, edge: null, duplicate: true }; // Edge already exists
+      return { success: false, edge: null, duplicate: true };
     }
     console.error("Failed to create edge:", error);
     return { success: false, edge: null };

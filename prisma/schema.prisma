@@ -36,21 +36,22 @@ model Invitation {
 }
 
 model Case {
-  id           String        @id @default(uuid())
-  title        String
-  description  String?
-  status       String        @default("ACTIVE")
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  aiAnalysis   Json?
-  auditLogs    AuditLog[]
-  documents    Document[]
-  edges        Edge[]
-  invitations  Invitation[]
-  nodes        Node[]
-  chatMessages ChatMessage[]
-  news         News[]
-  users        User[]        @relation("CaseInvestigators")
+  id               String             @id @default(uuid())
+  title            String
+  description      String?
+  status           String             @default("ACTIVE")
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  aiAnalysis       Json?
+  auditLogs        AuditLog[]
+  ConvergenceEvent ConvergenceEvent[]
+  documents        Document[]
+  edges            Edge[]
+  invitations      Invitation[]
+  nodes            Node[]
+  chatMessages     ChatMessage[]
+  news             News[]
+  users            User[]             @relation("CaseInvestigators")
 }
 
 model ChatMessage {
@@ -81,32 +82,36 @@ model Document {
 }
 
 model Node {
-  id        String    @id @default(uuid())
-  caseId    String
-  type      NodeType
-  label     String
-  content   String?
-  positionX Float     @default(0)
-  positionY Float     @default(0)
-  latitude  Float?
-  longitude Float?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  document  Document?
-  edgesOut  Edge[]    @relation("FromNode")
-  edgesIn   Edge[]    @relation("ToNode")
-  case      Case      @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  id             String          @id @default(uuid())
+  caseId         String
+  type           NodeType
+  label          String
+  content        String?
+  positionX      Float           @default(0)
+  positionY      Float           @default(0)
+  latitude       Float?
+  longitude      Float?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  document       Document?
+  edgesOut       Edge[]          @relation("FromNode")
+  edgesIn        Edge[]          @relation("ToNode")
   locationEvents LocationEvent[]
+  case           Case            @relation(fields: [caseId], references: [id], onDelete: Cascade)
 }
 
 model LocationEvent {
-  id        String   @id @default(cuid())
-  entityId  String
-  latitude  Float
-  longitude Float
-  timestamp DateTime
-  source    String
-  node      Node     @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  id           String   @id @default(cuid())
+  entityId     String
+  latitude     Float
+  longitude    Float
+  locationName String?
+  eventType    String?
+  description  String?
+  timestamp    DateTime
+  createdAt    DateTime @default(now())
+  source       String?
+  node         Node     @relation(fields: [entityId], references: [id], onDelete: Cascade)
 }
 
 model Edge {
@@ -149,6 +154,20 @@ model News {
   case        Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
 
   @@map("news")
+}
+
+model ConvergenceEvent {
+  id           String   @id
+  caseId       String
+  entityIds    String[]
+  latitude     Float
+  longitude    Float
+  locationName String
+  startTime    DateTime
+  endTime      DateTime
+  description  String
+  createdAt    DateTime @default(now())
+  Case         Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
 }
 
 enum NodeType {

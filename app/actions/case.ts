@@ -29,11 +29,7 @@ export async function getCaseGraph(caseId: string) {
         ? "evidence"
         : "hypothesis";
 
-    return {
-      id: n.id,
-      type: rfType,
-      position: { x: n.positionX, y: n.positionY },
-      data: {
+    const data: any = {
         ...parsedContent,
         name: (parsedContent.name as string) || n.label,
         label: n.label,
@@ -54,7 +50,24 @@ export async function getCaseGraph(caseId: string) {
             : undefined,
         text: (parsedContent.text as string) || n.label,
         prefix: (parsedContent.prefix as string) || "",
-      },
+      };
+
+    // Ensure Evidence nodes always have an 'item' object for EvidenceCard
+    if (rfType === "evidence" && !data.item) {
+      data.item = {
+        id: n.id,
+        title: n.label,
+        credibility: data.credibilityScore || 85,
+        timestamp: "Previously uploaded",
+        type: "document",
+      };
+    }
+
+    return {
+      id: n.id,
+      type: rfType,
+      position: { x: n.positionX, y: n.positionY },
+      data,
     };
   });
 

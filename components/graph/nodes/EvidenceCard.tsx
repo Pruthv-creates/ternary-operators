@@ -13,6 +13,22 @@ const getCredibilityColor = (score: number) => {
 };
 
 export default function EvidenceCard({ item }: EvidenceCardProps) {
+    if (!item) {
+        return (
+            <div className={cn(
+                "evidence-card rounded-xl p-3 w-56 cursor-pointer",
+                "bg-[#1e293b]/90 border border-slate-700/50 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.4)]"
+            )}>
+                <div className="text-[9px] text-slate-400 font-semibold tracking-widest uppercase mb-1.5">
+                    Evidence (Missing Data)
+                </div>
+                <div className="text-[11px] font-bold text-slate-200 leading-tight uppercase tracking-wide mb-3">
+                    Untitled Evidence
+                </div>
+            </div>
+        );
+    }
+
     return (
         <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
